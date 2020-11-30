@@ -8,9 +8,9 @@
 #include <chrono>
 #include "cuda.h"
 
-#define NGRID 7
-#define NPARS 7
-#define NT    4000000
+// #define NGRID 7
+// #define NPARS 7
+// #define NT    4000000
 
 __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy, 
                             const double* const P,
@@ -100,17 +100,19 @@ void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, co
 }
 
 void SetMaterials(double* const K, double* const G, const int m, const int n, const double dX, const double dY) {
+  constexpr double E = 1.0;
+  constexpr double nu = 0.25;
   constexpr double E0 = 0.002;
   constexpr double nu0 = 0.3;
   constexpr double E1 = 2.0;
   constexpr double nu1 = 0.2;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      K[j * m + i] = E0 / (3.0 - 6.0 * nu0);
-      G[j * m + i] = E0 / (2.0 + 2.0 * nu0);
+      K[j * m + i] = E/*0*/ / (3.0 - 6.0 * nu/*0*/);
+      G[j * m + i] = E/*0*/ / (2.0 + 2.0 * nu/*0*/);
       if ( sqrt((-0.5 * dX * (m - 1) + dX * i) * (-0.5 * dX * (m - 1) + dX * i) + (-0.5 * dY * (n - 1) + dY * j) * (-0.5 * dY * (n - 1) + dY * j)) < 2.85459861019 ) {
-        K[j * m + i] = E1 / (3.0 - 6.0 * nu1);
-        G[j * m + i] = E1 / (2.0 + 2.0 * nu1);
+        K[j * m + i] = E/*1*/ / (3.0 - 6.0 * nu/*1*/);
+        G[j * m + i] = E/*1*/ / (2.0 + 2.0 * nu/*1*/);
       }
     }
   }
@@ -126,7 +128,7 @@ std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int,
   const long int nX = block.x * grid.x;
   const long int nY = block.y * grid.y;
 
-  cudaSetDevice(0);
+  cudaSetDevice(2);
   cudaDeviceReset();
   cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 

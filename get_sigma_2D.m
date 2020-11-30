@@ -105,9 +105,8 @@ function S = get_sigma_2D(loadValue, loadType)
   endfor
 
   % GPU CALCULATION
-  %system(['nvcc -DNGRID=',int2str(ngrid),' -DNT=',int2str(nt),' -DNPARS=',int2str(length(pa)),' Wave2d_2020_06_04.cu']);
-  %system(['nvcc boundary_problem.cu']);
-  %system(['a.exe']);
+  system(['nvcc -DNGRID=',int2str(nGrid),' -DNT=',int2str(Nt),' -DNPARS=',int2str(length(pa)),' boundary_problem.cu']);
+  system(['.\a.exe']);
   
   fil = fopen('Pc.dat', 'rb');
   Pc = fread(fil, 'double');
