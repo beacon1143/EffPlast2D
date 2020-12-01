@@ -13,10 +13,10 @@ function S = get_sigma_2D(loadValue, loadType)
   G0   = E0 / (2.0 + 2.0 * nu0);      % shear modulus
 
   % NUMERICS
-  nGrid = 2;
+  nGrid = 1;
   Nx  = 32 * nGrid;     % number of space steps
   Ny  = 32 * nGrid;
-  Nt  = 10000;     % number of time steps
+  Nt  = 100000;     % number of time steps
   CFL = 0.5;     % Courant-Friedrichs-Lewy
 
   % PREPROCESSING
@@ -112,6 +112,11 @@ function S = get_sigma_2D(loadValue, loadType)
   Pc = fread(fil, 'double');
   fclose(fil);
   Pc = reshape(Pc, Nx, Ny);
+  
+  fil = fopen('Uxc.dat', 'rb');
+  Uxc = fread(fil, 'double');
+  fclose(fil);
+  Uxc = reshape(Uxc, Nx + 1, Ny);
 
   fil = fopen('Uyc.dat', 'rb');
   Uyc = fread(fil, 'double');
@@ -124,32 +129,33 @@ function S = get_sigma_2D(loadValue, loadType)
   tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
 
   diffP = P - Pc;
+  diffUx = Ux - Uxc;
   diffUy = Uy - Uyc;
   diffTauXY = tauxy - tauXYc;
 
   % POSTPROCESSING
   subplot(2,2,1)
-  imagesc(Uy)
+  imagesc(Ux)
   colorbar
-  title('Uy')
+  title('Ux')
   axis image
 
   subplot(2,2,2)
-  imagesc(diffUy)
+  imagesc(diffUx)
   colorbar
-  title('diffUy')
+  title('diffUx')
   axis image
 
   subplot(2,2,3)
-  imagesc(P)
+  imagesc(tauxy)
   colorbar
-  title('P')
+  title('tauxy')
   axis image
 
   subplot(2,2,4)
-  imagesc(diffP)
+  imagesc(diffTauXY)
   colorbar
-  title('diffP')
+  title('diffTauXY')
   axis image
 
   S = [0 0 0];

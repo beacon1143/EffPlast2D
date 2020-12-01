@@ -233,6 +233,7 @@ std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int,
 
   /* OUTPUT DATA WRITING */
   SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc.dat");
+  SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
   SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
   SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc.dat");
 
