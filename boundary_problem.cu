@@ -102,10 +102,10 @@ void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, co
 void SetMaterials(double* const K, double* const G, const int m, const int n, const double dX, const double dY) {
   constexpr double E = 1.0;
   constexpr double nu = 0.25;
-  constexpr double E0 = 0.002;
+  /*constexpr double E0 = 0.002;
   constexpr double nu0 = 0.3;
   constexpr double E1 = 2.0;
-  constexpr double nu1 = 0.2;
+  constexpr double nu1 = 0.2;*/
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
       K[j * m + i] = E/*0*/ / (3.0 - 6.0 * nu/*0*/);

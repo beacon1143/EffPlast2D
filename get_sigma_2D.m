@@ -1,4 +1,4 @@
-function S = get_sigma_2D(loadValue, loadType)
+function S = get_sigma_2D(nGrid, nT, loadValue, loadType)
   figure(1)
   clf
   colormap jet
@@ -13,10 +13,10 @@ function S = get_sigma_2D(loadValue, loadType)
   G0   = E0 / (2.0 + 2.0 * nu0);      % shear modulus
 
   % NUMERICS
-  nGrid = 1;
+  %nGrid = 1;
   Nx  = 32 * nGrid;     % number of space steps
   Ny  = 32 * nGrid;
-  Nt  = 100000;     % number of time steps
+  %Nt  = 100000;     % number of time steps
   CFL = 0.5;     % Courant-Friedrichs-Lewy
 
   % PREPROCESSING
@@ -64,7 +64,7 @@ function S = get_sigma_2D(loadValue, loadType)
   fclose(fil);
 
   % CPU CALCULATION
-  for it = 1 : Nt
+  for it = 1 : nT
     % displacement divergence
     divU = diff(Ux,1,1) / dX + diff(Uy,1,2) / dY;
     
@@ -104,59 +104,55 @@ function S = get_sigma_2D(loadValue, loadType)
   %  endif
   endfor
 
-  % GPU CALCULATION
-  system(['nvcc -DNGRID=',int2str(nGrid),' -DNT=',int2str(Nt),' -DNPARS=',int2str(length(pa)),' boundary_problem.cu']);
-  system(['.\a.exe']);
+  %fil = fopen('Pc.dat', 'rb');
+  %Pc = fread(fil, 'double');
+  %fclose(fil);
+  %Pc = reshape(Pc, Nx, Ny);
   
-  fil = fopen('Pc.dat', 'rb');
-  Pc = fread(fil, 'double');
-  fclose(fil);
-  Pc = reshape(Pc, Nx, Ny);
-  
-  fil = fopen('Uxc.dat', 'rb');
-  Uxc = fread(fil, 'double');
-  fclose(fil);
-  Uxc = reshape(Uxc, Nx + 1, Ny);
+  %fil = fopen('Uxc.dat', 'rb');
+  %Uxc = fread(fil, 'double');
+  %fclose(fil);
+  %Uxc = reshape(Uxc, Nx + 1, Ny);
 
-  fil = fopen('Uyc.dat', 'rb');
-  Uyc = fread(fil, 'double');
-  fclose(fil);
-  Uyc = reshape(Uyc, Nx, Ny + 1);
+  %fil = fopen('Uyc.dat', 'rb');
+  %Uyc = fread(fil, 'double');
+  %fclose(fil);
+  %Uyc = reshape(Uyc, Nx, Ny + 1);
 
-  fil = fopen('tauXYc.dat', 'rb');
-  tauXYc = fread(fil, 'double');
-  fclose(fil);
-  tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
+  %fil = fopen('tauXYc.dat', 'rb');
+  %tauXYc = fread(fil, 'double');
+  %fclose(fil);
+  %tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
 
-  diffP = P - Pc;
-  diffUx = Ux - Uxc;
-  diffUy = Uy - Uyc;
-  diffTauXY = tauxy - tauXYc;
+  %diffP = P - Pc;
+  %diffUx = Ux - Uxc;
+  %diffUy = Uy - Uyc;
+  %diffTauXY = tauxy - tauXYc;
 
   % POSTPROCESSING
-  subplot(2,2,1)
-  imagesc(Ux)
-  colorbar
-  title('Ux')
-  axis image
+  %subplot(2,2,1)
+  %imagesc(Ux)
+  %colorbar
+  %title('Ux')
+  %axis image
 
-  subplot(2,2,2)
-  imagesc(diffUx)
-  colorbar
-  title('diffUx')
-  axis image
+  %subplot(2,2,2)
+  %imagesc(diffUx)
+  %colorbar
+  %title('diffUx')
+  %axis image
 
-  subplot(2,2,3)
-  imagesc(tauxy)
-  colorbar
-  title('tauxy')
-  axis image
+  %subplot(2,2,3)
+  %imagesc(tauxy)
+  %colorbar
+  %title('tauxy')
+  %axis image
 
-  subplot(2,2,4)
-  imagesc(diffTauXY)
-  colorbar
-  title('diffTauXY')
-  axis image
+  %subplot(2,2,4)
+  %imagesc(diffTauXY)
+  %colorbar
+  %title('diffTauXY')
+  %axis image
 
   S = [0 0 0];
   S(1) = mean(tauxx(:) - P(:))
