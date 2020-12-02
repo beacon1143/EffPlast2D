@@ -1,4 +1,4 @@
-function S = get_sigma_2D(nGrid, nT, loadValue, loadType)
+function S = get_sigma_2D(loadValue, loadType, nGrid, nT)
   figure(1)
   clf
   colormap jet
