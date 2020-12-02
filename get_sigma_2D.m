@@ -1,4 +1,4 @@
-function S = get_sigma_2D(loadValue, loadType, nGrid, nT, nIter)
+function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   figure(1)
   clf
   colormap jet
@@ -54,10 +54,10 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nT, nIter)
   dUydy = loadValue * loadType(2);
   dUxdy = loadValue * loadType(3);
   
-  S = zeros(Nt, 3);
+  S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho, damp];
+  pa = [dX, dY, dt, K0, G0, rho0, damp];
 
   % parameters
   fil = fopen('pa.dat', 'wb');
@@ -65,9 +65,9 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nT, nIter)
   fclose(fil);
 
   % CPU CALCULATION
-  for it = 1 : Nt
-    Ux = Ux + (dUxdx * xUx + dUxdy * yUx) / Nt;
-    Uy = Uy + (dUydy * yUy) / Nt;
+  for it = 1 : nTimeSteps
+    Ux = Ux + (dUxdx * xUx + dUxdy * yUx) / nTimeSteps;
+    Uy = Uy + (dUydy * yUy) / nTimeSteps;
     for iter = 1 : nIter
       % displacement divergence
       divU = diff(Ux,1,1) / dX + diff(Uy,1,2) / dY;
