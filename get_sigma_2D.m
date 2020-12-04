@@ -6,11 +6,12 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   % PHYSICS
   Lx  = 10.0;                         % physical length
   Ly  = 10.0;                         % physical width
-  E0   = 1.0;                      % Young's modulus
-  nu0  = 0.25;                     % Poisson's ratio  
-  rho0 = 1.0;                      % density
+  E0   = 1.0;                         % Young's modulus
+  nu0  = 0.25;                        % Poisson's ratio  
+  rho0 = 1.0;                         % density
   K0   = E0 / (3.0 * (1 - 2 * nu0));  % bulk modulus
   G0   = E0 / (2.0 + 2.0 * nu0);      % shear modulus
+  coh  = 0.00075;
 
   % NUMERICS
   %nGrid = 1;
@@ -40,6 +41,7 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
 
   % INITIAL CONDITIONS
   P0    = zeros(Nx, Ny);            % initial hydrostatic stress
+  tauxyAv = zeros(Nx, Ny);
   %P0    = exp(-x .* x - y .* y);    % hydrostatic stress (ball part of tensor)
   Ux    = zeros(Nx + 1, Ny);        % displacement
   Uy    = zeros(Nx, Ny + 1);
@@ -77,6 +79,22 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
       tauxx = 2.0 * G .* (diff(Ux,1,1)/dX - divU/3.0);
       tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
       tauxy = av4(G) .* (diff(Ux(2:end-1,:), 1, 2)/dY + diff(Uy(:,2:end-1), 1, 1)/dX);
+      
+      % plasticity
+      tauxyAv(2:end-1,2:end-1) = av4(tauxy);
+      J2 = sqrt(tauxx .* tauxx + tauyy .* tauyy + 2.0 * tauxyAv.^2);
+      iPlast = find(J2 > coh);
+      if length(iPlast) > 0
+        tauxx(iPlast) = tauxx(iPlast) .* coh ./ J2(iPlast);
+        tauyy(iPlast) = tauyy(iPlast) .* coh ./ J2(iPlast);
+        tauxyAv(iPlast) = tauxyAv(iPlast) .* coh ./ J2(iPlast);
+        J2 = sqrt(tauxx .* tauxx + tauyy .* tauyy + 2.0 * tauxyAv .* tauxyAv);
+      end
+      J2xy = sqrt(av4(tauxx).^2 + av4(tauyy).^2 + 2.0 * tauxy .* tauxy);    % plasticity part 2 tauxy
+      iPlastXY = find(J2xy > coh);
+      if length(iPlastXY) > 0
+        tauxy(iPlastXY) = tauxy(iPlastXY) .* coh ./ J2xy(iPlastXY);
+      end
       
       % motion equation
       dVxdt = diff(-P(:,2:end-1) + tauxx(:,2:end-1), 1, 1)/dX / rho0 + diff(tauxy,1,2)/dY;

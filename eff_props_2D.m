@@ -30,3 +30,16 @@ endfor
 % GPU CALCULATION
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(7), ' boundary_problem.cu']);
 system(['.\a.exe']);
+
+% POSTPROCESSING
+subplot(2, 2, 1)
+plot(1:nTimeSteps, C1111), title("C_{1111}")
+subplot(2, 2, 2)
+plot(1:nTimeSteps, C1122), title("C_{1122}")
+subplot(2, 2, 3)
+plot(1:nTimeSteps, C2222), title("C_{2222}")
+subplot(2, 2, 4)
+plot(1:nTimeSteps, C1212), title("C_{1212}")
+drawnow
+
+
