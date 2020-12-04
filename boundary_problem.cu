@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <string>
 #include <array>
 #include <chrono>
@@ -10,7 +11,8 @@
 
 // #define NGRID 7
 // #define NPARS 7
-// #define NT    4000000
+// #define NT    2
+// #define NITER 100000
 
 __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy, 
                             const double* const P,
@@ -118,7 +120,7 @@ void SetMaterials(double* const K, double* const G, const int m, const int n, co
   }
 }
 
-std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int, 3>& loadType) {
+std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const std::array<int, 3>& loadType) {
   dim3 grid, block;
   block.x = 32; 
   block.y = 32; 
@@ -189,24 +191,12 @@ std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int,
   const double dUxdy = loadValue * loadType[2];
 
   double* Ux_cuda;
-  double* Ux_cpu = (double*)malloc((nX+1) * nY * sizeof(double));
-  for (int i = 0; i < nX + 1; i++) {
-    for (int j = 0; j < nY; j++) {
-      Ux_cpu[j * (nX + 1) + i] = (-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy;
-    }
-  }
-  cudaMalloc(&Ux_cuda, (nX + 1) * nY * sizeof(double));
-  cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice);
+  double* Ux_cpu;
+  SetMatrixZero(&Ux_cpu, &Ux_cuda, nX + 1, nY);
 
   double* Uy_cuda;
-  double* Uy_cpu = (double*)malloc(nX * (nY + 1) * sizeof(double));
-  for (int i = 0; i < nX; i++) {
-    for (int j = 0; j < nY + 1; j++) {
-      Uy_cpu[j * nX + i] = (-0.5 * dY * nY + dY * j) * dUydy;
-    }
-  }
-  cudaMalloc(&Uy_cuda, nX * (nY + 1) * sizeof(double));
-  cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice);
+  double* Uy_cpu;
+  SetMatrixZero(&Uy_cpu, &Uy_cuda, nX, nY + 1);
 
   // velocity
   double* Vx_cuda;
@@ -219,16 +209,61 @@ std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int,
 
   //std::cout << "Before loop...\n";
 
+  std::vector< std::array<double, 3> > Sigma(NT);
+  for (auto& i : Sigma) {
+    i = {0.0, 0.0, 0.0};
+  }
+
   /* ACTION LOOP */
   for (int it = 0; it < NT; it++) {
-    ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
-    cudaDeviceSynchronize();    // wait for compute device to finish
-    //std::cout << "After computing sigma...\n";
-    ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
-    cudaDeviceSynchronize();    // wait for compute device to finish
+    for (int i = 0; i < nX + 1; i++) {
+      for (int j = 0; j < nY; j++) {
+        Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) / NT;
+      }
+    }
+    cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice);
 
-    /*cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
-    std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;*/
+    for (int i = 0; i < nX; i++) {
+      for (int j = 0; j < nY + 1; j++) {
+        Uy_cpu[j * nX + i] += (-0.5 * dY * nY + dY * j) * dUydy / NT;
+      }
+    }
+    cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice);
+
+    /* ITERATION LOOP */
+    for (int iter = 0; iter < NITER; iter++) {
+      ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
+      cudaDeviceSynchronize();    // wait for compute device to finish
+      //std::cout << "After computing sigma...\n";
+      ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
+      cudaDeviceSynchronize();    // wait for compute device to finish
+
+      /*cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
+      std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;*/
+    }
+    /* AVERAGING */
+    cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < nX; i++) {
+      for (int j = 0; j < nY; j++) {
+        Sigma[it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
+        Sigma[it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
+      }
+    }
+    Sigma[it][0] /= nX * nY;
+    Sigma[it][1] /= nX * nY;
+
+    for (int i = 0; i < nX - 1; i++) {
+      for (int j = 0; j < nY - 1; j++) {
+        Sigma[it][2] += tauXY_cpu[j * (nX - 1) + i];
+      }
+    }
+    Sigma[it][2] /= (nX - 1) * (nY - 1);
+
+    //std::cout << Sigma[it][0] << '\n' << Sigma[it][1] << '\n' << Sigma[it][2] << std::endl;
   }
 
   /* OUTPUT DATA WRITING */
@@ -236,31 +271,6 @@ std::array<double, 3> ComputeSigma(const double loadValue, const std::array<int,
   SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
   SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
   SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc.dat");
-
-  /* AVERAGING */
-  cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost);
-
-  std::array<double, 3> Sigma = {0.0, 0.0, 0.0};
-  for (int i = 0; i < nX; i++) {
-    for (int j = 0; j < nY; j++) {
-      Sigma[0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
-      Sigma[1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
-    }
-  }
-  Sigma[0] /= nX * nY;
-  Sigma[1] /= nX * nY;
-
-  for (int i = 0; i < nX - 1; i++) {
-    for (int j = 0; j < nY - 1; j++) {
-      Sigma[2] += tauXY_cpu[j * (nX - 1) + i];
-    }
-  }
-  Sigma[2] /= (nX - 1) * (nY - 1);
-
-  std::cout << Sigma[0] << '\n' << Sigma[1] << '\n' << Sigma[2] << std::endl;
 
   free(pa_cpu);
   free(K_cpu);
@@ -296,25 +306,31 @@ int main() {
   const auto start = std::chrono::system_clock::now();
 
   constexpr double load_value = 0.002;
-  const std::array<double, 3> Sxx = ComputeSigma(load_value, {1, 0, 0});
-  const std::array<double, 3> Syy = ComputeSigma(load_value, {0, 1, 0});
-  const std::array<double, 3> Sxy = ComputeSigma(load_value, {0, 0, 1});
+  const std::vector< std::array<double, 3> > Sxx = ComputeSigma(load_value, {1, 0, 0});
+  const std::vector< std::array<double, 3> > Syy = ComputeSigma(load_value, {0, 1, 0});
+  const std::vector< std::array<double, 3> > Sxy = ComputeSigma(load_value, {0, 0, 1});
 
-  const double C_1111 = Sxx[0] / load_value;
-  const double C_1122 = Sxx[1] / load_value;
-  const double C_1112 = Sxx[2] / load_value;
+  std::vector<double> C_1111(NT), C_1122(NT), C_1112(NT),
+                      C_2222(NT), C_1222(NT),
+                      C_1212(NT);
+  
+  for (int it = 0; it < NT; it++) {
+    C_1111[it] = Sxx[it][0] / load_value / (it + 1) * NT;
+    C_1122[it] = Sxx[it][1] / load_value / (it + 1) * NT;
+    C_1112[it] = Sxx[it][2] / load_value / (it + 1) * NT;
 
-  const double C_2222 = Syy[1] / load_value;
-  const double C_1222 = Syy[2] / load_value;
+    C_2222[it] = Syy[it][1] / load_value / (it + 1) * NT;
+    C_1222[it] = Syy[it][2] / load_value / (it + 1) * NT;
 
-  const double C_1212 = Sxy[2] / load_value;
+    C_1212[it] = Sxy[it][2] / load_value / (it + 1) * NT;
 
-  std::cout << "C_1111 = " << C_1111 << '\n';
-  std::cout << "C_1122 = " << C_1122 << '\n';
-  std::cout << "C_1112 = " << C_1112 << '\n';
-  std::cout << "C_2222 = " << C_2222 << '\n';
-  std::cout << "C_1222 = " << C_1222 << '\n';
-  std::cout << "C_1212 = " << C_1212 << '\n';
+    std::cout << "C_1111[" << it << "] = " << C_1111[it] << '\n';
+    std::cout << "C_1122[" << it << "] = " << C_1122[it] << '\n';
+    std::cout << "C_1112[" << it << "] = " << C_1112[it] << '\n';
+    std::cout << "C_2222[" << it << "] = " << C_2222[it] << '\n';
+    std::cout << "C_1222[" << it << "] = " << C_1222[it] << '\n';
+    std::cout << "C_1212[" << it << "] = " << C_1212[it] << '\n';
+  }
 
   const auto end = std::chrono::system_clock::now();
   const int elapsed_sec = static_cast<int>( std::chrono::duration_cast<std::chrono::seconds>(end - start).count() );

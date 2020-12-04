@@ -3,7 +3,7 @@ clear
 loadValue = 0.002;
 nGrid = 1;
 nTimeSteps = 2;
-nIter = 100000;
+nIter = 10000;
 
 Sxx = get_sigma_2D(loadValue, [1, 0, 0], nGrid, nTimeSteps, nIter);
 Syy = get_sigma_2D(loadValue, [0, 1, 0], nGrid, nTimeSteps, nIter);
@@ -28,5 +28,5 @@ for it = 1:nTimeSteps
 endfor
 
 % GPU CALCULATION
-system(['nvcc -DNGRID=',int2str(nGrid),' -DNT=',int2str(nIter),' -DNPARS=',int2str(7),' boundary_problem.cu']);
+system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(7), ' boundary_problem.cu']);
 system(['.\a.exe']);
