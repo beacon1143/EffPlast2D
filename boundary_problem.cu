@@ -26,18 +26,18 @@ __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy,
   const double dX = pa[0], dY = pa[1];
   const double dT = pa[2];
   const double rho = pa[5];
-  const double damp = pa[6];
+  const double dampX = pa[6], dampY = pa[7];
 
   // motion equation
   if (i > 0 && i < nX && j > 0 && j < nY - 1) {
-    Vx[j * (nX + 1) + i] = Vx[j * (nX + 1) + i] * (1.0 - dT * damp) + (dT / rho) * ( (
+    Vx[j * (nX + 1) + i] = Vx[j * (nX + 1) + i] * (1.0 - dT * dampX) + (dT / rho) * ( (
                            -P[j * nX + i] + P[j * nX + i - 1] + tauXX[j * nX + i] - tauXX[j * nX + i - 1]
                            ) / dX + (
                            tauXY[j * (nX - 1) + i - 1] - tauXY[(j - 1) * (nX - 1) + i - 1]
                            ) / dY );
   }
   if (i > 0 && i < nX - 1 && j > 0 && j < nY) {
-    Vy[j * nX + i] = Vy[j * nX + i] * (1.0 - dT * damp) + (dT / rho) * ( (
+    Vy[j * nX + i] = Vy[j * nX + i] * (1.0 - dT * dampY) + (dT / rho) * ( (
                      -P[j * nX + i] + P[(j - 1) * nX + i] + tauYY[j * nX + i] - tauYY[(j - 1) * nX + i]
                      ) / dY + (
                      tauXY[(j - 1) * (nX - 1) + i] - tauXY[(j - 1) * (nX - 1) + i - 1]
@@ -63,7 +63,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   const double dX = pa[0], dY = pa[1];
   //const double dT = pa[2];
   //const double K = pa[3], G = pa[4];
-  const double coh = pa[7];
+  const double coh = pa[8];
 
   // constitutive equation - Hooke's law
   P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
