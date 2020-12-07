@@ -59,7 +59,7 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho0, damp];
+  pa = [dX, dY, dt, K0, G0, rho0, damp, coh];
 
   % parameters
   fil = fopen('pa.dat', 'wb');

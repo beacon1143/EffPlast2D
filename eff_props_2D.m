@@ -28,7 +28,7 @@ for it = 1:nTimeSteps
 endfor
 
 % GPU CALCULATION
-system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(7), ' boundary_problem.cu']);
+system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(8), ' boundary_problem.cu']);
 system(['.\a.exe']);
 
 % POSTPROCESSING

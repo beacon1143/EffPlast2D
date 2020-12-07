@@ -10,7 +10,7 @@
 #include "cuda.h"
 
 // #define NGRID 7
-// #define NPARS 7
+// #define NPARS 8
 // #define NT    2
 // #define NITER 100000
 
@@ -52,6 +52,8 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               const double* const K, const double* const G,
                               const double* const P0, double* P,
                               double* tauXX, double* tauYY, double* tauXY,
+                              double* const tauXYav,
+                              double* const J2, double* const J2XY,
                               const double* const pa,
                               const long int nX, const long int nY) {
 
@@ -61,6 +63,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   const double dX = pa[0], dY = pa[1];
   //const double dT = pa[2];
   //const double K = pa[3], G = pa[4];
+  const double coh = pa[7];
 
   // constitutive equation - Hooke's law
   P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
@@ -80,6 +83,35 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
     tauXY[j * (nX - 1) + i] = 0.25 * (G[j * nX + i] + G[j * nX + i + 1] + G[(j + 1) * nX + i] + G[(j + 1) * nX + i + 1]) * (
                               (Ux[(j + 1) * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i + 1]) / dY + (Uy[(j + 1) * nX + i + 1] - Uy[(j + 1) * nX + i]) / dX    // dUx/dy + dUy/dx
                               );
+  }
+
+  // plasticity
+  if (i > 0 && i < nX - 1 && 
+      j > 0 && j < nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i] + tauXY[j * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i]);
+  }
+
+  J2[j * nX + i] = sqrt( tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i] );
+
+  if (J2[j * nX + i] > coh) {
+    tauXX[j * nX + i] *= coh / J2[j * nX + i];
+    tauYY[j * nX + i] *= coh / J2[j * nX + i];
+    tauXYav[j * nX + i] *= coh / J2[j * nX + i];
+    J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
+  }
+
+  if (i < nX - 1 && j < nY - 1) {
+    J2XY[j * (nX - 1) + i] = sqrt(
+      0.0625 * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) + 
+      0.0625 * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) + 
+      2.0 * tauXY[j * (nX - 1) + i] * tauXY[j * (nX - 1) + i]
+    );
+  }
+
+  if (i < nX - 1 && j < nY - 1) {
+    if (J2XY[j * (nX - 1) + i] > coh) {
+      tauXY[j * (nX - 1) + i] *= coh / J2XY[j * (nX - 1) + i];
+    }
   }
 }
 
@@ -185,6 +217,18 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   double* tauXY_cpu;
   SetMatrixZero(&tauXY_cpu, &tauXY_cuda, nX - 1, nY - 1);
 
+  double* tauXYav_cuda;
+  double* tauXYav_cpu;
+  SetMatrixZero(&tauXYav_cpu, &tauXYav_cuda, nX, nY);
+
+  double* J2_cuda;
+  double* J2_cpu;
+  SetMatrixZero(&J2_cpu, &J2_cuda, nX, nY);
+
+  double* J2XY_cuda;
+  double* J2XY_cpu;
+  SetMatrixZero(&J2XY_cpu, &J2XY_cuda, nX - 1, nY - 1);
+
   // displacement
   const double dUxdx = loadValue * loadType[0];
   const double dUydy = loadValue * loadType[1];
@@ -232,7 +276,7 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
 
     /* ITERATION LOOP */
     for (int iter = 0; iter < NITER; iter++) {
-      ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
+      ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
       //std::cout << "After computing sigma...\n";
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
@@ -280,6 +324,9 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   free(tauXX_cpu);
   free(tauYY_cpu);
   free(tauXY_cpu);
+  free(tauXYav_cpu);
+  free(J2_cpu);
+  free(J2XY_cpu);
   free(Ux_cpu);
   free(Uy_cpu);
   free(Vx_cpu);
@@ -293,6 +340,9 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   cudaFree(tauXX_cuda);
   cudaFree(tauYY_cuda);
   cudaFree(tauXY_cuda);
+  cudaFree(tauXYav_cuda);
+  cudaFree(J2_cuda);
+  cudaFree(J2XY_cuda);
   cudaFree(Ux_cuda);
   cudaFree(Uy_cuda);
   cudaFree(Vx_cuda);
