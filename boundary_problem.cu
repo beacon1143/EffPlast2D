@@ -117,20 +117,19 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
 
   // plasticity
   J2[j * nX + i] = sqrt( tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i] );
-
-  if (J2[j * nX + i] > coh) {
-    tauXX[j * nX + i] *= coh / J2[j * nX + i];
-    tauYY[j * nX + i] *= coh / J2[j * nX + i];
-    tauXYav[j * nX + i] *= coh / J2[j * nX + i];
-    J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
-  }
-
   if (i < nX - 1 && j < nY - 1) {
     J2XY[j * (nX - 1) + i] = sqrt(
       0.0625 * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) + 
       0.0625 * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) + 
       2.0 * tauXY[j * (nX - 1) + i] * tauXY[j * (nX - 1) + i]
     );
+  }
+
+  if (J2[j * nX + i] > coh) {
+    tauXX[j * nX + i] *= coh / J2[j * nX + i];
+    tauYY[j * nX + i] *= coh / J2[j * nX + i];
+    //tauXYav[j * nX + i] *= coh / J2[j * nX + i];
+    //J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
   }
 
   if (i < nX - 1 && j < nY - 1) {
