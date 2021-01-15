@@ -1,9 +1,12 @@
 clear
 
 loadValue = 0.00075;
-nGrid = 7;
-nTimeSteps = 200;
-nIter = 500;
+nGrid = 6;
+nTimeSteps = 1;
+nIter = 1000;
+
+Nx  = 32 * nGrid;     % number of space steps
+Ny  = 32 * nGrid;
 
 %Sxx = get_sigma_2D(loadValue, [1, 0, 0], nGrid, nTimeSteps, nIter);
 %Syy = get_sigma_2D(loadValue, [0, 1, 0], nGrid, nTimeSteps, nIter);
@@ -27,31 +30,60 @@ nIter = 500;
 %  C1212(it) = Sxy(it, 3) / loadValue / it * nTimeSteps
 %endfor
 
-%% POSTPROCESSING
-%subplot(2, 2, 1)
-%plot(1:nTimeSteps, C1111), title("C_{1111}")
-%subplot(2, 2, 2)
-%plot(1:nTimeSteps, C1122), title("C_{1122}")
-%subplot(2, 2, 3)
-%plot(1:nTimeSteps, C2222), title("C_{2222}")
-%subplot(2, 2, 4)
-%plot(1:nTimeSteps, C1212), title("C_{1212}")
-%drawnow
+Sxx = get_sigma_2D(loadValue, [1, 1, 0], nGrid, nTimeSteps, nIter) / loadValue
 
 % GPU CALCULATION
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(9), ' boundary_problem.cu']);
 system(['.\a.exe']);
 
-%% POSTPROCESSING
-%subplot(2, 2, 1)
-%plot(1:nTimeSteps, C1111), title("C_{1111}")
-%subplot(2, 2, 2)
-%plot(1:nTimeSteps, C1122), title("C_{1122}")
-%subplot(2, 2, 3)
-%plot(1:nTimeSteps, C2222), title("C_{2222}")
-%subplot(2, 2, 4)
-%plot(1:nTimeSteps, C1212), title("C_{1212}")
-%drawnow
+fil = fopen('Pm.dat', 'rb');
+Pm = fread(fil, 'double');
+fclose(fil);
+Pm = reshape(Pm, Nx, Ny);
 
+fil = fopen('Pc.dat', 'rb');
+Pc = fread(fil, 'double');
+fclose(fil);
+Pc = reshape(Pc, Nx, Ny);
 
-Sxx = get_sigma_2D(loadValue, [1, 1, 0], nTimeSteps) / loadValue
+diffP = Pm - Pc;
+
+fil = fopen('tauXYm.dat', 'rb');
+tauXYm = fread(fil, 'double');
+fclose(fil);
+tauXYm = reshape(tauXYm, Nx - 1, Ny - 1);
+
+fil = fopen('tauXYc.dat', 'rb');
+tauXYc = fread(fil, 'double');
+fclose(fil);
+tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
+
+diffTauXY = tauXYm - tauXYc;
+
+% POSTPROCESSING
+subplot(2, 2, 1)
+imagesc(Pm)
+colorbar
+title('Pm')
+axis image
+
+subplot(2, 2, 2)
+imagesc(diffP)
+colorbar
+title('diffP')
+axis image
+
+subplot(2, 2, 3)
+imagesc(tauXYm)
+colorbar
+title('tauXYm')
+axis image
+
+subplot(2, 2, 4)
+imagesc(diffTauXY)
+colorbar
+title('diffTauXY')
+axis image
+
+drawnow
+

@@ -205,6 +205,10 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
     S(it, 2) = mean(tauyy(:) - P(:));
     S(it, 3) = mean(tauxy(:));
   endfor
+  
+  fil = fopen('Pm.dat', 'wb');
+  fwrite(fil, P(:), 'double');
+  fclose(fil);
 
   %fil = fopen('Pc.dat', 'rb');
   %Pc = fread(fil, 'double');
@@ -220,6 +224,10 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   %Uyc = fread(fil, 'double');
   %fclose(fil);
   %Uyc = reshape(Uyc, Nx, Ny + 1);
+  
+  fil = fopen('tauXYm.dat', 'wb');
+  fwrite(fil, tauxy(:), 'double');
+  fclose(fil);
 
   %fil = fopen('tauXYc.dat', 'rb');
   %tauXYc = fread(fil, 'double');

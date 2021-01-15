@@ -158,19 +158,31 @@ void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, co
 }
 
 void SetMaterials(double* const K, double* const G, const int m, const int n, const double dX, const double dY) {
-  constexpr double E = 1.0;
-  constexpr double nu = 0.25;
-  /*constexpr double E0 = 0.002;
-  constexpr double nu0 = 0.3;
-  constexpr double E1 = 2.0;
-  constexpr double nu1 = 0.2;*/
+  constexpr double K0 = 1.0;
+  constexpr double G0 = 1.0;
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      K[j * m + i] = E/*0*/ / (3.0 - 6.0 * nu/*0*/);
-      G[j * m + i] = E/*0*/ / (2.0 + 2.0 * nu/*0*/);
-      if ( sqrt((-0.5 * dX * (m - 1) + dX * i) * (-0.5 * dX * (m - 1) + dX * i) + (-0.5 * dY * (n - 1) + dY * j) * (-0.5 * dY * (n - 1) + dY * j)) < 2.85459861019 ) {
-        K[j * m + i] = E/*1*/ / (3.0 - 6.0 * nu/*1*/);
-        G[j * m + i] = E/*1*/ / (2.0 + 2.0 * nu/*1*/);
+      K[j * m + i] = K0;
+      G[j * m + i] = G0;
+      if ( sqrt((-0.5 * dX * (m - 1) + dX * i) * (-0.5 * dX * (m - 1) + dX * i) + (-0.5 * dY * (n - 1) + dY * j) * (-0.5 * dY * (n - 1) + dY * j)) < 1.0 ) {
+        K[j * m + i] = 0.01 * K0;
+        G[j * m + i] = 0.01 * G0;
+      }
+    }
+  }
+}
+
+void SetInitPressure(double* const P, const double coh,
+                     const int m, const int n,
+                     const double dX, const double dY) {
+  const double P0 = 0.5 * coh;
+
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
+      P[j * m + i] = 0.0;
+      if ( sqrt((-0.5 * dX * (m - 1) + dX * i) * (-0.5 * dX * (m - 1) + dX * i) + (-0.5 * dY * (n - 1) + dY * j) * (-0.5 * dY * (n - 1) + dY * j)) < 1.0 ) {
+        P[j * m + i] = P0;
       }
     }
   }
@@ -221,9 +233,11 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   cudaMemcpy(G_cuda, G_cpu, nX * nY * sizeof(double), cudaMemcpyHostToDevice);
 
   // stress
+  double* P0_cpu = (double*)malloc(nX * nY * sizeof(double));
+  SetInitPressure(P0_cpu, pa_cpu[8], nX, nY, dX, dY);
   double* P0_cuda;
-  double* P0_cpu;
-  SetMatrixZero(&P0_cpu, &P0_cuda, nX, nY);
+  cudaMalloc(&P0_cuda, nX * nY * sizeof(double));
+  cudaMemcpy(P0_cuda, P0_cpu, nX * nY * sizeof(double), cudaMemcpyHostToDevice);
 
   double* P_cuda;
   double* P_cpu;
@@ -331,7 +345,7 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
     }
     Sigma[it][2] /= (nX - 1) * (nY - 1);
 
-    //std::cout << Sigma[it][0] << '\n' << Sigma[it][1] << '\n' << Sigma[it][2] << std::endl;
+    std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
   }
 
   /* OUTPUT DATA WRITING */
@@ -379,8 +393,8 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
 int main() {
   const auto start = std::chrono::system_clock::now();
 
-  constexpr double load_value = 0.002;
-  const std::vector< std::array<double, 3> > Sxx = ComputeSigma(load_value, {1, 0, 0});
+  constexpr double load_value = 0.00075;
+  /*const std::vector< std::array<double, 3> > Sxx = ComputeSigma(load_value, {1, 0, 0});
   const std::vector< std::array<double, 3> > Syy = ComputeSigma(load_value, {0, 1, 0});
   const std::vector< std::array<double, 3> > Sxy = ComputeSigma(load_value, {0, 0, 1});
 
@@ -404,7 +418,9 @@ int main() {
     std::cout << "C_2222[" << it << "] = " << C_2222[it] << '\n';
     std::cout << "C_1222[" << it << "] = " << C_1222[it] << '\n';
     std::cout << "C_1212[" << it << "] = " << C_1212[it] << '\n';
-  }
+  }*/
+
+  const std::vector< std::array<double, 3> > S = ComputeSigma(load_value, { 1, 1, 0 });
 
   const auto end = std::chrono::system_clock::now();
   const int elapsed_sec = static_cast<int>( std::chrono::duration_cast<std::chrono::seconds>(end - start).count() );
