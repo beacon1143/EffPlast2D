@@ -215,10 +215,10 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     
     divUeff = loadValue * (loadType(1) + loadType(2));
         
-    Keff(it) = -mean(P(:)) / (divUeff) / it * Nt
-    Geff(it, 1) = 0.5 * mean(tauxx(:)) / (loadValue * loadType(1) - divUeff / 3.0) / it * Nt
-    Geff(it, 2) = 0.5 * mean(tauyy(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * Nt
-    %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * Nt
+    Keff(it) = -mean(P(:)) / (divUeff) / it * nTimeSteps
+    Geff(it, 1) = 0.5 * mean(tauxx(:)) / (loadValue * loadType(1) - divUeff / 3.0) / it * nTimeSteps
+    Geff(it, 2) = 0.5 * mean(tauyy(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * nTimeSteps
+    %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * nTimeSteps
   endfor
   
   fil = fopen('Pm.dat', 'wb');
