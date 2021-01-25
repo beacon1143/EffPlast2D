@@ -9,8 +9,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   E0   = 1.0;                         % Young's modulus
   nu0  = 0.25;                        % Poisson's ratio  
   rho0 = 1.0;                         % density
-  K0   = E0 / (3.0 * (1 - 2 * nu0));  % bulk modulus
-  G0   = E0 / (2.0 + 2.0 * nu0);      % shear modulus
+  K0   = 1.0;  % bulk modulus
+  G0   = 0.25;      % shear modulus
   coh  = 0.001;
   P0 = 1.0 * coh;
 
@@ -130,7 +130,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       Uy = Uy + Vy * dt;
     endfor
     
-    tauxyAv(2:end-1,2:end-1) = av4(tauxy);
+    %tauxyAv(2:end-1,2:end-1) = av4(tauxy);
     
     Plast(1:end-1, 1:end-1) = Plast(1:end-1, 1:end-1) + PlastXY;
     Plast(2:end, 1:end-1) = Plast(2:end, 1:end-1) + PlastXY;
@@ -158,33 +158,33 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
                         (tauyy(Plast > 0) - P(Plast > 0)) .* coscos(Plast > 0) .* coscos(Plast > 0);
     Snuff(sqrt(x.*x + y.*y) < 1.0) = 0.0;
     
-  % POSTPROCESSING
-    if mod(it, 1) == 0
-      subplot(2, 2, 1)
-      pcolor(x, y, Snurr) % diff(Ux, 1, 1)/dX )
-      title("\sigma_{rr}")
-      shading flat
-      colorbar
-      axis image        % square image
-      
-      subplot(2, 2, 3)
-      pcolor(x, y, Snuff) % diff(Ux, 1, 1)/dX )
-      title("\sigma_{\phi \phi}")
-      shading flat
-      colorbar
-      axis image        % square image
-      
-      subplot(2, 2, 2)
-      plot(x, 0.5 * (Sanrr(:, Ny/2) + Sanrr(:, Ny/2 - 1)), 'g', x, 0.5 * (Snurr(:, Ny/2) + Snurr(:, Ny/2 - 1)), 'r')
-      title("\sigma_{rr}")
-      
-      subplot(2, 2, 4)
-      plot(x, 0.5 * (Sanff(:, Ny/2) + Sanff(:, Ny/2 - 1)), 'g', x, 0.5 * (Snuff(:, Ny/2) + Snuff(:, Ny/2 - 1)), 'r')
-      %plot(x, 0.5 * (Sanrr(:, Ny/2) - Sanff(:, Ny/2)), 'g', x, 0.5 * (Snurr(:, Ny/2) - Snuff(:, Ny/2)), 'r')
-      title("\sigma_{rr} - \sigma_{\phi \phi}")
-      
-      drawnow
-    endif
+  %% POSTPROCESSING
+  %  if mod(it, 1) == 0
+  %    subplot(2, 2, 1)
+  %    pcolor(x, y, Snurr) % diff(Ux, 1, 1)/dX )
+  %    title("\sigma_{rr}")
+  %    shading flat
+  %    colorbar
+  %    axis image        % square image
+  %    
+  %    subplot(2, 2, 3)
+  %    pcolor(x, y, Snuff) % diff(Ux, 1, 1)/dX )
+  %    title("\sigma_{\phi \phi}")
+  %    shading flat
+  %    colorbar
+  %    axis image        % square image
+  %    
+  %    subplot(2, 2, 2)
+  %    plot(x, 0.5 * (Sanrr(:, Ny/2) + Sanrr(:, Ny/2 - 1)), 'g', x, 0.5 * (Snurr(:, Ny/2) + Snurr(:, Ny/2 - 1)), 'r')
+  %    title("\sigma_{rr}")
+  %    
+  %    subplot(2, 2, 4)
+  %    plot(x, 0.5 * (Sanff(:, Ny/2) + Sanff(:, Ny/2 - 1)), 'g', x, 0.5 * (Snuff(:, Ny/2) + Snuff(:, Ny/2 - 1)), 'r')
+  %    %plot(x, 0.5 * (Sanrr(:, Ny/2) - Sanff(:, Ny/2)), 'g', x, 0.5 * (Snurr(:, Ny/2) - Snuff(:, Ny/2)), 'r')
+  %    title("\sigma_{rr} - \sigma_{\phi \phi}")
+  %    
+  %    drawnow
+  %  endif
   %  if mod(it, 2) == 0
   %    subplot(2, 1, 1)
   %    pcolor(x, y, diff(Ux,1,1)/dX)

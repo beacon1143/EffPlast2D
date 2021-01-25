@@ -8,7 +8,7 @@ nIter = 1000;
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter) / loadValue
+Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter)
 
 % GPU CALCULATION
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(9), ' boundary_problem.cu']);
