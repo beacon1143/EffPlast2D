@@ -52,8 +52,8 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               const double* const K, const double* const G,
                               const double* const P0, double* P,
                               double* tauXX, double* tauYY, double* tauXY,
-                              double* const tauXYav,
-                              double* const J2, double* const J2XY,
+                              //double* const tauXYav,
+                              //double* const J2, double* const J2XY,
                               const double* const pa,
                               const long int nX, const long int nY) {
 
@@ -61,9 +61,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   const double dX = pa[0], dY = pa[1];
-  //const double dT = pa[2];
-  //const double K = pa[3], G = pa[4];
-  const double coh = pa[8];
+  //const double coh = pa[8];
 
   // constitutive equation - Hooke's law
   P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
@@ -84,6 +82,17 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               (Ux[(j + 1) * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i + 1]) / dY + (Uy[(j + 1) * nX + i + 1] - Uy[(j + 1) * nX + i]) / dX    // dUx/dy + dUy/dx
                               );
   }
+}
+
+__global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
+                                  double* const tauXYav,
+                                  double* const J2, double* const J2XY,
+                                  const double* const pa,
+                                  const long int nX, const long int nY) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+  const double coh = pa[8];
 
   // tauXY for plasticity
   if (i > 0 && i < nX - 1 && 
@@ -128,8 +137,8 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   if (J2[j * nX + i] > coh) {
     tauXX[j * nX + i] *= coh / J2[j * nX + i];
     tauYY[j * nX + i] *= coh / J2[j * nX + i];
-    //tauXYav[j * nX + i] *= coh / J2[j * nX + i];
-    //J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
+    tauXYav[j * nX + i] *= coh / J2[j * nX + i];
+    J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
   }
 
   if (i < nX - 1 && j < nY - 1) {
@@ -314,7 +323,9 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
 
     /* ITERATION LOOP */
     for (int iter = 0; iter < NITER; iter++) {
-      ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
+      ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, /*tauXYav_cuda, J2_cuda, J2XY_cuda,*/ pa_cuda, nX, nY);
+      cudaDeviceSynchronize();    // wait for compute device to finish
+      ComputePlasticity<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
       //std::cout << "After computing sigma...\n";
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
@@ -353,6 +364,8 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
   SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
   SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc.dat");
+  SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "tauXYavc.dat");
+  SaveMatrix(J2_cpu, J2_cuda, nX, nY, "J2c.dat");
 
   free(pa_cpu);
   free(K_cpu);

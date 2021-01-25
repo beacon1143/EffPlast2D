@@ -60,6 +60,30 @@ tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
 
 diffTauXY = tauXYm - tauXYc;
 
+fil = fopen('tauXYavm.dat', 'rb');
+tauXYavm = fread(fil, 'double');
+fclose(fil);
+tauXYavm = reshape(tauXYavm, Nx, Ny);
+
+fil = fopen('tauXYavc.dat', 'rb');
+tauXYavc = fread(fil, 'double');
+fclose(fil);
+tauXYavc = reshape(tauXYavc, Nx, Ny);
+
+diffTauXYav = tauXYavm - tauXYavc;
+
+fil = fopen('J2m.dat', 'rb');
+J2m = fread(fil, 'double');
+fclose(fil);
+J2m = reshape(J2m, Nx, Ny);
+
+fil = fopen('J2c.dat', 'rb');
+J2c = fread(fil, 'double');
+fclose(fil);
+J2c = reshape(J2c, Nx, Ny);
+
+diffJ2 = J2c - J2m;
+
 % POSTPROCESSING
 subplot(2, 2, 1)
 imagesc(Pm)
@@ -67,13 +91,13 @@ colorbar
 title('Pm')
 axis image
 
-subplot(2, 2, 2)
+subplot(2, 2, 3)
 imagesc(diffP)
 colorbar
 title('diffP')
 axis image
 
-subplot(2, 2, 3)
+subplot(2, 2, 2)
 imagesc(tauXYm)
 colorbar
 title('tauXYm')

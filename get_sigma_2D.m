@@ -53,6 +53,8 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   tauxx = zeros(Nx, Ny);            % deviatoric stress
   tauyy = zeros(Nx, Ny);
   tauxy = zeros(Nx - 1, Ny - 1);
+  J2 = zeros(Nx, Ny);
+  J2xy = zeros(Nx - 1, Ny - 1);
   Plast = zeros(Nx, Ny);
   PlastXY = zeros(Nx - 1, Ny - 1);
   
@@ -209,7 +211,7 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   fil = fopen('Pm.dat', 'wb');
   fwrite(fil, P(:), 'double');
   fclose(fil);
-
+  
   %fil = fopen('Pc.dat', 'rb');
   %Pc = fread(fil, 'double');
   %fclose(fil);
@@ -238,6 +240,14 @@ function S = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
   %diffUx = Ux - Uxc;
   %diffUy = Uy - Uyc;
   %diffTauXY = tauxy - tauXYc;
+  
+  fil = fopen('tauXYavm.dat', 'wb');
+  fwrite(fil, tauxyAv(:), 'double');
+  fclose(fil);
+  
+  fil = fopen('J2m.dat', 'wb');
+  fwrite(fil, J2(:), 'double');
+  fclose(fil);
 
   % POSTPROCESSING
   %subplot(2,2,1)
