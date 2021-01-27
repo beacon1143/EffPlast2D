@@ -1,4 +1,4 @@
-function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter)
+function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter)
   figure(1)
   clf
   colormap jet
@@ -10,7 +10,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   nu0  = 0.25;                        % Poisson's ratio  
   rho0 = 1.0;                         % density
   K0   = 1.0;  % bulk modulus
-  G0   = 0.25;      % shear modulus
+  G0   = 0.5;      % shear modulus
   coh  = 0.01;
   P0 = 1.0 * coh;
 
@@ -20,7 +20,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   Ny  = 32 * nGrid;
   %Nt  = 10;     % number of time steps
   %nIter = 500;
-  eIter = 1.0e-11;
+  %eIter = 1.0e-11;
   CFL = 0.125;     % Courant-Friedrichs-Lewy
 
   % PREPROCESSING
@@ -134,12 +134,14 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       Uy = Uy + Vy * dt;
       
       % exit criteria
-      error = (max(abs(Vx(:))) / Lx + max(abs(Vy(:))) / Ly) * dt / max(abs(loadValue * loadType));
-      if error < eIter
-        outStr = sprintf("Number of iterations is %d", iter);
-        disp(outStr);
-        break
-      end
+      if mod(iter, 1000) == 0
+        error = (max(abs(Vx(:))) / Lx + max(abs(Vy(:))) / Ly) * dt / max(abs(loadValue * loadType));
+        if error < eIter
+          outStr = sprintf("Number of iterations is %d", iter);
+          disp(outStr);
+          break
+        end
+      end %if
     end % for
     
     %tauxyAv(2:end-1,2:end-1) = av4(tauxy);

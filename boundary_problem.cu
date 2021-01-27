@@ -13,6 +13,7 @@
 // #define NPARS 8
 // #define NT    2
 // #define NITER 100000
+// #define EITER 1.0e-11
 
 __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy, 
                             const double* const P,
@@ -52,8 +53,6 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               const double* const K, const double* const G,
                               const double* const P0, double* P,
                               double* tauXX, double* tauYY, double* tauXY,
-                              //double* const tauXYav,
-                              //double* const J2, double* const J2XY,
                               const double* const pa,
                               const long int nX, const long int nY) {
 
@@ -166,9 +165,19 @@ void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, co
   fclose(A_filw);
 }
 
+double FindMaxAbs(const double* const arr, const int size) {
+  double max_el = 0.0;
+  for (int i = 0; i < size; i++) {
+    if (std::abs(arr[i]) > max_el) {
+      max_el = std::abs(arr[i]);
+    }
+  }
+  return max_el;
+}
+
 void SetMaterials(double* const K, double* const G, const int m, const int n, const double dX, const double dY) {
   constexpr double K0 = 1.0;
-  constexpr double G0 = 0.25;
+  constexpr double G0 = 0.5;
 
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
@@ -229,6 +238,7 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
   cudaMemcpy(pa_cuda, pa_cpu, NPARS * sizeof(double), cudaMemcpyHostToDevice);
 
   const double dX = pa_cpu[0], dY = pa_cpu[1];
+  const double dT = pa_cpu[2];
 
   // materials
   double* K_cpu = (double*)malloc(nX * nY * sizeof(double));
@@ -323,6 +333,8 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
     }
     cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice);
 
+    double error = 0.0;
+
     /* ITERATION LOOP */
     for (int iter = 0; iter < NITER; iter++) {
       ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, /*tauXYav_cuda, J2_cuda, J2XY_cuda,*/ pa_cuda, nX, nY);
@@ -333,8 +345,18 @@ std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const 
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
 
-      /*cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
-      std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;*/
+      if ((iter + 1) % 1000 == 0) {
+        cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
+        error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
+          (std::abs(loadValue) * std::max( std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2]) ));
+        // std::cout << "Error is " << error << '\n';
+        if (error < EITER) {
+          std::cout << "Number of iterations is " << iter + 1 << '\n';
+          break;
+        }
+        // std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
+      }
     }
     /* AVERAGING */
     cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);

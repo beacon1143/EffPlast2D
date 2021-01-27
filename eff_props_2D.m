@@ -3,15 +3,16 @@ clear
 loadValue = -0.002;
 nGrid = 6;
 nTimeSteps = 1;
-nIter = 1000;
+nIter = 100000;
+eIter = 1.0e-11;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter)
+Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter)
 
 % GPU CALCULATION
-system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DNPARS=', int2str(9), ' boundary_problem.cu']);
+system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(9), ' boundary_problem.cu']);
 system(['.\a.exe']);
 
 fil = fopen('Pm.dat', 'rb');
