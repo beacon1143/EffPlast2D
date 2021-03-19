@@ -1,7 +1,7 @@
 clear
 
 loadValue = -0.002;
-nGrid = 6;
+nGrid = 1;
 nTimeSteps = 1;
 nIter = 100000;
 eIter = 1.0e-11;
