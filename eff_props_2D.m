@@ -1,7 +1,7 @@
 clear
 
 loadValue = -0.002;
-nGrid = 1;
+nGrid = 2;
 nTimeSteps = 1;
 nIter = 100000;
 eIter = 1.0e-11;
@@ -12,7 +12,7 @@ Ny  = 32 * nGrid;
 Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter)
 
 % GPU CALCULATION
-system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(9), ' boundary_problem.cu']);
+system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(9), ' EffPlast2D.cu main.cu']);
 system(['.\a.exe']);
 
 fil = fopen('Pm.dat', 'rb');
