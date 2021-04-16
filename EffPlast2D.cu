@@ -266,8 +266,8 @@ void EffPlast2D::ReadParams(const std::string& filename) {
 }
 
 void EffPlast2D::SetMaterials() {
-  constexpr double K0 = 1.0;
-  constexpr double G0 = 0.5;
+  constexpr double K0 = 10.0;
+  constexpr double G0 = 0.01;
 
   for (int i = 0; i < nX; i++) {
     for (int j = 0; j < nY; j++) {
@@ -285,7 +285,7 @@ void EffPlast2D::SetMaterials() {
 }
 
 void EffPlast2D::SetInitPressure(const double coh) {
-  const double P0 = 1.0 * coh;
+  const double P0 = 0.0; //1.0 * coh;
 
   for (int i = 0; i < nX; i++) {
     for (int j = 0; j < nY; j++) {
