@@ -217,7 +217,12 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // -P_eff
     for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY; j++) {
-        Sigma[it][0] += - P_cpu[j * nX + i];
+        if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad ) {
+          Sigma[it][0] += - P_cpu[j * nX + i];
+        }
+        else {
+          //std::cout << "In the hole!\n";
+        }
       }
     }
     Sigma[it][0] /= nX * nY;
@@ -225,8 +230,10 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // Tau_eff
     for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY; j++) {
-        Sigma[it][1] += tauXX_cpu[j * nX + i];
-        Sigma[it][2] += tauYY_cpu[j * nX + i];
+        if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad ) {
+          Sigma[it][1] += tauXX_cpu[j * nX + i];
+          Sigma[it][2] += tauYY_cpu[j * nX + i];
+        }
       }
     }
     Sigma[it][1] /= nX * nY;
