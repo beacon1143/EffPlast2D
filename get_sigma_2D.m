@@ -13,6 +13,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   G0   = 0.5;      % shear modulus
   coh  = 0.01;
   P0 = 1.0 * coh;
+  rad = 2.0;
 
   % NUMERICS
   %nGrid = 7;
@@ -38,12 +39,12 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
   G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  [K, G] = set_mats_2D(Nx, Ny, x, y);     % Young's modulus and Poisson's ratio
+  [K, G] = set_mats_2D(Nx, Ny, x, y, rad);     % Young's modulus and Poisson's ratio
 
   % INITIAL CONDITIONS
   Pinit    = zeros(Nx, Ny);            % initial hydrostatic stress
   tauxyAv = zeros(Nx, Ny);
-  Pinit(sqrt(x.*x + y.*y) < 1.0) = P0;    % hydrostatic stress (ball part of tensor)
+  Pinit(sqrt(x.*x + y.*y) < rad) = P0;    % hydrostatic stress (ball part of tensor)
   Ux    = zeros(Nx + 1, Ny);        % displacement
   Uy    = zeros(Nx, Ny + 1);
   Vx    = zeros(Nx + 1, Ny);        % velocity
@@ -72,7 +73,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh];
+  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad];
 
   % parameters
   fil = fopen('pa.dat', 'wb');
@@ -153,9 +154,9 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     
     % cylindrical coorditate system
     Sanrr(Plast > 0) = -P0 + sign(loadValue) * 2.0 * coh * log(sqrt(sqrt(x(Plast > 0) .* x(Plast > 0) + y(Plast > 0) .* y(Plast > 0) ))) / sqrt(2);
-    Sanrr(sqrt(x.*x + y.*y) < 1.0) = 0.0;
+    Sanrr(sqrt(x.*x + y.*y) < rad) = 0.0;
     Sanff(Plast > 0) = -P0 + sign(loadValue) * 2.0 * coh * (log(sqrt(sqrt(x(Plast > 0) .* x(Plast > 0) + y(Plast > 0) .* y(Plast > 0)))) + 1.0) / sqrt(2);
-    Sanff(sqrt(x.*x + y.*y) < 1.0) = 0.0;
+    Sanff(sqrt(x.*x + y.*y) < rad) = 0.0;
     
     sinsin = y ./ (sqrt(x.*x + y.*y));
     coscos = x ./ (sqrt(x.*x + y.*y));
@@ -164,13 +165,13 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     Snurr(Plast > 0) = (tauxx(Plast > 0) - P(Plast > 0)) .* coscos(Plast > 0) .* coscos(Plast > 0) + ...
                         2.0 * tauxyAv(Plast > 0) .* sinsin(Plast > 0) .* coscos(Plast > 0) + ...
                         (tauyy(Plast > 0) - P(Plast > 0)) .* sinsin(Plast > 0) .* sinsin(Plast > 0);
-    Snurr(sqrt(x.*x + y.*y) < 1.0) = 0.0;
+    Snurr(sqrt(x.*x + y.*y) < rad) = 0.0;
     
     %Snuff(Plast > 0) = tauyy(Plast > 0) - P(Plast > 0);
     Snuff(Plast > 0) = (tauxx(Plast > 0) - P(Plast > 0)) .* sinsin(Plast > 0) .* sinsin(Plast > 0) - ...
                         2.0 * tauxyAv(Plast > 0) .* sinsin(Plast > 0) .* coscos(Plast > 0) + ...
                         (tauyy(Plast > 0) - P(Plast > 0)) .* coscos(Plast > 0) .* coscos(Plast > 0);
-    Snuff(sqrt(x.*x + y.*y) < 1.0) = 0.0;
+    Snuff(sqrt(x.*x + y.*y) < rad) = 0.0;
     
   %% POSTPROCESSING
   %  if mod(it, 1) == 0

@@ -24,6 +24,7 @@ private:
   dim3 grid, block;
   double* pa_cuda, * pa_cpu;
   double dX, dY, dT;
+  double rad;
 
   double* K_cpu, * K_cuda, * G_cpu, * G_cuda;      // materials
   double* P0_cpu, * P0_cuda, * P_cpu, * P_cuda;    // stress

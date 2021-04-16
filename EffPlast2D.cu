@@ -266,7 +266,7 @@ void EffPlast2D::SetMaterials() {
     for (int j = 0; j < nY; j++) {
       K_cpu[j * nX + i] = K0;
       G_cpu[j * nX + i] = G0;
-      if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < 1.0 ) {
+      if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
         K_cpu[j * nX + i] = 0.01 * K0;
         G_cpu[j * nX + i] = 0.01 * G0;
       }
@@ -283,7 +283,7 @@ void EffPlast2D::SetInitPressure(const double coh) {
   for (int i = 0; i < nX; i++) {
     for (int j = 0; j < nY; j++) {
       P0_cpu[j * nX + i] = 0.0;
-      if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < 1.0 ) {
+      if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
         P0_cpu[j * nX + i] = P0;
       }
     }
@@ -341,6 +341,7 @@ EffPlast2D::EffPlast2D() {
   dX = pa_cpu[0];
   dY = pa_cpu[1];
   dT = pa_cpu[2];
+  rad = pa_cpu[9];
 
   // materials
   K_cpu = (double*)malloc(nX * nY * sizeof(double));
