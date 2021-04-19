@@ -1,11 +1,11 @@
 clear
 
 loadValue = -0.002;
-nGrid = 2;
+nGrid = 4;
 nTimeSteps = 1;
-nIter = 100000;
+nIter = 10000000;
 eIter = 1.0e-10;
-needCPUcalculation = false;
+needCPUcalculation = true;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
