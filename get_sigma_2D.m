@@ -252,14 +252,14 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       tauYYsolid = tauyy;
       tauYYsolid(sqrt(x.*x + y.*y) < rad) = 0.0;
           
-      Keff(it) = -mean(Psolid(:)) / (divUeff) / it * nTimeSteps;
+      Keff(it) = -mean(Psolid(:)) / (divUeff) / it * nTimeSteps
       Geff(it, 1) = 0.5 * mean(tauXXsolid(:)) / (loadValue * loadType(1) - divUeff / 3.0) / it * nTimeSteps;
       Geff(it, 2) = 0.5 * mean(tauYYsolid(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * nTimeSteps;
       %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * nTimeSteps
       
-      dR = max(Ux(2:end, end/2));
-      dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly;
-      KeffNew = P(2, end/2) / dPhi
+      dR = max(Ux(2:end, end/2))
+      dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly
+      KeffNew = P(1, end/2) / dPhi
     endfor
     
     fil = fopen('Pm.dat', 'wb');

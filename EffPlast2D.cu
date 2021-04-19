@@ -45,7 +45,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   const double dX = pa[0], dY = pa[1];
-  //const double coh = pa[8];
+  const double rad = pa[9];
 
   // constitutive equation - Hooke's law
   P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
@@ -74,7 +74,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   }
 
   if (i < nX - 1 && j < nY - 1) {
-    if (sqrt((-0.5 * dX * nX + dX * i) * (-0.5 * dX * nX + dX * i) + (-0.5 * dY * nY + dY * j) * (-0.5 * dY * nY + dY * j)) < rad ) {
+    if (sqrt((-0.5 * dX * (nX - 2) + dX * i) * (-0.5 * dX * (nX - 2) + dX * i) + (-0.5 * dY * (nY - 2) + dY * j) * (-0.5 * dY * (nY - 2) + dY * j)) < rad ) {
       tauXY[j * (nX - 1) + i] = 0.0;
     }
   }
@@ -152,8 +152,6 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
   const double dUydy = loadValue * loadType[1];
   const double dUxdy = loadValue * loadType[2];
 
-  
-
   //std::cout << "Before loop...\n";
 
   std::vector< std::array<double, 3> > Sigma(NT);
@@ -209,6 +207,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
 
     /*for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY; j++) {
@@ -252,6 +251,14 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     Sigma[it][2] /= nX * nY;
 
     //std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
+
+    double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
+    std::cout << "dR = " << dR << '\n';
+    double dPhi = 3.1415926 * ( (rad + dR) * (rad + dR) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
+    std::cout << "dPhi = " << dPhi << '\n';
+    double KeffPhi = P_cpu[nX * nX / 2] / dPhi;
+
+    std::cout << "KeffPhi = " << KeffPhi << '\n'; 
   }
 
   /* OUTPUT DATA WRITING */

@@ -44,8 +44,8 @@ int main() {
     Geff[it][1] = 0.5 * S[it][2] / (load_value * load_type[1] - divUeff / 3.0) / (it + 1) * NT;
 
     std::cout << "K_eff[" << it << "] = " << Keff[it] << '\n';
-    std::cout << "Gxx_eff[" << it << "] = " << Geff[it][0] << '\n';
-    std::cout << "Gyy_eff[" << it << "] = " << Geff[it][1] << '\n';
+    //std::cout << "Gxx_eff[" << it << "] = " << Geff[it][0] << '\n';
+    //std::cout << "Gyy_eff[" << it << "] = " << Geff[it][1] << '\n';
   }
 
   const auto end = std::chrono::system_clock::now();
