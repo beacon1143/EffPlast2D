@@ -104,6 +104,11 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
         tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
         tauxy = av4(G) .* (diff(Ux(2:end-1,:), 1, 2)/dY + diff(Uy(:,2:end-1), 1, 1)/dX);
         
+        P(sqrt(x.*x + y.*y) < rad) = 0.0;
+        tauxx(sqrt(x.*x + y.*y) < rad) = 0.0;
+        tauyy(sqrt(x.*x + y.*y) < rad) = 0.0;
+        tauxy(radC < rad) = 0.0;
+        
         % tauXY for plasticity
         tauxyAv(2:end-1,2:end-1) = av4(tauxy);
         
