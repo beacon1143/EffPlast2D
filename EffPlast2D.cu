@@ -66,6 +66,18 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               (Ux[(j + 1) * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i + 1]) / dY + (Uy[(j + 1) * nX + i + 1] - Uy[(j + 1) * nX + i]) / dX    // dUx/dy + dUy/dx
                               );
   }
+
+  if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
+    P[j * nX + i] = 0.0;
+    tauXX[j * nX + i] = 0.0;
+    tauYY[j * nX + i] = 0.0;
+  }
+
+  if (i < nX - 1 && j < nY - 1) {
+    if (sqrt((-0.5 * dX * nX + dX * i) * (-0.5 * dX * nX + dX * i) + (-0.5 * dY * nY + dY * j) * (-0.5 * dY * nY + dY * j)) < rad ) {
+      tauXY[j * (nX - 1) + i] = 0.0;
+    }
+  }
 }
 
 __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
