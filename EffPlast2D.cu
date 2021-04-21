@@ -263,11 +263,13 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
   /* OUTPUT DATA WRITING */
   SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc.dat");
-  SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
-  SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
+  SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "tauXXc.dat");
+  SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "tauYYc.dat");
   SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc.dat");
   SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "tauXYavc.dat");
   SaveMatrix(J2_cpu, J2_cuda, nX, nY, "J2c.dat");
+  SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
+  SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
 
   cudaDeviceReset();
   return Sigma;

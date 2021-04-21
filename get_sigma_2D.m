@@ -1,8 +1,5 @@
 function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, needCPUcalc)
-  figure(1)
-  clf
-  colormap jet
-  
+    
   % PHYSICS
   Lx  = 20.0;                         % physical length
   Ly  = 20.0;                         % physical width
@@ -13,7 +10,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   G0   = 0.5;      % shear modulus
   coh  = 0.01;
   P0 = 0.0; %1.0 * coh;
-  rad = 2.0;
+  rad = 1.0;
 
   % NUMERICS
   %nGrid = 7;
