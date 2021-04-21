@@ -4,11 +4,11 @@ clf
 colormap jet
 
 loadValue = -0.002;
-nGrid = 20;
+nGrid = 2;
 nTimeSteps = 1;
 nIter = 10000000;
 eIter = 1.0e-10;
-needCPUcalculation = false;
+needCPUcalculation = true;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
@@ -16,7 +16,7 @@ Ny  = 32 * nGrid;
 Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
 
 % GPU CALCULATION
-system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(10), ' EffPlast2D.cu main.cu']);
+system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(12), ' EffPlast2D.cu main.cu']);
 system(['.\a.exe']);
 
 fil = fopen('Pc.dat', 'rb');
@@ -127,7 +127,7 @@ else
   subplot(2, 2, 4)
   imagesc(tauYYc(2:end-1, 2:end-1))
   colorbar
-  title('tauYYc')
+  title('tauYY')
   axis image
 
   drawnow

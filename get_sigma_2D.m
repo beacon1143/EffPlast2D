@@ -39,7 +39,9 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
   G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  [K, G] = set_mats_2D(Nx, Ny, x, y, rad);     % Young's modulus and Poisson's ratio
+  K0 = 10.0;
+  G0 = 0.01;
+  [K, G] = set_mats_2D(Nx, Ny, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
 
   % INITIAL CONDITIONS
   Pinit   = zeros(Nx, Ny);            % initial hydrostatic stress
@@ -74,7 +76,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad];
+  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad, K0, G0];
   
   Keff = zeros(nTimeSteps);
 
