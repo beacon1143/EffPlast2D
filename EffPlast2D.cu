@@ -253,9 +253,9 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     //std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
-    std::cout << "dR = " << dR << '\n';
+    //std::cout << "dR = " << dR << '\n';
     double dPhi = 3.1415926 * ( (rad + dR) * (rad + dR) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
-    std::cout << "dPhi = " << dPhi << '\n';
+    //std::cout << "dPhi = " << dPhi << '\n';
     double KeffPhi = P_cpu[nX * nX / 2] / dPhi;
 
     std::cout << "KeffPhi = " << KeffPhi << '\n'; 

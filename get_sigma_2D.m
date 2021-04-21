@@ -257,10 +257,13 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       Geff(it, 2) = 0.5 * mean(tauYYsolid(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * nTimeSteps;
       %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * nTimeSteps
       
-      dR = max(Ux(2:end, end/2))
-      dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly
+      dR = max(Ux(2:end, end/2));
+      dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly;
       KeffNew = P(1, end/2) / dPhi
-    endfor
+      
+      Phi = pi * rad * rad / Lx / Ly;
+      Kexact = 0.01 / Phi
+    end %for
     
     fil = fopen('Pm.dat', 'wb');
     fwrite(fil, P(:), 'double');
