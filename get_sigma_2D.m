@@ -3,14 +3,12 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % PHYSICS
   Lx  = 20.0;                         % physical length
   Ly  = 20.0;                         % physical width
-  E0   = 1.0;                         % Young's modulus
-  nu0  = 0.25;                        % Poisson's ratio  
   rho0 = 1.0;                         % density
-  K0   = 1.0;  % bulk modulus
-  G0   = 0.5;      % shear modulus
-  coh  = 0.01;
+  K0   = 1.0;                         % bulk modulus
+  G0   = 0.01;                         % shear modulus
+  coh  = 0.1;
   P0 = 0.0; %1.0 * coh;
-  rad = 1.5;
+  rad = 1.0;
 
   % NUMERICS
   %nGrid = 7;
@@ -39,8 +37,6 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
   G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  K0 = 1.0;
-  G0 = 0.01;
   [K, G] = set_mats_2D(Nx, Ny, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
 
   % INITIAL CONDITIONS
