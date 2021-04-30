@@ -197,9 +197,11 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
         // std::cout << "Error is " << error << '\n';
         if (error < EITER) {
           std::cout << "Number of iterations is " << iter + 1 << '\n';
+          log_file << "Number of iterations is " << iter + 1 << '\n';
           break;
         }
         // std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
+        // log_file << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
       }
     }
     /* AVERAGING */
@@ -232,7 +234,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
           Sigma[it][0] += - P_cpu[j * nX + i];
         }
         else {
-          //std::cout << "In the hole!\n";
+          // std::cout << "In the hole!\n";
+          // log_file << "In the hole!\n";
         }
       }
     }
@@ -250,18 +253,23 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     Sigma[it][1] /= nX * nY;
     Sigma[it][2] /= nX * nY;
 
-    //std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
+    // std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
+    // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
-    //std::cout << "dR = " << dR << '\n';
+    // std::cout << "dR = " << dR << '\n';
+    // log_file << "dR = " << dR << '\n';
     const double dPhi = 3.1415926 * ( (rad + dR) * (rad + dR) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
-    //std::cout << "dPhi = " << dPhi << '\n';
+    // std::cout << "dPhi = " << dPhi << '\n';
+    // log_file << "dPhi = " << dPhi << '\n';
     const double KeffPhi = P_cpu[nX * nX / 2] / dPhi;
     std::cout << "KeffPhi = " << KeffPhi << '\n';
+    log_file << "KeffPhi = " << KeffPhi << '\n';
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double Kexact = G0 / phi;
     std::cout << "Kexact = " << Kexact << '\n';
+    log_file << "Kexact = " << Kexact << '\n';
   }
 
   /* OUTPUT DATA WRITING */
@@ -405,6 +413,9 @@ EffPlast2D::EffPlast2D() {
   // velocity
   SetMatrixZero(&Vx_cpu, &Vx_cuda, nX + 1, nY);
   SetMatrixZero(&Vy_cpu, &Vy_cuda, nX, nY + 1);
+
+  // log
+  log_file.open("EffPlast2D.log");
 }
 
 EffPlast2D::~EffPlast2D() {
@@ -449,4 +460,7 @@ EffPlast2D::~EffPlast2D() {
   free(Vy_cpu);
   cudaFree(Vx_cuda);
   cudaFree(Vy_cuda);
+
+  // log
+  log_file.close();
 }

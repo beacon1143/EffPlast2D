@@ -40,6 +40,8 @@ private:
   double* Vx_cpu, * Vx_cuda;                       // velocity
   double* Vy_cpu, * Vy_cuda;
 
+  std::ofstream log_file;
+
   void ReadParams(const std::string& filename);
   void SetMaterials();
   void SetInitPressure(const double coh);
