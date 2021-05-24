@@ -8,7 +8,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   G0   = 0.01;                         % shear modulus
   coh  = 0.1;
   P0 = 0.0; %1.0 * coh;
-  porosity = 0.01;
+  porosity = 0.035;
   rad = sqrt(porosity * Lx * Lx / pi);
 
   % NUMERICS
