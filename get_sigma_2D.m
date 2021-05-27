@@ -231,7 +231,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
                mean(tauxx(:, 1) - P(:, 1)) + mean(tauxx(:, end) - P(:, end)) + ...
                mean(tauyy(1, :) - P(1, :)) + mean(tauyy(end, :) - P(end, :)) + ...
                mean(tauyy(:, 1) - P(:, 1)) + mean(tauyy(:, end) - P(:, end));
-      deltaP = deltaP * 0.125; % / coh / sqrt(2);
+      deltaP = deltaP * 0.125 / coh / sqrt(2);
       
       tauInfty = mean(tauxx(1, :) - tauyy(1, :)) + mean(tauxx(end, :) - tauyy(end, :)) + ...
                  mean(tauxx(:, 1) - tauyy(:, 1)) + mean(tauxx(:, end) - tauyy(:, end));
@@ -256,8 +256,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       
       dR = max(Ux(2:end, end/2));
       dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly;
-      %KeffPhi = P(1, end/2) / dPhi
-      KeffPhi = deltaP / dPhi
+      KeffPhi = P(1, end/2) / dPhi
+      %KeffPhi = deltaP / dPhi
       
       Phi = pi * rad * rad / Lx / Ly;
       Kexact = 0.01 / Phi

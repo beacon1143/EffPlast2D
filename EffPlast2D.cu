@@ -45,12 +45,17 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   const double dX = pa[0], dY = pa[1];
+  const double dT = pa[2];
   const double rad = pa[9];
 
   // constitutive equation - Hooke's law
-  P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
+  //P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
+  //                (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
+  //                );
+
+  P[j * nX + i] = P[j * nX + i] - G[j * nX + i] * ( // incompressibility
                   (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
-                  );
+                  ) * dT / nX;
 
   tauXX[j * nX + i] = 2.0 * G[j * nX + i] * (
                       (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX -    // dUx/dx
