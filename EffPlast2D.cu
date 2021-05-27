@@ -194,16 +194,21 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
 
-      if ((iter + 1) % 1000 == 0) {
+      if ((iter + 1) % 10000 == 0) {
         cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
         cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
         error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
           (std::abs(loadValue) * std::max( std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2]) ));
-        // std::cout << "Error is " << error << '\n';
+        // std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+        // log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
         if (error < EITER) {
           std::cout << "Number of iterations is " << iter + 1 << '\n';
           log_file << "Number of iterations is " << iter + 1 << '\n';
           break;
+        }
+        else if (iter == NITER - 1) {
+          std::cout << "WARNING: Maximum number of iterations reached!\n";
+          log_file << "WARNING: Maximum number of iterations reached!\n";
         }
         // std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
         // log_file << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
