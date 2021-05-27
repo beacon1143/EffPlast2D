@@ -95,7 +95,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
         divU = diff(Ux,1,1) / dX + diff(Uy,1,2) / dY;
         
         % constitutive equation - Hooke's law
-        P     = Pinit - K .* divU;
+        %P     = Pinit - K .* divU;
+        P     = P - G .* divU * dt / Nx;    % incompressibility
         tauxx = 2.0 * G .* (diff(Ux,1,1)/dX - divU/3.0);
         tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
         tauxy = av4(G) .* (diff(Ux(2:end-1,:), 1, 2)/dY + diff(Uy(:,2:end-1), 1, 1)/dX);
