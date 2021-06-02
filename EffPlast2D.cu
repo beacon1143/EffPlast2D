@@ -194,21 +194,21 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
 
-      if ((iter + 1) % 10000 == 0) {
+      if ((iter + 1) % 100000 == 0) {
         cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
         cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
         error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
           (std::abs(loadValue) * std::max( std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2]) ));
-        // std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
-        // log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+        std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+        log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
         if (error < EITER) {
           std::cout << "Number of iterations is " << iter + 1 << '\n';
           log_file << "Number of iterations is " << iter + 1 << '\n';
           break;
         }
         else if (iter == NITER - 1) {
-          std::cout << "WARNING: Maximum number of iterations reached!\n";
-          log_file << "WARNING: Maximum number of iterations reached!\n";
+          std::cout << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
+          log_file << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
         }
         // std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
         // log_file << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
@@ -273,13 +273,18 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // std::cout << "dPhi = " << dPhi << '\n';
     // log_file << "dPhi = " << dPhi << '\n';
     const double KeffPhi = P_cpu[nX * nX / 2] / dPhi;
+    std::cout << "deltaP = " << P_cpu[nX * nX / 2] << '\n';
+    log_file << "deltaP = " << P_cpu[nX * nX / 2] << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
     log_file << "KeffPhi = " << KeffPhi << '\n';
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-    const double Kexact = G0 / phi;
-    std::cout << "Kexact = " << Kexact << '\n';
-    log_file << "Kexact = " << Kexact << '\n';
+    const double KexactElast = G0 / phi;
+    const double KexactPlast = G0 / phi / exp(std::abs(P_cpu[nX * nX / 2]) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
+    std::cout << "KexactElast = " << KexactElast << '\n';
+    log_file << "KexactElast = " << KexactElast << '\n';
+    std::cout << "KexactPlast = " << KexactPlast << '\n';
+    log_file << "KexactPlast = " << KexactPlast << '\n';
   }
 
   /* OUTPUT DATA WRITING */
