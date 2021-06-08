@@ -57,4 +57,5 @@ private:
 
   double GetDeltaP_honest();
   double GetDeltaP_approx();
+  double GetTauInfty_approx();
 };

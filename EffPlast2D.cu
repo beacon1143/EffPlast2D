@@ -268,6 +268,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     const double deltaP_honest = GetDeltaP_honest();
     const double deltaP_approx = GetDeltaP_approx();
+    const double tauInfty_approx = GetTauInfty_approx();
 
     const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
     // std::cout << "dR = " << dR << '\n';
@@ -283,12 +284,15 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     log_file << "deltaP_honest = " << deltaP_honest << '\n';
     std::cout << "deltaP_approx = " << deltaP_approx << '\n';
     log_file << "deltaP_approx = " << deltaP_approx << '\n';
+    std::cout << "tauInfty_approx = " << tauInfty_approx << '\n';
+    log_file << "tauInfty_approx = " << tauInfty_approx << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
     log_file << "KeffPhi = " << KeffPhi << '\n';
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
+    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0) / 
+      (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / pa_cpu[8] / pa_cpu[8]);
     //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
     log_file << "KexactElast = " << KexactElast << '\n';
@@ -421,6 +425,19 @@ double EffPlast2D::GetDeltaP_approx() {
 
   deltaP *= -0.125;
   return deltaP;
+}
+
+double EffPlast2D::GetTauInfty_approx() {
+  double tauInfty = 0.0;
+
+  tauInfty += tauXX_cpu[(nY/2) * nX + 0] - tauYY_cpu[(nY/2) * nX + 0];
+  tauInfty += tauXX_cpu[(nY/2) * nX + nX - 1] - tauYY_cpu[(nY/2) * nX + nX - 1];
+
+  tauInfty += tauXX_cpu[0 * nX + nX/2] - tauYY_cpu[0 * nX + nX/2];
+  tauInfty += tauXX_cpu[(nY - 1) * nX + nX/2] - tauYY_cpu[(nY - 1) * nX + nX/2];
+
+  tauInfty *= 0.25;
+  return tauInfty;
 }
 
 EffPlast2D::EffPlast2D() {
