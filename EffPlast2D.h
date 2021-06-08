@@ -20,13 +20,16 @@ public:
   EffPlast2D();
   ~EffPlast2D();
 private:
-  long int nX, nY;
   dim3 grid, block;
+  long int nX, nY;
+
+  // parameters
   double* pa_cuda, * pa_cpu;
   double dX, dY, dT;
   double rad;                                      // radius of hole
   double K0, G0;                                   // bulk modulus and shear modulus
 
+  // space arrays
   double* K_cpu, * K_cuda, * G_cpu, * G_cuda;      // materials
   double* P0_cpu, * P0_cuda, * P_cpu, * P_cuda;    // stress
   double* tauXX_cpu, * tauXX_cuda;
@@ -40,7 +43,9 @@ private:
   double* Vx_cpu, * Vx_cuda;                       // velocity
   double* Vy_cpu, * Vy_cuda;
 
+  // utilities
   std::ofstream log_file;
+  size_t output_step;
 
   void ReadParams(const std::string& filename);
   void SetMaterials();

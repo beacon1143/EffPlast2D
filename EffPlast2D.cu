@@ -194,7 +194,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
       cudaDeviceSynchronize();    // wait for compute device to finish
 
-      if ((iter + 1) % 100000 == 0) {
+      if ((iter + 1) % output_step == 0) {
         cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
         cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
         error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
@@ -387,7 +387,7 @@ EffPlast2D::EffPlast2D() {
   cudaDeviceReset();
   cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);
 
-  // parameters
+  /* PARAMETERS */
   pa_cpu = (double*)malloc(NPARS * sizeof(double));
   cudaMalloc((void**)&pa_cuda, NPARS * sizeof(double));
   ReadParams("pa.dat");
@@ -399,6 +399,7 @@ EffPlast2D::EffPlast2D() {
   K0 = pa_cpu[10];
   G0 = pa_cpu[11];
 
+  /* SPACE ARRAYS */
   // materials
   K_cpu = (double*)malloc(nX * nY * sizeof(double));
   G_cpu = (double*)malloc(nX * nY * sizeof(double));
@@ -429,8 +430,9 @@ EffPlast2D::EffPlast2D() {
   SetMatrixZero(&Vx_cpu, &Vx_cuda, nX + 1, nY);
   SetMatrixZero(&Vy_cpu, &Vy_cuda, nX, nY + 1);
 
-  // log
+  /* UTILITIES */
   log_file.open("EffPlast2D.log");
+  output_step = 10'000;
 }
 
 EffPlast2D::~EffPlast2D() {
