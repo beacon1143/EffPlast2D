@@ -54,4 +54,7 @@ private:
   static void SetMatrixZero(double** A_cpu, double** A_cuda, const int m, const int n);
   static void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, const int n, const std::string& filename);
   static double FindMaxAbs(const double* const arr, const int size);
+
+  double GetDeltaP_honest();
+  double GetDeltaP_approx();
 };

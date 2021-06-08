@@ -266,21 +266,30 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
+    const double deltaP_honest = GetDeltaP_honest();
+    const double deltaP_approx = GetDeltaP_approx();
+
     const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
     // std::cout << "dR = " << dR << '\n';
     // log_file << "dR = " << dR << '\n';
     const double dPhi = 3.1415926 * ( (rad + dR) * (rad + dR) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
     // std::cout << "dPhi = " << dPhi << '\n';
     // log_file << "dPhi = " << dPhi << '\n';
-    const double KeffPhi = P_cpu[nX * nX / 2] / dPhi;
-    std::cout << "deltaP = " << P_cpu[nX * nX / 2] << '\n';
-    log_file << "deltaP = " << P_cpu[nX * nX / 2] << '\n';
+
+    const double KeffPhi = deltaP_approx / dPhi;
+    //const double KeffPhi = deltaP_honest / dPhi;
+    
+    std::cout << "deltaP_honest = " << deltaP_honest << '\n';
+    log_file << "deltaP_honest = " << deltaP_honest << '\n';
+    std::cout << "deltaP_approx = " << deltaP_approx << '\n';
+    log_file << "deltaP_approx = " << deltaP_approx << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
     log_file << "KeffPhi = " << KeffPhi << '\n';
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / phi / exp(std::abs(P_cpu[nX * nX / 2]) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
+    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
+    //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
     log_file << "KexactElast = " << KexactElast << '\n';
     std::cout << "KexactPlast = " << KexactPlast << '\n';
@@ -372,6 +381,46 @@ double EffPlast2D::FindMaxAbs(const double* const arr, const int size) {
     }
   }
   return max_el;
+}
+
+double EffPlast2D::GetDeltaP_honest() {
+  double deltaP = 0.0, deltaPx = 0.0, deltaPy = 0.0;
+
+  for (int i = 1; i < nX - 1; i++) {
+    deltaPx += tauXX_cpu[0 * nX + i] - P_cpu[0 * nX + i];
+    deltaPx += tauYY_cpu[0 * nX + i] - P_cpu[0 * nX + i];
+    deltaPx += tauXX_cpu[(nY - 1) * nX + i] - P_cpu[(nY - 1) * nX + i];
+    deltaPx += tauYY_cpu[(nY - 1) * nX + i] - P_cpu[(nY - 1) * nX + i];
+  }
+  deltaPx /= (nX - 2);
+
+  for (int j = 1; j < nY - 1; j++) {
+    deltaPy += tauXX_cpu[j * nX + 0] - P_cpu[j * nX + 0];
+    deltaPy += tauYY_cpu[j * nX + 0] - P_cpu[j * nX + 0];
+    deltaPy += tauXX_cpu[j * nX + nY - 1] - P_cpu[j * nX + nY - 1];
+    deltaPy += tauYY_cpu[j * nX + nY - 1] - P_cpu[j * nX + nY - 1];
+  }
+  deltaPy /= (nY - 2);
+
+  deltaP = -0.125 * (deltaPx + deltaPy);
+  return deltaP;
+}
+
+double EffPlast2D::GetDeltaP_approx() {
+  double deltaP = 0.0;
+
+  deltaP += tauXX_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
+  deltaP += tauYY_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
+  deltaP += tauXX_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
+  deltaP += tauYY_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
+
+  deltaP += tauXX_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
+  deltaP += tauYY_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
+  deltaP += tauXX_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
+  deltaP += tauYY_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
+
+  deltaP *= -0.125;
+  return deltaP;
 }
 
 EffPlast2D::EffPlast2D() {
