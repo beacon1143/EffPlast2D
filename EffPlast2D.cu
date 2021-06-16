@@ -45,7 +45,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   const double dX = pa[0], dY = pa[1];
-  const double dT = pa[2];
+  // const double dT = pa[2];
   const double rad = pa[9];
 
   // constitutive equation - Hooke's law
@@ -220,6 +220,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
 
     /*for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY; j++) {
@@ -270,10 +271,26 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     const double deltaP_approx = GetDeltaP_approx();
     const double tauInfty_approx = GetTauInfty_approx();
 
+    std::vector<double> dispX((nX + 1) / 2);
+    for (int i = 0; i < (nX + 1) / 2; i++) {
+      dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
+    }
+
+    std::vector<double> dispY((nY + 1) / 2);
+    for (int j = 0; j < (nY + 1) / 2; j++) {
+      dispY[j] = Uy_cpu[j * nX + nX / 2];
+    }
+
     const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
-    // std::cout << "dR = " << dR << '\n';
-    // log_file << "dR = " << dR << '\n';
-    const double dPhi = 3.1415926 * ( (rad + dR) * (rad + dR) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
+    std::cout << "dR = " << dR << '\n';
+    log_file << "dR = " << dR << '\n';
+    const double dRx = FindMaxAbs(dispX);
+    std::cout << "dRx = " << dRx << '\n';
+    log_file << "dRx = " << dRx << '\n';
+    const double dRy = FindMaxAbs(dispY);
+    std::cout << "dRy = " << dRy << '\n';
+    log_file << "dRy = " << dRy << '\n';
+    const double dPhi = 3.1415926 * ( (rad + dRx) * (rad + dRy) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
     // std::cout << "dPhi = " << dPhi << '\n';
     // log_file << "dPhi = " << dPhi << '\n';
 
@@ -291,9 +308,9 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0) / 
+    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] - 1.0) / 
       (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / pa_cpu[8] / pa_cpu[8]);
-    //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] /*/ sqrt(2)*/ - 1.0);
+    //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
     log_file << "KexactElast = " << KexactElast << '\n';
     std::cout << "KexactPlast = " << KexactPlast << '\n';
@@ -301,14 +318,14 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
   }
 
   /* OUTPUT DATA WRITING */
-  SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc.dat");
-  SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "tauXXc.dat");
-  SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "tauYYc.dat");
-  SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc.dat");
-  SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "tauXYavc.dat");
-  SaveMatrix(J2_cpu, J2_cuda, nX, nY, "J2c.dat");
-  SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc.dat");
-  SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc.dat");
+  SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(J2_cpu, J2_cuda, nX, nY, "J2c_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc_" + std::to_string(32 * NGRID) + "_.dat");
 
   cudaDeviceReset();
   return Sigma;
@@ -387,6 +404,16 @@ double EffPlast2D::FindMaxAbs(const double* const arr, const int size) {
   return max_el;
 }
 
+double EffPlast2D::FindMaxAbs(const std::vector<double>& vec) {
+  double max_el = 0.0;
+  for (auto i : vec) {
+    if (std::abs(i) > max_el) {
+      max_el = i;
+    }
+  }
+  return max_el;
+}
+
 double EffPlast2D::GetDeltaP_honest() {
   double deltaP = 0.0, deltaPx = 0.0, deltaPy = 0.0;
 
@@ -436,7 +463,7 @@ double EffPlast2D::GetTauInfty_approx() {
   tauInfty += tauXX_cpu[0 * nX + nX/2] - tauYY_cpu[0 * nX + nX/2];
   tauInfty += tauXX_cpu[(nY - 1) * nX + nX/2] - tauYY_cpu[(nY - 1) * nX + nX/2];
 
-  tauInfty *= 0.25;
+  tauInfty *= 0.125;
   return tauInfty;
 }
 
@@ -498,7 +525,7 @@ EffPlast2D::EffPlast2D() {
 
   /* UTILITIES */
   log_file.open("EffPlast2D.log");
-  output_step = 10'000;
+  output_step = 100'000;
 }
 
 EffPlast2D::~EffPlast2D() {

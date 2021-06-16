@@ -3,12 +3,12 @@ figure(1)
 clf
 colormap jet
 
-loadValue = -0.002;
+loadValue = -0.0015;
 nGrid = 4;
 nTimeSteps = 1;
-nIter = 100000;
-eIter = 1.0e-7;
-needCPUcalculation = true;
+nIter = 10000000;
+eIter = 1.0e-10;
+needCPUcalculation = false;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
@@ -19,32 +19,32 @@ Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter, ne
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(12), ' EffPlast2D.cu main.cu']);
 system(['.\a.exe']);
 
-fil = fopen('Pc.dat', 'rb');
+fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
 Pc = fread(fil, 'double');
 fclose(fil);
 Pc = reshape(Pc, Nx, Ny);
 
-fil = fopen('tauXXc.dat', 'rb');
+fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
 tauXXc = fread(fil, 'double');
 fclose(fil);
 tauXXc = reshape(Pc, Nx, Ny);
 
-fil = fopen('tauYYc.dat', 'rb');
+fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
 tauYYc = fread(fil, 'double');
 fclose(fil);
 tauYYc = reshape(Pc, Nx, Ny);
 
-fil = fopen('tauXYc.dat', 'rb');
+fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
 tauXYc = fread(fil, 'double');
 fclose(fil);
 tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
 
-fil = fopen('tauXYavc.dat', 'rb');
+fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
 tauXYavc = fread(fil, 'double');
 fclose(fil);
 tauXYavc = reshape(tauXYavc, Nx, Ny);
 
-fil = fopen('J2c.dat', 'rb');
+fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
 J2c = fread(fil, 'double');
 fclose(fil);
 J2c = reshape(J2c, Nx, Ny);

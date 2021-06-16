@@ -5,7 +5,7 @@ int main() {
   const auto start = std::chrono::system_clock::now();
 
   constexpr double load_value = -0.002;
-  constexpr std::array<double, 3> load_type = {1.0, 1.0, 0.0};
+  constexpr std::array<double, 3> load_type = {-3.0, 6.0, 0.0};
   /*const std::vector< std::array<double, 3> > Sxx = ComputeSigma(load_value, {1, 0, 0});
   const std::vector< std::array<double, 3> > Syy = ComputeSigma(load_value, {0, 1, 0});
   const std::vector< std::array<double, 3> > Sxy = ComputeSigma(load_value, {0, 0, 1});
