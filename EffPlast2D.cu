@@ -267,7 +267,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
-    const double deltaP_honest = GetDeltaP_honest();
+    //const double deltaP_honest = GetDeltaP_honest();
     const double deltaP_approx = GetDeltaP_approx();
     const double tauInfty_approx = GetTauInfty_approx();
 
@@ -281,9 +281,9 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       dispY[j] = Uy_cpu[j * nX + nX / 2];
     }
 
-    const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
+    /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
     std::cout << "dR = " << dR << '\n';
-    log_file << "dR = " << dR << '\n';
+    log_file << "dR = " << dR << '\n';*/
     const double dRx = FindMaxAbs(dispX);
     std::cout << "dRx = " << dRx << '\n';
     log_file << "dRx = " << dRx << '\n';
@@ -297,8 +297,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     const double KeffPhi = deltaP_approx / dPhi;
     //const double KeffPhi = deltaP_honest / dPhi;
     
-    std::cout << "deltaP_honest = " << deltaP_honest << '\n';
-    log_file << "deltaP_honest = " << deltaP_honest << '\n';
+    //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
+    //log_file << "deltaP_honest = " << deltaP_honest << '\n';
     std::cout << "deltaP_approx = " << deltaP_approx << '\n';
     log_file << "deltaP_approx = " << deltaP_approx << '\n';
     std::cout << "tauInfty_approx = " << tauInfty_approx << '\n';
@@ -525,7 +525,7 @@ EffPlast2D::EffPlast2D() {
 
   /* UTILITIES */
   log_file.open("EffPlast2D.log");
-  output_step = 100'000;
+  output_step = 10'000;
 }
 
 EffPlast2D::~EffPlast2D() {

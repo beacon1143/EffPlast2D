@@ -3,17 +3,17 @@ figure(1)
 clf
 colormap jet
 
-loadValue = -0.0015;
-nGrid = 4;
+loadValue = -0.002;
+nGrid = 2;
 nTimeSteps = 1;
-nIter = 10000000;
-eIter = 1.0e-10;
-needCPUcalculation = false;
+nIter = 1000000;
+eIter = 1.0e-8;
+needCPUcalculation = true;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
+Sxx = get_sigma_2D(loadValue, [-3.0, 6.0, 0], nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
 
 % GPU CALCULATION
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(12), ' EffPlast2D.cu main.cu']);

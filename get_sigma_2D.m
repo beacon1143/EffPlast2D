@@ -95,8 +95,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
         divU = diff(Ux,1,1) / dX + diff(Uy,1,2) / dY;
         
         % constitutive equation - Hooke's law
-        %P     = Pinit - K .* divU;
-        P     = P - G .* divU * dt / Nx;    % incompressibility
+        P     = Pinit - K .* divU;
+        %P     = P - G .* divU * dt / Nx;    % incompressibility
         tauxx = 2.0 * G .* (diff(Ux,1,1)/dX - divU/3.0);
         tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
         tauxy = av4(G) .* (diff(Ux(2:end-1,:), 1, 2)/dY + diff(Uy(:,2:end-1), 1, 1)/dX);
@@ -144,12 +144,19 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
         Uy = Uy + Vy * dt;
         
         % exit criteria
-        if mod(iter, 1000) == 0
+        if mod(iter, 10000) == 0
           error = (max(abs(Vx(:))) / Lx + max(abs(Vy(:))) / Ly) * dt / max(abs(loadValue * loadType));
+          outStr = sprintf('Iteration %d: Error is %d', iter, error);
+          disp(outStr);
           if error < eIter
-            outStr = sprintf("Number of iterations is %d", iter);
+            outStr = sprintf('Number of iterations is %d', iter);
             disp(outStr);
             break
+          else
+            if iter == nIter
+              outStr = sprintf('WARNING: Maximum number of iterations reached!\nError is %d', error);
+              disp(outStr);
+            end
           end
         end %if
       end % for
@@ -248,19 +255,33 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       
       tauYYsolid = tauyy;
       tauYYsolid(sqrt(x.*x + y.*y) < rad) = 0.0;
-          
+      
       Keff(it) = -mean(Psolid(:)) / (divUeff) / it * nTimeSteps;
       Geff(it, 1) = 0.5 * mean(tauXXsolid(:)) / (loadValue * loadType(1) - divUeff / 3.0) / it * nTimeSteps;
       Geff(it, 2) = 0.5 * mean(tauYYsolid(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * nTimeSteps;
       %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * nTimeSteps
       
-      dR = max(Ux(2:end, end/2));
-      dPhi = pi * ((rad + dR) * (rad + dR) - rad * rad) / Lx / Ly;
-      KeffPhi = P(1, end/2) / dPhi
+      deltaP_approx = tauxx(1, end/2) - P(1, end/2) + tauyy(1, end/2) - P(1, end/2) + ...
+                      tauxx(end, end/2) - P(end, end/2) + tauyy(end, end/2) - P(end, end/2) + ...
+                      tauxx(end/2, 1) - P(end/2, 1) + tauyy(end/2, 1) - P(end/2, 1) + ...
+                      tauxx(end/2, end) - P(end/2, end) + tauyy(end/2, end) - P(end/2, end);
+      deltaP_approx = -deltaP_approx * 0.125
+      
+      tauInfty_approx = tauxx(1, end/2) - tauyy(1, end/2) + ...
+                        tauxx(end, end/2) - tauyy(end, end/2) + ...
+                        tauxx(end/2, 1) - tauyy(end/2, 1) + ...
+                        tauxx(end/2, end) - tauyy(end/2, end);
+      tauInfty_approx = tauInfty_approx * 0.125
+      
+      dRx = max(Ux(2:end, end/2))
+      dRy = max(Uy(end/2, 2:end))
+      dPhi = pi * ((rad + dRx) * (rad + dRy) - rad * rad) / Lx / Ly;
+      KeffPhi = deltaP_approx / dPhi
       %KeffPhi = deltaP / dPhi
       
       Phi = pi * rad * rad / Lx / Ly;
-      Kexact = 0.01 / Phi
+      KexactElast = G0 / Phi
+      KexactPlast = G0 / Phi / exp(abs(deltaP_approx) / coh - 1.0) / (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / coh / coh)
     end %for
     
     fil = fopen('Pm.dat', 'wb');
