@@ -57,6 +57,6 @@ private:
   static double FindMaxAbs(const std::vector<double>& vec);
 
   double GetDeltaP_honest();
-  double GetDeltaP_approx();
-  double GetTauInfty_approx();
+  double GetDeltaP_approx(const double Exx, const double Eyy);
+  double GetTauInfty_approx(const double Exx, const double Eyy);
 };

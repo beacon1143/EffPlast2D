@@ -268,8 +268,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     //const double deltaP_honest = GetDeltaP_honest();
-    const double deltaP_approx = GetDeltaP_approx();
-    const double tauInfty_approx = GetTauInfty_approx();
+    const double deltaP_approx = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
+    const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
     std::vector<double> dispX((nX + 1) / 2);
     for (int i = 0; i < (nX + 1) / 2; i++) {
@@ -437,33 +437,39 @@ double EffPlast2D::GetDeltaP_honest() {
   return deltaP;
 }
 
-double EffPlast2D::GetDeltaP_approx() {
+double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
   double deltaP = 0.0;
 
-  deltaP += tauXX_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
-  deltaP += tauYY_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
-  deltaP += tauXX_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
-  deltaP += tauYY_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
+  if (Exx < Eyy ) {
+    deltaP += tauXX_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
+    deltaP += tauYY_cpu[(nY/2) * nX + 0] - P_cpu[(nY/2) * nX + 0];
+    deltaP += tauXX_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
+    deltaP += tauYY_cpu[(nY/2) * nX + nX - 1] - P_cpu[(nY/2) * nX + nX - 1];
+  }
+  else {
+    deltaP += tauXX_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
+    deltaP += tauYY_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
+    deltaP += tauXX_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
+    deltaP += tauYY_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
+  }
 
-  deltaP += tauXX_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
-  deltaP += tauYY_cpu[0 * nX + nX/2] - P_cpu[0 * nX + nX/2];
-  deltaP += tauXX_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
-  deltaP += tauYY_cpu[(nY - 1) * nX + nX/2] - P_cpu[(nY - 1) * nX + nX/2];
-
-  deltaP *= -0.125;
+  deltaP *= -0.25;
   return deltaP;
 }
 
-double EffPlast2D::GetTauInfty_approx() {
+double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
   double tauInfty = 0.0;
 
-  tauInfty += tauXX_cpu[(nY/2) * nX + 0] - tauYY_cpu[(nY/2) * nX + 0];
-  tauInfty += tauXX_cpu[(nY/2) * nX + nX - 1] - tauYY_cpu[(nY/2) * nX + nX - 1];
+  if (Exx < Eyy ) {
+    tauInfty += tauYY_cpu[(nY/2) * nX + 0] - tauXX_cpu[(nY/2) * nX + 0];
+    tauInfty += tauYY_cpu[(nY/2) * nX + nX - 1] - tauXX_cpu[(nY/2) * nX + nX - 1];
+  }
+  else {
+    tauInfty += tauYY_cpu[0 * nX + nX/2] - tauXX_cpu[0 * nX + nX/2];
+    tauInfty += tauYY_cpu[(nY - 1) * nX + nX/2] - tauXX_cpu[(nY - 1) * nX + nX/2];
+  }
 
-  tauInfty += tauXX_cpu[0 * nX + nX/2] - tauYY_cpu[0 * nX + nX/2];
-  tauInfty += tauXX_cpu[(nY - 1) * nX + nX/2] - tauYY_cpu[(nY - 1) * nX + nX/2];
-
-  tauInfty *= 0.125;
+  tauInfty *= 0.25;
   return tauInfty;
 }
 
