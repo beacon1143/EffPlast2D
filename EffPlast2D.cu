@@ -271,13 +271,15 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     const double deltaP_approx = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
+    int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
     std::vector<double> dispX((nX + 1) / 2);
-    for (int i = 0; i < (nX + 1) / 2; i++) {
+    for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2; i++) {
       dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
     }
 
+    int holeY = static_cast<int>((nY + 1) * 2 * rad / nY / dY);    // approx Y-axis index of hole boundary
     std::vector<double> dispY((nY + 1) / 2);
-    for (int j = 0; j < (nY + 1) / 2; j++) {
+    for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2; j++) {
       dispY[j] = Uy_cpu[j * nX + nX / 2];
     }
 

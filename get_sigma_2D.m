@@ -18,7 +18,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   %Nt  = 10;     % number of time steps
   %nIter = 500;
   %eIter = 1.0e-11;
-  CFL = 0.125;     % Courant-Friedrichs-Lewy
+  CFL = 0.5;     % Courant-Friedrichs-Lewy
 
   % PREPROCESSING
   dX     = Lx / (Nx - 1);                                   % space step
@@ -261,20 +261,28 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       Geff(it, 2) = 0.5 * mean(tauYYsolid(:)) / (loadValue * loadType(2) - divUeff / 3.0) / it * nTimeSteps;
       %Geff(it, 3) = mean(tauxy(:)) / (loadValue * loadType(1)) / it * nTimeSteps
       
-      deltaP_approx = tauxx(1, end/2) - P(1, end/2) + tauyy(1, end/2) - P(1, end/2) + ...
-                      tauxx(end, end/2) - P(end, end/2) + tauyy(end, end/2) - P(end, end/2) + ...
-                      tauxx(end/2, 1) - P(end/2, 1) + tauyy(end/2, 1) - P(end/2, 1) + ...
-                      tauxx(end/2, end) - P(end/2, end) + tauyy(end/2, end) - P(end/2, end);
-      deltaP_approx = -deltaP_approx * 0.125
+      deltaP_approx = 0.0;
+      tauInfty_approx = 0.0;
+      if loadValue * loadType(1) < loadValue * loadType(2)
+        deltaP_approx = deltaP_approx + ...
+                        tauxx(1, end/2) - P(1, end/2) + tauyy(1, end/2) - P(1, end/2) + ...
+                        tauxx(end, end/2) - P(end, end/2) + tauyy(end, end/2) - P(end, end/2);
+        tauInfty_approx = tauInfty_approx + ...
+                          tauxx(1, end/2) - tauyy(1, end/2) + ...
+                          tauxx(end, end/2) - tauyy(end, end/2);
+      else
+        deltaP_approx = deltaP_approx + ...
+                        tauxx(end/2, 1) - P(end/2, 1) + tauyy(end/2, 1) - P(end/2, 1) + ...
+                        tauxx(end/2, end) - P(end/2, end) + tauyy(end/2, end) - P(end/2, end);
+        tauInfty_approx = tauInfty_approx + ...
+                          tauxx(end/2, 1) - tauyy(end/2, 1) + ...
+                          tauxx(end/2, end) - tauyy(end/2, end);
+      end % if
+      deltaP_approx = -deltaP_approx * 0.25
+      tauInfty_approx = -tauInfty_approx * 0.25
       
-      tauInfty_approx = tauxx(1, end/2) - tauyy(1, end/2) + ...
-                        tauxx(end, end/2) - tauyy(end, end/2) + ...
-                        tauxx(end/2, 1) - tauyy(end/2, 1) + ...
-                        tauxx(end/2, end) - tauyy(end/2, end);
-      tauInfty_approx = tauInfty_approx * 0.125
-      
-      dRx = max(Ux(2:end, end/2))
-      dRy = max(Uy(end/2, 2:end))
+      dRx = max(Ux(end/2 - fix(Nx * 2 * rad / Lx) - 1 : end/2, end/2))
+      dRy = max(Uy(end/2, end/2 - fix(Ny * 2 * rad / Lx) - 1 : end/2))
       dPhi = pi * ((rad + dRx) * (rad + dRy) - rad * rad) / Lx / Ly;
       KeffPhi = deltaP_approx / dPhi
       %KeffPhi = deltaP / dPhi
