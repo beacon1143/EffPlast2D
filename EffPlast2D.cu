@@ -267,6 +267,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
+    /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
     //const double deltaP_honest = GetDeltaP_honest();
     const double deltaP_approx = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
@@ -317,6 +318,53 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     log_file << "KexactElast = " << KexactElast << '\n';
     std::cout << "KexactPlast = " << KexactPlast << '\n';
     log_file << "KexactPlast = " << KexactPlast << '\n';
+
+    /* ANALYTIC SOLUTION FOR STATICS */
+    double* xxx = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      xxx[i] = -0.5 * dX * (nX - 1) + dX * i;
+    }
+    SaveVector(xxx, nX, "xxx_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] xxx;
+
+    double* Sanrr = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
+        Sanrr[i] = 0.0;
+      }
+      else {
+        Sanrr[i] = -deltaP_approx + deltaP_approx * rad * rad / (-0.5 * dX * (nX - 1) + dX * i) / (-0.5 * dX * (nX - 1) + dX * i);
+      }
+    }
+    SaveVector(Sanrr, nX, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Sanrr;
+
+    double* Sanff = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
+        Sanff[i] = 0.0;
+      }
+      else {
+        Sanff[i] = -deltaP_approx - deltaP_approx * rad * rad / (-0.5 * dX * (nX - 1) + dX * i) / (-0.5 * dX * (nX - 1) + dX * i);
+      }
+    }
+    SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Sanff;
+
+    double* Snurr = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY / 2 * nX + i];
+      // std::cout << Snurr[i] << '\n';
+    }
+    SaveVector(Snurr, nX, "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Snurr;
+
+    double* Snuff = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY / 2 * nX + i];
+    }
+    SaveVector(Snuff, nX, "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Snuff;
   }
 
   /* OUTPUT DATA WRITING */
@@ -394,6 +442,12 @@ void EffPlast2D::SaveMatrix(double* const A_cpu, const double* const A_cuda, con
   FILE* A_filw = fopen(filename.c_str(), "wb");
   fwrite(A_cpu, sizeof(double), m * n, A_filw);
   fclose(A_filw);
+}
+
+void EffPlast2D::SaveVector(double* const arr, const int size, const std::string& filename) {
+  FILE* arr_filw = fopen(filename.c_str(), "wb");
+  fwrite(arr, sizeof(double), size, arr_filw);
+  fclose(arr_filw);
 }
 
 double EffPlast2D::FindMaxAbs(const double* const arr, const int size) {

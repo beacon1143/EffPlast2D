@@ -9,11 +9,12 @@ nTimeSteps = 1;
 nIter = 1000000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
+needCompareStatic = true;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(loadValue, [1.5, 1.5, 0], nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
+Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
 
 % GPU CALCULATION
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(12), ' EffPlast2D.cu main.cu']);
@@ -56,6 +57,13 @@ if needCPUcalculation
   Pm = reshape(Pm, Nx, Ny);
 
   diffP = Pm - Pc;
+  
+  fil = fopen('tauXXm.dat', 'rb');
+  tauXXm = fread(fil, 'double');
+  fclose(fil);
+  tauXXm = reshape(tauXXm, Nx, Ny);
+
+  diffTauXX = tauXXm - tauXXc;
 
   fil = fopen('tauXYm.dat', 'rb');
   tauXYm = fread(fil, 'double');
@@ -92,43 +100,79 @@ if needCPUcalculation
   axis image
 
   subplot(2, 2, 2)
-  imagesc(tauXYm)
+  imagesc(tauXXm)
   colorbar
-  title('tauXYm')
+  title('tauXXm')
   axis image
 
   subplot(2, 2, 4)
-  imagesc(diffTauXY)
+  imagesc(diffTauXX)
   colorbar
-  title('diffTauXY')
+  title('diffTauXX')
   axis image
 
   drawnow
 else
   % POSTPROCESSING
-  subplot(2, 2, 1)
-  imagesc(Pc(2:end-1, 2:end-1))
-  colorbar
-  title('P')
-  axis image
+  if needCompareStatic
+    % ANALYTIC SOLUTION FOR STATICS
+    fil = fopen(strcat('xxx_', int2str(Nx), '_.dat'), 'rb');
+    xxx = fread(fil, 'double');
+    fclose(fil);
+    xxx = reshape(xxx, Nx, 1);
 
-  subplot(2, 2, 3)
-  imagesc(tauXYc(2:end-1, 2:end-1))
-  colorbar
-  title('tauXY')
-  axis image
+    fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
+    Sanrr = fread(fil, 'double');
+    fclose(fil);
+    Sanrr = reshape(Sanrr, Nx, 1);
+    
+    fil = fopen(strcat('Sanff_', int2str(Nx), '_.dat'), 'rb');
+    Sanff = fread(fil, 'double');
+    fclose(fil);
+    Sanff = reshape(Sanff, Nx, 1);
 
-  subplot(2, 2, 2)
-  imagesc(tauXXc(2:end-1, 2:end-1))
-  colorbar
-  title('tauXX')
-  axis image
+    fil = fopen(strcat('Snurr_', int2str(Nx), '_.dat'), 'rb');
+    Snurr = fread(fil, 'double');
+    fclose(fil);
+    Snurr = reshape(Snurr, Nx, 1);
+    
+    fil = fopen(strcat('Snuff_', int2str(Nx), '_.dat'), 'rb');
+    Snuff = fread(fil, 'double');
+    fclose(fil);
+    Snuff = reshape(Snuff, Nx, 1);
+    
+    subplot(1, 2, 1)
+    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'r') 
+    title('\sigma_{rr}')
+    
+    subplot(1, 2, 2)
+    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'r') 
+    title('\sigma_{\phi \phi}')
+  else  
+    subplot(2, 2, 1)
+    imagesc(Pc(2:end-1, 2:end-1))
+    colorbar
+    title('P')
+    axis image
 
-  subplot(2, 2, 4)
-  imagesc(tauYYc(2:end-1, 2:end-1))
-  colorbar
-  title('tauYY')
-  axis image
+    subplot(2, 2, 3)
+    imagesc(tauXYc(2:end-1, 2:end-1))
+    colorbar
+    title('tauXY')
+    axis image
 
-  drawnow
-end %if
+    subplot(2, 2, 2)
+    imagesc(tauXXc(2:end-1, 2:end-1))
+    colorbar
+    title('tauXX')
+    axis image
+
+    subplot(2, 2, 4)
+    imagesc(tauYYc(2:end-1, 2:end-1))
+    colorbar
+    title('tauYY')
+    axis image
+
+    drawnow
+  end %if (needCompareStatic)
+end %if (needCPUcalculation)

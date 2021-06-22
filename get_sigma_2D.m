@@ -6,7 +6,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   rho0 = 1.0;                         % density
   K0   = 1.0;                         % bulk modulus
   G0   = 0.01;                         % shear modulus
-  coh  = 0.001;
+  coh  = 1.0;
   P0 = 0.0; %1.0 * coh;
   porosity = 0.01;
   rad = sqrt(porosity * Lx * Lx / pi);
@@ -296,35 +296,14 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     fwrite(fil, P(:), 'double');
     fclose(fil);
     
-    %fil = fopen('Pc.dat', 'rb');
-    %Pc = fread(fil, 'double');
-    %fclose(fil);
-    %Pc = reshape(Pc, Nx, Ny);
-    
-    %fil = fopen('Uxc.dat', 'rb');
-    %Uxc = fread(fil, 'double');
-    %fclose(fil);
-    %Uxc = reshape(Uxc, Nx + 1, Ny);
-
-    %fil = fopen('Uyc.dat', 'rb');
-    %Uyc = fread(fil, 'double');
-    %fclose(fil);
-    %Uyc = reshape(Uyc, Nx, Ny + 1);
+    fil = fopen('tauXXm.dat', 'wb');
+    fwrite(fil, tauxx(:), 'double');
+    fclose(fil);
     
     fil = fopen('tauXYm.dat', 'wb');
     fwrite(fil, tauxy(:), 'double');
     fclose(fil);
 
-    %fil = fopen('tauXYc.dat', 'rb');
-    %tauXYc = fread(fil, 'double');
-    %fclose(fil);
-    %tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
-
-    %diffP = P - Pc;
-    %diffUx = Ux - Uxc;
-    %diffUy = Uy - Uyc;
-    %diffTauXY = tauxy - tauXYc;
-    
     fil = fopen('tauXYavm.dat', 'wb');
     fwrite(fil, tauxyAv(:), 'double');
     fclose(fil);
