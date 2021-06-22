@@ -200,7 +200,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
         error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
           (std::abs(loadValue) * std::max( std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2]) ));
         std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
-        log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+        // log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
         if (error < EITER) {
           std::cout << "Number of iterations is " << iter + 1 << '\n';
           log_file << "Number of iterations is " << iter + 1 << '\n';
@@ -333,7 +333,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
         Sanrr[i] = 0.0;
       }
       else {
-        Sanrr[i] = -deltaP_approx + deltaP_approx * rad * rad / (-0.5 * dX * (nX - 1) + dX * i) / (-0.5 * dX * (nX - 1) + dX * i);
+        double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
+        Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR /*- tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0))*/;
       }
     }
     SaveVector(Sanrr, nX, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
@@ -345,7 +346,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
         Sanff[i] = 0.0;
       }
       else {
-        Sanff[i] = -deltaP_approx - deltaP_approx * rad * rad / (-0.5 * dX * (nX - 1) + dX * i) / (-0.5 * dX * (nX - 1) + dX * i);
+        double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
+        Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR /*+ tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0))*/;
       }
     }
     SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
