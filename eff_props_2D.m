@@ -142,12 +142,19 @@ else
     Snuff = reshape(Snuff, Nx, 1);
     
     subplot(1, 2, 1)
-    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'r') 
+    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
     title('\sigma_{rr}')
+    xlabel('r')
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    %set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
     
     subplot(1, 2, 2)
-    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'r') 
+    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
     title('\sigma_{\phi \phi}')
+    xlabel('r')
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    drawnow
   else  
     subplot(2, 2, 1)
     imagesc(Pc(2:end-1, 2:end-1))
