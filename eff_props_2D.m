@@ -27,12 +27,12 @@ Pc = reshape(Pc, Nx, Ny);
 fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
 tauXXc = fread(fil, 'double');
 fclose(fil);
-tauXXc = reshape(Pc, Nx, Ny);
+tauXXc = reshape(tauXXc, Nx, Ny);
 
 fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
 tauYYc = fread(fil, 'double');
 fclose(fil);
-tauYYc = reshape(Pc, Nx, Ny);
+tauYYc = reshape(tauYYc, Nx, Ny);
 
 fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
 tauXYc = fread(fil, 'double');
