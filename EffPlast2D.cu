@@ -219,6 +219,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(J2_cpu, J2_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
 
@@ -334,9 +335,16 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR /*- tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0))*/;
+        //Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
+        if (J2_cpu[nY * nX / 2 + i] < pa_cpu[8]) {
+          Sanrr[i] = 0.0;
+        }
+        else {
+          Sanrr[i] = -sqrt(2.0) * pa_cpu[8] * log(1.0 / relR);
+        }
       }
     }
+    
     SaveVector(Sanrr, nX, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] Sanrr;
 
@@ -347,7 +355,13 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR /*+ tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0))*/;
+        //Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
+        if (J2_cpu[nY * nX / 2 + i] < pa_cpu[8]) {
+          Sanff[i] = 0.0;
+        }
+        else {
+          Sanff[i] = -sqrt(2.0) * pa_cpu[8] * (1.0 + log(1.0 / relR));
+        }
       }
     }
     SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
@@ -355,7 +369,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     double* Snurr = new double[nX];
     for (int i = 0; i < nX; i++) {
-      Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY / 2 * nX + i];
+      Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY * nX / 2 + i];
       // std::cout << Snurr[i] << '\n';
     }
     SaveVector(Snurr, nX, "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
@@ -363,7 +377,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     double* Snuff = new double[nX];
     for (int i = 0; i < nX; i++) {
-      Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY / 2 * nX + i];
+      Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY * nX / 2 + i];
     }
     SaveVector(Snuff, nX, "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] Snuff;

@@ -163,15 +163,15 @@ else
     axis image
 
     subplot(2, 2, 3)
-    imagesc(tauXYc(2:end-1, 2:end-1))
-    colorbar
-    title('tauXY')
-    axis image
-
-    subplot(2, 2, 2)
     imagesc(tauXXc(2:end-1, 2:end-1))
     colorbar
     title('tauXX')
+    axis image
+
+    subplot(2, 2, 2)
+    imagesc(J2c(2:end-1, 2:end-1))
+    colorbar
+    title('J2')
     axis image
 
     subplot(2, 2, 4)
