@@ -336,7 +336,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
         //Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
-        if (J2_cpu[nY * nX / 2 + i] < pa_cpu[8]) {
+        if (J2_cpu[nY * nX / 2 + i] < (1.0 - std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanrr[i] = 0.0;
         }
         else {
@@ -356,7 +356,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
         //Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
-        if (J2_cpu[nY * nX / 2 + i] < pa_cpu[8]) {
+        if (J2_cpu[nY * nX / 2 + i] < (1.0 - std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanff[i] = 0.0;
         }
         else {
