@@ -73,7 +73,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad, K0, G0];
+  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad];
   
   Keff = zeros(nTimeSteps);
 

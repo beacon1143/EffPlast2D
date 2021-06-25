@@ -566,9 +566,9 @@ EffPlast2D::EffPlast2D() {
   dX = pa_cpu[0];
   dY = pa_cpu[1];
   dT = pa_cpu[2];
+  K0 = pa_cpu[3];
+  G0 = pa_cpu[4];
   rad = pa_cpu[9];
-  K0 = pa_cpu[10];
-  G0 = pa_cpu[11];
 
   /* SPACE ARRAYS */
   // materials
