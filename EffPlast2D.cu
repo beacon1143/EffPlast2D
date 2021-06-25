@@ -303,10 +303,10 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     
     //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
     //log_file << "deltaP_honest = " << deltaP_honest << '\n';
-    std::cout << "deltaP_approx = " << deltaP_approx << '\n';
-    log_file << "deltaP_approx = " << deltaP_approx << '\n';
-    std::cout << "tauInfty_approx = " << tauInfty_approx << '\n';
-    log_file << "tauInfty_approx = " << tauInfty_approx << '\n';
+    std::cout << "deltaP / Y = " << deltaP_approx / (pa_cpu[8]) << '\n';
+    log_file << "deltaP / Y = " << deltaP_approx / (pa_cpu[8]) << '\n';
+    std::cout << "tauInfty / Y = " << tauInfty_approx / (pa_cpu[8]) << '\n';
+    log_file << "tauInfty / Y = " << tauInfty_approx / (pa_cpu[8]) << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
     log_file << "KeffPhi = " << KeffPhi << '\n';
 
