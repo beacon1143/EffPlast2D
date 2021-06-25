@@ -4,11 +4,11 @@ clf
 colormap jet
 
 loadValue = -0.002;
-nGrid = 24;
+nGrid = 6;
 nTimeSteps = 1;
 nIter = 1000000;
 eIter = 1.0e-10;
-needCPUcalculation = false;
+needCPUcalculation = true;
 needCompareStatic = true;
 
 Nx  = 32 * nGrid;     % number of space steps
@@ -64,6 +64,13 @@ if needCPUcalculation
   tauXXm = reshape(tauXXm, Nx, Ny);
 
   diffTauXX = tauXXm - tauXXc;
+  
+  fil = fopen('tauYYm.dat', 'rb');
+  tauYYm = fread(fil, 'double');
+  fclose(fil);
+  tauYYm = reshape(tauYYm, Nx, Ny);
+
+  diffTauYY = tauYYm - tauYYc;
 
   fil = fopen('tauXYm.dat', 'rb');
   tauXYm = fread(fil, 'double');
@@ -94,9 +101,9 @@ if needCPUcalculation
   axis image
 
   subplot(2, 2, 3)
-  imagesc(diffP)
+  imagesc(tauXYm)
   colorbar
-  title('diffP')
+  title('tauXY')
   axis image
 
   subplot(2, 2, 2)
@@ -106,9 +113,9 @@ if needCPUcalculation
   axis image
 
   subplot(2, 2, 4)
-  imagesc(diffTauXX)
+  imagesc(tauYYm)
   colorbar
-  title('diffTauXX')
+  title('tauYY')
   axis image
 
   drawnow

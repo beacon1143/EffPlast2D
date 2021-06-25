@@ -10,6 +10,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   P0 = 0.0; %1.0 * coh;
   porosity = 0.005;
   rad = sqrt(porosity * Lx * Lx / pi);
+  N = 2;
 
   % NUMERICS
   %nGrid = 7;
@@ -38,7 +39,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
   G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  [K, G] = set_mats_2D(Nx, Ny, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
+  [K, G] = set_mats_2D(2, Nx, Ny, Lx, Ly, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
 
   % INITIAL CONDITIONS
   Pinit   = zeros(Nx, Ny);            % initial hydrostatic stress
@@ -101,10 +102,15 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
         tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
         tauxy = av4(G) .* (diff(Ux(2:end-1,:), 1, 2)/dY + diff(Uy(:,2:end-1), 1, 1)/dX);
         
-        P(sqrt(x.*x + y.*y) < rad) = 0.0;
-        tauxx(sqrt(x.*x + y.*y) < rad) = 0.0;
-        tauyy(sqrt(x.*x + y.*y) < rad) = 0.0;
-        tauxy(radC < rad) = 0.0;
+        for i = 0 : N - 1
+          for j = 0 : N - 1
+            P(sqrt((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .* (x - 0.5*Lx*(1-1/N) + (Lx/N)*i) + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .* (y - 0.5*Ly*(1-1/N) + (Ly/N)*j)) < rad) = 0.0;
+            tauxx(sqrt((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .* (x - 0.5*Lx*(1-1/N) + (Lx/N)*i) + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .* (y - 0.5*Ly*(1-1/N) + (Ly/N)*j)) < rad) = 0.0;
+            tauyy(sqrt((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .* (x - 0.5*Lx*(1-1/N) + (Lx/N)*i) + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .* (y - 0.5*Ly*(1-1/N) + (Ly/N)*j)) < rad) = 0.0;
+            tauxy(sqrt((xC - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .* (xC - 0.5*Lx*(1-1/N) + (Lx/N)*i) + (yC - 0.5*Ly*(1-1/N) + (Ly/N)*j) .* (yC - 0.5*Ly*(1-1/N) + (Ly/N)*j)) < rad) = 0.0;
+          end % for
+        end % for
+        
         
         % tauXY for plasticity
         tauxyAv(2:end-1,2:end-1) = av4(tauxy);
@@ -298,6 +304,10 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     
     fil = fopen('tauXXm.dat', 'wb');
     fwrite(fil, tauxx(:), 'double');
+    fclose(fil);
+    
+    fil = fopen('tauYYm.dat', 'wb');
+    fwrite(fil, tauyy(:), 'double');
     fclose(fil);
     
     fil = fopen('tauXYm.dat', 'wb');
