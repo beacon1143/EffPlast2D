@@ -125,6 +125,10 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
     tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 2] + tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1]);
   }
 
+  if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
+    tauXYav[j * nX + i] = 0.0;
+  }
+
   // plasticity
   J2[j * nX + i] = sqrt( tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i] );
   if (i < nX - 1 && j < nY - 1) {
@@ -269,7 +273,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-    //const double deltaP_honest = GetDeltaP_honest();
+    const double deltaP_honest = GetDeltaP_honest();
     const double deltaP_approx = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
@@ -288,13 +292,15 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
     std::cout << "dR = " << dR << '\n';
     log_file << "dR = " << dR << '\n';*/
-    const double dRx = FindMaxAbs(dispX);
+    const double dRx = -FindMaxAbs(dispX);
     std::cout << "dRx = " << dRx << '\n';
     log_file << "dRx = " << dRx << '\n';
-    const double dRy = FindMaxAbs(dispY);
+    const double dRy = -FindMaxAbs(dispY);
     std::cout << "dRy = " << dRy << '\n';
     log_file << "dRy = " << dRy << '\n';
-    const double dPhi = 3.1415926 * ( (rad + dRx) * (rad + dRy) - rad * rad ) / (dX * (nX - 1) * dY * (nY - 1));
+    const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
+    const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
+    const double dPhi = std::abs(Phi - Phi0); //3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
     // std::cout << "dPhi = " << dPhi << '\n';
     // log_file << "dPhi = " << dPhi << '\n';
 
