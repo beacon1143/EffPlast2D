@@ -6,11 +6,11 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   rho0 = 1.0;                         % density
   K0   = 1.0;                         % bulk modulus
   G0   = 0.01;                         % shear modulus
-  coh  = 1.000 / sqrt(2.0);
+  coh  = 0.001 * sqrt(2.0);
   P0 = 0.0; %1.0 * coh;
-  porosity = 0.005;
-  rad = sqrt(porosity * Lx * Lx / pi);
-  N = 1;
+  porosity = 0.05;
+  N = 5;
+  rad = sqrt(porosity * Lx * Lx / pi) / (N * N);  
 
   % NUMERICS
   %nGrid = 7;
@@ -29,7 +29,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   [x, y] = ndgrid(x, y);                                    % 2D mesh
   xC     = av4(x);
   yC     = av4(y);
-  radC   = sqrt(xC .* xC + yC .* yC);
+  %radC   = sqrt(xC .* xC + yC .* yC);
   [xUx, yUx] = ndgrid((-(Lx + dX)/2) : dX : ((Lx + dX)/2), (-Ly/2) : dY : (Ly/2));
   [xUy, yUy] = ndgrid((-Lx/2) : dX : (Lx/2), (-(Ly+dY)/2) : dY : ((Ly+dY)/2));
   dt     = CFL * min(dX, dY) / sqrt( (K0 + 4*G0/3) / rho0);    % time step
@@ -74,7 +74,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   S = zeros(nTimeSteps, 3);
 
   % INPUT FILES
-  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad];
+  pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad, N];
   
   Keff = zeros(nTimeSteps);
 

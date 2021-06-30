@@ -47,6 +47,7 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
   const double dX = pa[0], dY = pa[1];
   // const double dT = pa[2];
   const double rad = pa[9];
+  const double N = pa[10];
 
   // constitutive equation - Hooke's law
   P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * ( 
@@ -72,15 +73,25 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
                               );
   }
 
-  if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
-    P[j * nX + i] = 0.0;
-    tauXX[j * nX + i] = 0.0;
-    tauYY[j * nX + i] = 0.0;
-  }
+  for (int k = 0; k < N; k++) {
+    for (int l = 0; l < N; l++) {
+      if (sqrt((-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) * 
+               (-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) + 
+               (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) * 
+               (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad ) {
+        P[j * nX + i] = 0.0;
+        tauXX[j * nX + i] = 0.0;
+        tauYY[j * nX + i] = 0.0;
+      }
 
-  if (i < nX - 1 && j < nY - 1) {
-    if (sqrt((-0.5 * dX * (nX - 2) + dX * i) * (-0.5 * dX * (nX - 2) + dX * i) + (-0.5 * dY * (nY - 2) + dY * j) * (-0.5 * dY * (nY - 2) + dY * j)) < rad ) {
-      tauXY[j * (nX - 1) + i] = 0.0;
+      if (i < nX - 1 && j < nY - 1) {
+        if (sqrt((-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) * 
+                 (-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) + 
+                 (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) * 
+                 (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad ) {
+          tauXY[j * (nX - 1) + i] = 0.0;
+        }
+      }
     }
   }
 }
@@ -93,7 +104,9 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
 
+  //const double dX = pa[0], dY = pa[1];
   const double coh = pa[8];
+  //const double rad = pa[9];
 
   // tauXY for plasticity
   if (i > 0 && i < nX - 1 && 
@@ -125,9 +138,9 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
     tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 2] + tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1]);
   }
 
-  if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
+  /*if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
     tauXYav[j * nX + i] = 0.0;
-  }
+  }*/
 
   // plasticity
   J2[j * nX + i] = sqrt( tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i] );
@@ -273,8 +286,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-    const double deltaP_honest = GetDeltaP_honest();
-    const double deltaP_approx = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
+    //const double deltaP = GetDeltaP_honest();
+    const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
     int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
@@ -300,26 +313,26 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     log_file << "dRy = " << dRy << '\n';
     const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
-    const double dPhi = std::abs(Phi - Phi0); //3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
+    const double dPhi = 3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
     // std::cout << "dPhi = " << dPhi << '\n';
     // log_file << "dPhi = " << dPhi << '\n';
 
-    const double KeffPhi = deltaP_approx / dPhi;
+    const double KeffPhi = deltaP / dPhi;
     //const double KeffPhi = deltaP_honest / dPhi;
     
     //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
     //log_file << "deltaP_honest = " << deltaP_honest << '\n';
-    std::cout << "deltaP / Y = " << deltaP_approx / (pa_cpu[8]) << '\n';
-    log_file << "deltaP / Y = " << deltaP_approx / (pa_cpu[8]) << '\n';
-    std::cout << "tauInfty / Y = " << tauInfty_approx / (pa_cpu[8]) << '\n';
-    log_file << "tauInfty / Y = " << tauInfty_approx / (pa_cpu[8]) << '\n';
+    std::cout << "deltaP / Y = " << deltaP / Y << '\n';
+    log_file << "deltaP / Y = " << deltaP / Y << '\n';
+    std::cout << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
+    log_file << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
     log_file << "KeffPhi = " << KeffPhi << '\n';
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / phi / exp(std::abs(deltaP_approx) / pa_cpu[8] - 1.0) / 
-      (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / pa_cpu[8] / pa_cpu[8]);
+    const double KexactPlast = G0 / phi / exp(std::abs(deltaP) / Y - 1.0) / 
+      (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
     //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
     log_file << "KexactElast = " << KexactElast << '\n';
@@ -341,13 +354,13 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
-        /*if (J2_cpu[nY * nX / 2 + i] < (1.0 - std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
+        //Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
+        if (J2_cpu[nY * nX / 2 + i] < (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanrr[i] = 0.0;
         }
         else {
-          Sanrr[i] = -sqrt(2.0) * pa_cpu[8] * log(1.0 / relR);
-        }*/
+          Sanrr[i] = -2.0 * Y * log(1.0 / relR);
+        }
       }
     }
     
@@ -361,13 +374,13 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
-        /*if (J2_cpu[nY * nX / 2 + i] < (1.0 - std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
+        //Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
+        if (J2_cpu[nY * nX / 2 + i] < (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanff[i] = 0.0;
         }
         else {
-          Sanff[i] = -sqrt(2.0) * pa_cpu[8] * (1.0 + log(1.0 / relR));
-        }*/
+          Sanff[i] = -2.0 * Y * (1.0 + log(1.0 / relR));
+        }
       }
     }
     SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
@@ -422,9 +435,18 @@ void EffPlast2D::SetMaterials() {
     for (int j = 0; j < nY; j++) {
       K_cpu[j * nX + i] = K0;
       G_cpu[j * nX + i] = G0;
-      if ( sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
-        K_cpu[j * nX + i] = 0.01 * K0;
-        G_cpu[j * nX + i] = 0.01 * G0;
+      double x = -0.5 * dX * (nX - 1) + dX * i;
+      double y = -0.5 * dY * (nY - 1) + dY * j;
+      double Lx = dX * (nX - 1);
+      double Ly = dY * (nY - 1);
+      for (int k = 0; k < N; k++) {
+        for (int l = 0; l < N; l++) {
+          if ( sqrt((x - 0.5 * Lx * (1.0 - 1.0/N) + (Lx/N)*k) * (x - 0.5 * Lx * (1.0 - 1.0/N) + (Lx/N)*k) + 
+                    (y - 0.5 * Ly * (1.0 - 1.0/N) + (Ly/N)*l) * (y - 0.5 * Ly * (1.0 - 1.0/N) + (Ly/N)*l)) < rad ) {
+            K_cpu[j * nX + i] = 0.01 * K0;
+            G_cpu[j * nX + i] = 0.01 * G0;
+          }
+        }
       }
     }
   }
@@ -575,6 +597,8 @@ EffPlast2D::EffPlast2D() {
   K0 = pa_cpu[3];
   G0 = pa_cpu[4];
   rad = pa_cpu[9];
+  Y = pa_cpu[8] / sqrt(2.0);
+  N = pa_cpu[10];
 
   /* SPACE ARRAYS */
   // materials
