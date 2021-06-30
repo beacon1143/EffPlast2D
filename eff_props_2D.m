@@ -4,12 +4,12 @@ clf
 colormap jet
 
 loadValue = -0.002;
-nGrid = 6;
+nGrid = 24;
 nTimeSteps = 1;
 nIter = 1000000;
 eIter = 1.0e-10;
-needCPUcalculation = true;
-needCompareStatic = true;
+needCPUcalculation = false;
+needCompareStatic = false;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;

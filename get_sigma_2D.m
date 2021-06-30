@@ -6,11 +6,11 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   rho0 = 1.0;                         % density
   K0   = 1.0;                         % bulk modulus
   G0   = 0.01;                         % shear modulus
-  coh  = 0.001 / sqrt(2.0);
+  coh  = 1.000 / sqrt(2.0);
   P0 = 0.0; %1.0 * coh;
   porosity = 0.005;
   rad = sqrt(porosity * Lx * Lx / pi);
-  N = 2;
+  N = 1;
 
   % NUMERICS
   %nGrid = 7;
@@ -39,7 +39,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
   G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  [K, G] = set_mats_2D(2, Nx, Ny, Lx, Ly, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
+  [K, G] = set_mats_2D(N, Nx, Ny, Lx, Ly, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
 
   % INITIAL CONDITIONS
   Pinit   = zeros(Nx, Ny);            % initial hydrostatic stress
@@ -244,7 +244,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
                mean(tauxx(:, 1) - P(:, 1)) + mean(tauxx(:, end) - P(:, end)) + ...
                mean(tauyy(1, :) - P(1, :)) + mean(tauyy(end, :) - P(end, :)) + ...
                mean(tauyy(:, 1) - P(:, 1)) + mean(tauyy(:, end) - P(:, end));
-      deltaP = deltaP * 0.125 / coh / sqrt(2);
+      deltaP = deltaP * 0.125 % / coh / sqrt(2);
       
       tauInfty = mean(tauxx(1, :) - tauyy(1, :)) + mean(tauxx(end, :) - tauyy(end, :)) + ...
                  mean(tauxx(:, 1) - tauyy(:, 1)) + mean(tauxx(:, end) - tauyy(:, end));
