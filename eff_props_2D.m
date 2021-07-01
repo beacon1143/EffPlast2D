@@ -50,6 +50,20 @@ J2c = fread(fil, 'double');
 fclose(fil);
 J2c = reshape(J2c, Nx, Ny);
 
+fil = fopen(strcat('Uxc_', int2str(Nx), '_.dat'), 'rb');
+Uxc = fread(fil, 'double');
+fclose(fil);
+Uxc = reshape(Uxc, Nx + 1, Ny);
+Uxc = transpose(Uxc);
+
+fil = fopen(strcat('Uyc_', int2str(Nx), '_.dat'), 'rb');
+Uyc = fread(fil, 'double');
+fclose(fil);
+Uyc = reshape(Uyc, Nx, Ny + 1);
+Uyc = transpose(Uyc);
+
+% Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
+
 if needCPUcalculation
   fil = fopen('Pm.dat', 'rb');
   Pm = fread(fil, 'double');
@@ -127,6 +141,16 @@ else
     xxx = fread(fil, 'double');
     fclose(fil);
     xxx = reshape(xxx, Nx, 1);
+    
+    fil = fopen(strcat('Uanr_', int2str(Nx), '_.dat'), 'rb');
+    Uanr = fread(fil, 'double');
+    fclose(fil);
+    Uanr = reshape(Uanr, Nx, 1);
+    
+    fil = fopen(strcat('Unur_', int2str(Nx), '_.dat'), 'rb');
+    Unur = fread(fil, 'double');
+    fclose(fil);
+    Unur = reshape(Unur, Nx, 1);
 
     fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
     Sanrr = fread(fil, 'double');
@@ -148,43 +172,61 @@ else
     fclose(fil);
     Snuff = reshape(Snuff, Nx, 1);
     
-    subplot(1, 2, 1)
-    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
-    title('\sigma_{rr}')
-    xlabel('r')
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
-    %set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
+    %subplot(1, 3, 1)
+    %plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
+    %title('\sigma_{rr}')
+    %xlabel('r')
+    %set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    %%set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
     
-    subplot(1, 2, 2)
-    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
-    title('\sigma_{\phi \phi}')
+    %subplot(1, 3, 2)
+    %plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
+    %title('\sigma_{\phi \phi}')
+    %xlabel('r')
+    %set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    subplot(1, 1, 1)
+    plot(xxx(Nx/2 + 1:Nx), Uanr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Unur(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
+    title('U_r')
     xlabel('r')
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
     drawnow
   else  
-    subplot(2, 2, 1)
+    subplot(2, 3, 1)
     imagesc(Pc(2:end-1, 2:end-1))
     colorbar
     title('P')
     axis image
 
-    subplot(2, 2, 3)
+    subplot(2, 3, 5)
     imagesc(tauXXc(2:end-1, 2:end-1))
     colorbar
     title('tauXX')
     axis image
 
-    subplot(2, 2, 2)
+    subplot(2, 3, 2)
     imagesc(J2c(2:end-1, 2:end-1))
     colorbar
     title('J2')
     axis image
 
-    subplot(2, 2, 4)
+    subplot(2, 3, 4)
     imagesc(tauYYc(2:end-1, 2:end-1))
     colorbar
     title('tauYY')
+    axis image
+    
+    subplot(2, 3, 3)
+    imagesc(Uxc)
+    colorbar
+    title('Ux')
+    axis image
+    
+    subplot(2, 3, 6)
+    imagesc(Uyc)
+    colorbar
+    title('Uy')
     axis image
 
     drawnow

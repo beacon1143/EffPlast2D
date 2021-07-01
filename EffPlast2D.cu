@@ -31,7 +31,7 @@ __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy,
   }
 
   Ux[j * (nX + 1) + i] = Ux[j * (nX + 1) + i] + Vx[j * (nX + 1) + i] * dT;
-  Uy[j * nX + i] = Uy[j * nX + i] + Vy[j * nX + i] * dT;
+  Uy[j * nX + i]       = Uy[j * nX + i]       + Vy[j * nX + i] * dT;
 }
 
 __global__ void ComputeStress(const double* const Ux, const double* const Uy,
@@ -346,6 +346,27 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     }
     SaveVector(xxx, nX, "xxx_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] xxx;
+
+    double* Uanr = new double[nX];
+    double coef = - Y * rad * rad * exp(sqrt(Y * (deltaP - Y)) / Y) * exp(sqrt(Y * (deltaP - Y)) / Y) / G0;
+    for (int i = 0; i < nX; i++) {
+      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
+        Uanr[i] = 0.0;
+      }
+      else {
+        //Uanr[i] = coef / xxx[i];
+        Uanr[i] = -deltaP * (0.3333333333 * xxx[i] / K0 + 0.25 * rad * rad * rad / (G0 * xxx[i] * xxx[i]));
+      }
+    }
+    SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Uanr;
+
+    double* Unur = new double[nX];
+    for (int i = 0; i < nX; i++) {
+      Unur[i] = Ux_cpu[nY * (nX + 1) / 2 + i];
+    }
+    SaveVector(Unur, nX, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Unur;
 
     double* Sanrr = new double[nX];
     for (int i = 0; i < nX; i++) {
