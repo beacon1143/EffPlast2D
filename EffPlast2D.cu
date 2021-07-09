@@ -355,7 +355,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         //Uanr[i] = coef / xxx[i];
-        Uanr[i] = -deltaP * (0.3333333333 * xxx[i] / K0 + 0.25 * rad * rad * rad / (G0 * xxx[i] * xxx[i]));
+        Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
       }
     }
     SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
