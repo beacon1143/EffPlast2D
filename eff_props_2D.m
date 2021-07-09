@@ -24,31 +24,37 @@ fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
 Pc = fread(fil, 'double');
 fclose(fil);
 Pc = reshape(Pc, Nx, Ny);
+Pc = transpose(Pc);
 
 fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
 tauXXc = fread(fil, 'double');
 fclose(fil);
 tauXXc = reshape(tauXXc, Nx, Ny);
+tauXXc = transpose(tauXXc);
 
 fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
 tauYYc = fread(fil, 'double');
 fclose(fil);
 tauYYc = reshape(tauYYc, Nx, Ny);
+tauYYc = transpose(tauYYc);
 
 fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
 tauXYc = fread(fil, 'double');
 fclose(fil);
 tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
+tauXYc = transpose(tauXYc);
 
 fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
 tauXYavc = fread(fil, 'double');
 fclose(fil);
 tauXYavc = reshape(tauXYavc, Nx, Ny);
+tauXYavc = transpose(tauXYavc);
 
 fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
 J2c = fread(fil, 'double');
 fclose(fil);
 J2c = reshape(J2c, Nx, Ny);
+J2c = transpose(J2c);
 
 fil = fopen(strcat('Uxc_', int2str(Nx), '_.dat'), 'rb');
 Uxc = fread(fil, 'double');
@@ -172,20 +178,20 @@ else
     fclose(fil);
     Snuff = reshape(Snuff, Nx, 1);
     
-    %subplot(1, 3, 1)
-    %plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
-    %title('\sigma_{rr}')
-    %xlabel('r')
-    %set(gca, 'FontSize', 15, 'fontWeight', 'bold')
-    %%set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
+    subplot(1, 3, 1)
+    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
+    title('\sigma_{rr}')
+    xlabel('r')
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    %set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
     
-    %subplot(1, 3, 2)
-    %plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
-    %title('\sigma_{\phi \phi}')
-    %xlabel('r')
-    %set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    subplot(1, 3, 2)
+    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
+    title('\sigma_{\phi \phi}')
+    xlabel('r')
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
-    subplot(1, 1, 1)
+    subplot(1, 3, 3)
     plot(xxx(Nx/2 + 1:Nx), Uanr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Unur(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
     title('U_r')
     xlabel('r')
