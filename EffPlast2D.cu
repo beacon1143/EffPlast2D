@@ -302,6 +302,11 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       dispY[j] = Uy_cpu[j * nX + nX / 2];
     }
 
+    /*std::vector<double> dispXwrong((nY + 1) / 2);
+    for (int j = nY / 2 - holeY - 2; j < nY / 2; j++) {
+      dispXwrong[j] = Ux_cpu[j * nX + nX / 2];
+    }*/
+
     /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
     std::cout << "dR = " << dR << '\n';
     log_file << "dR = " << dR << '\n';*/
@@ -311,6 +316,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     const double dRy = -FindMaxAbs(dispY);
     std::cout << "dRy = " << dRy << '\n';
     log_file << "dRy = " << dRy << '\n';
+    /*const double dRxWrong = -FindMaxAbs(dispXwrong);
+    std::cout << "dRxWrong = " << dRxWrong << '\n';*/
     const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
     const double dPhi = 3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
