@@ -355,14 +355,14 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     delete[] xxx;
 
     double* Uanr = new double[nX];
-    double coef = - Y * rad * rad * exp(sqrt(Y * (deltaP - Y)) / Y) * exp(sqrt(Y * (deltaP - Y)) / Y) / G0;
+    double coef = - 0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / G0;
     for (int i = 0; i < nX; i++) {
       if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
         Uanr[i] = 0.0;
       }
       else {
-        //Uanr[i] = coef / xxx[i];
-        Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
+        //Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
+        Uanr[i] = coef / xxx[i];
       }
     }
     SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
@@ -382,7 +382,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        //Sanrr[i] = -deltaP_approx + deltaP_approx * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
+        //Sanrr[i] = -deltaP + deltaP * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
         if (J2_cpu[nY * nX / 2 + i] < (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanrr[i] = 0.0;
         }
@@ -402,7 +402,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
       }
       else {
         double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        //Sanff[i] = -deltaP_approx - deltaP_approx * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
+        //Sanff[i] = -deltaP - deltaP * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
         if (J2_cpu[nY * nX / 2 + i] < (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanff[i] = 0.0;
         }
