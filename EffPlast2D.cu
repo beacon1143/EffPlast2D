@@ -286,8 +286,8 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-    //const double deltaP = GetDeltaP_honest();
-    const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
+    const double deltaP = GetDeltaP_honest();
+    //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
     int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
@@ -346,89 +346,10 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     std::cout << "KexactPlast = " << KexactPlast << '\n';
     log_file << "KexactPlast = " << KexactPlast << '\n';
 
-    /* ANALYTIC SOLUTION FOR STATICS */
-    double* xxx = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      xxx[i] = -0.5 * dX * (nX - 1) + dX * i;
-    }
-    SaveVector(xxx, nX, "xxx_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] xxx;
-
-    double* Uanr = new double[nX];
-    double coef = - 0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / G0;
-    for (int i = 0; i < nX; i++) {
-      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
-        Uanr[i] = 0.0;
-      }
-      else {
-        //Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
-        Uanr[i] = coef / xxx[i];
-      }
-    }
-    SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Uanr;
-
-    double* Unur = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      Unur[i] = Ux_cpu[nY * (nX + 1) / 2 + i];
-    }
-    SaveVector(Unur, nX, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Unur;
-
-    double* Sanrr = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
-        Sanrr[i] = 0.0;
-      }
-      else {
-        double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        //Sanrr[i] = -deltaP + deltaP * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
-        if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
-          Sanrr[i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
-        }
-        else {
-          Sanrr[i] = -2.0 * Y * log(1.0 / relR);
-        }
-      }
-    }
-    
-    SaveVector(Sanrr, nX, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Sanrr;
-
-    double* Sanff = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
-        Sanff[i] = 0.0;
-      }
-      else {
-        double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-        //Sanff[i] = -deltaP - deltaP * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
-        if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
-          Sanff[i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
-        }
-        else {
-          Sanff[i] = -2.0 * Y * (1.0 + log(1.0 / relR));
-        }
-      }
-    }
-    SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Sanff;
-
-    double* Snurr = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY * nX / 2 + i];
-      // std::cout << Snurr[i] << '\n';
-    }
-    SaveVector(Snurr, nX, "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Snurr;
-
-    double* Snuff = new double[nX];
-    for (int i = 0; i < nX; i++) {
-      Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY * nX / 2 + i];
-    }
-    SaveVector(Snuff, nX, "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Snuff;
+    SaveAnStatic1D(deltaP);
   }
+
+  /* ANALYTIC 2D SOLUTION FOR STATICS */
 
   /* OUTPUT DATA WRITING */
   SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc_" + std::to_string(32 * NGRID) + "_.dat");
@@ -599,6 +520,91 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
 
   tauInfty *= 0.25;
   return tauInfty;
+}
+
+void EffPlast2D::SaveAnStatic1D(const double deltaP) {
+  /* ANALYTIC 1D SOLUTION FOR STATICS */
+  double* xxx = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    xxx[i] = -0.5 * dX * (nX - 1) + dX * i;
+  }
+  SaveVector(xxx, nX, "xxx_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] xxx;
+
+  double* Uanr = new double[nX];
+  double coef = - 0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / G0;
+  for (int i = 0; i < nX; i++) {
+    if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
+      Uanr[i] = 0.0;
+    }
+    else {
+      //Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
+      Uanr[i] = coef / xxx[i];
+    }
+  }
+  SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Uanr;
+
+  double* Unur = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    Unur[i] = Ux_cpu[nY * (nX + 1) / 2 + i];
+  }
+  SaveVector(Unur, nX, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Unur;
+
+  double* Sanrr = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
+      Sanrr[i] = 0.0;
+    }
+    else {
+      double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
+      //Sanrr[i] = -deltaP + deltaP * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
+      if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
+        Sanrr[i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
+      }
+      else {
+        Sanrr[i] = -2.0 * Y * log(1.0 / relR);
+      }
+    }
+  }
+    
+  SaveVector(Sanrr, nX, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Sanrr;
+
+  double* Sanff = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
+      Sanff[i] = 0.0;
+    }
+    else {
+      double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
+      //Sanff[i] = -deltaP - deltaP * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
+      if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
+        Sanff[i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
+      }
+      else {
+        Sanff[i] = -2.0 * Y * (1.0 + log(1.0 / relR));
+      }
+    }
+  }
+  SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Sanff;
+
+  double* Snurr = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY * nX / 2 + i];
+    // std::cout << Snurr[i] << '\n';
+  }
+  SaveVector(Snurr, nX, "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Snurr;
+
+  double* Snuff = new double[nX];
+  for (int i = 0; i < nX; i++) {
+    Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY * nX / 2 + i];
+  }
+  SaveVector(Snuff, nX, "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] Snuff;
 }
 
 EffPlast2D::EffPlast2D() {
