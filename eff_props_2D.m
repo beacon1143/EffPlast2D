@@ -4,9 +4,9 @@ clf
 colormap jet
 
 loadValue = -0.004;
-nGrid = 24;
+nGrid = 6;
 nTimeSteps = 1;
-nIter = 1000000;
+nIter = 10000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
 needCompareStatic = true;
@@ -68,7 +68,7 @@ fclose(fil);
 Uyc = reshape(Uyc, Nx, Ny + 1);
 Uyc = transpose(Uyc);
 
-% Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
+ Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
 
 if needCPUcalculation
   fil = fopen('Pm.dat', 'rb');
@@ -158,44 +158,117 @@ else
     fclose(fil);
     Unur = reshape(Unur, Nx, 1);
 
+%    fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
+%    Sanrr = fread(fil, 'double');
+%    fclose(fil);
+%    Sanrr = reshape(Sanrr, Nx, 1);
+%    
+%    fil = fopen(strcat('Sanff_', int2str(Nx), '_.dat'), 'rb');
+%    Sanff = fread(fil, 'double');
+%    fclose(fil);
+%    Sanff = reshape(Sanff, Nx, 1);
+%
+%    fil = fopen(strcat('Snurr_', int2str(Nx), '_.dat'), 'rb');
+%    Snurr = fread(fil, 'double');
+%    fclose(fil);
+%    Snurr = reshape(Snurr, Nx, 1);
+%    
+%    fil = fopen(strcat('Snuff_', int2str(Nx), '_.dat'), 'rb');
+%    Snuff = fread(fil, 'double');
+%    fclose(fil);
+%    Snuff = reshape(Snuff, Nx, 1);
+
+%    fil = fopen(strcat('tau_cuda_', int2str(Nx), '_.dat'), 'rb');
+%    tau = fread(fil, 'double');
+%    fclose(fil);
+%    tau = reshape(tau, Nx, Ny);
+%    
+%    fil = fopen(strcat('P_cuda_', int2str(Nx), '_.dat'), 'rb');
+%    P = fread(fil, 'double');
+%    fclose(fil);
+%    P = reshape(P, Nx, Ny);
+
     fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
     Sanrr = fread(fil, 'double');
     fclose(fil);
-    Sanrr = reshape(Sanrr, Nx, 1);
+    Sanrr = reshape(Sanrr, Nx - 1, Ny - 1);
     
     fil = fopen(strcat('Sanff_', int2str(Nx), '_.dat'), 'rb');
     Sanff = fread(fil, 'double');
     fclose(fil);
-    Sanff = reshape(Sanff, Nx, 1);
+    Sanff = reshape(Sanff, Nx - 1, Ny - 1);
 
     fil = fopen(strcat('Snurr_', int2str(Nx), '_.dat'), 'rb');
     Snurr = fread(fil, 'double');
     fclose(fil);
-    Snurr = reshape(Snurr, Nx, 1);
+    Snurr = reshape(Snurr, Nx - 1, Ny - 1);
     
     fil = fopen(strcat('Snuff_', int2str(Nx), '_.dat'), 'rb');
     Snuff = fread(fil, 'double');
     fclose(fil);
-    Snuff = reshape(Snuff, Nx, 1);
-    
-    subplot(1, 3, 1)
-    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
-    title('\sigma_{rr}')
-    xlabel('r')
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
-    %set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
-    
-    subplot(1, 3, 2)
-    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
-    title('\sigma_{\phi \phi}')
-    xlabel('r')
+    Snuff = reshape(Snuff, Nx - 1, Ny - 1);
+
+    % POSTPROCESSING
+    subplot(3, 2, 1)
+    imagesc(Snurr)
+    colorbar
+    title('\sigma_{rr} numerical')
+    axis image
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
-    subplot(1, 3, 3)
-    plot(xxx(Nx/2 + 1:Nx), Uanr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Unur(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
-    title('U_r')
-    xlabel('r')
+    subplot(3, 2, 2)
+    imagesc(Snuff)
+    colorbar
+    title('\sigma_{\phi \phi} numerical')
+    axis image
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    subplot(3, 2, 3)
+    imagesc(Sanrr)
+    colorbar
+    title('\sigma_{rr} analytics')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    subplot(3, 2, 4)
+    imagesc(Sanff)
+    colorbar
+    title('\sigma_{\phi \phi} analytics')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    subplot(3, 2, 5)
+    imagesc(Snurr - Sanrr)
+    colorbar
+    title('\sigma_{rr} error')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+    subplot(3, 2, 6)
+    imagesc(Snurr - Sanff)
+    colorbar
+    title('\sigma_{\phi \phi} error')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+%    subplot(1, 5, 3)
+%    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
+%    title('\sigma_{rr}')
+%    xlabel('r')
+%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+%    %set(findall(gcf,'type','text'),'FontSize',30,'fontWeight','bold')
+%    
+%    subplot(1, 5, 4)
+%    plot(xxx(Nx/2 + 1:Nx), Sanff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snuff(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
+%    title('\sigma_{\phi \phi}')
+%    xlabel('r')
+%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+%    
+%    subplot(1, 5, 5)
+%    plot(xxx(Nx/2 + 1:Nx), Uanr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Unur(Nx/2 + 1:Nx), 'LineWidth' , 2, 'r') 
+%    title('U_r')
+%    xlabel('r')
+%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
     drawnow
   else  
