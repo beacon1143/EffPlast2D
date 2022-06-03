@@ -559,6 +559,8 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
   double* Snurr = new double[(nX - 1) * (nY - 1)];
   double* Snuff = new double[(nX - 1) * (nY - 1)];
 
+  double* plastZone = new double[(nX - 1) * (nY - 1)];
+
   for (int i = 0; i < nX - 1; i++)
   {
     for (int j = 0; j < nY - 1; j++)
@@ -569,10 +571,21 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
       const double cosf = x / r;
       const double sinf = y / r;
 
-      if (x * x + y * y < rad * rad)
+      plastZone[j * (nX - 1) + i] = 0.0;
+
+      const double dr = 40.0 * std::min(dX, dY);
+      const double R_max = 0.5 * dX * (nX - 3);
+
+      if (
+      	x * x + y * y < (rad + dr) * (rad + dr) ||
+      	x * x + y * y > R_max * R_max
+      )
       {
         Sanrr[j * (nX - 1) + i] = 0.0;
         Sanff[j * (nX - 1) + i] = 0.0;
+
+        Snurr[j * (nX - 1) + i] = 0.0;
+        Snuff[j * (nX - 1) + i] = 0.0;
       }
       else
       {
@@ -582,30 +595,33 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
         if (J2 <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
           Sanrr[j * (nX - 1) + i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
           Sanff[j * (nX - 1) + i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
+
         }
         else {
           Sanrr[j * (nX - 1) + i] = -2.0 * Y * log(1.0 / relR);
           Sanff[j * (nX - 1) + i] = -2.0 * Y * (1.0 + log(1.0 / relR));
+
+          plastZone[j * (nX - 1) + i] = 1.0;
         }
+
+        const double Sxx = 0.25 * (
+          -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] + 
+          -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] + 
+          -P_cpu[(j + 1) * nX + i] + tauXX_cpu[(j + 1) * nX + i] + 
+          -P_cpu[(j + 1) * nX + (i + 1)] + tauXX_cpu[(j + 1) * nX + (i + 1)]
+        );
+        const double Syy = 0.25 * (
+          -P_cpu[j * nX + i] + tauYY_cpu[j * nX + i] + 
+          -P_cpu[j * nX + (i + 1)] + tauYY_cpu[j * nX + (i + 1)] + 
+          -P_cpu[(j + 1) * nX + i] + tauYY_cpu[(j + 1) * nX + i] + 
+          -P_cpu[(j + 1) * nX + (i + 1)] + tauYY_cpu[(j + 1) * nX + (i + 1)]
+        );
+
+        const double Sxy = tauXY_cpu[j * (nX - 1) + i];
+
+        Snurr[j * (nX - 1) + i] = Sxx * cosf * cosf + Syy * sinf * sinf + 2 * Sxy * sinf * cosf;
+        Snuff[j * (nX - 1) + i] = Sxx * sinf * sinf + Syy * cosf * cosf - 2 * Sxy * sinf * cosf;
       }
-
-      const double Sxx = 0.25 * (
-        -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] + 
-        -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] + 
-        -P_cpu[(j + 1) * nX + i] + tauXX_cpu[(j + 1) * nX + i] + 
-        -P_cpu[(j + 1) * nX + (i + 1)] + tauXX_cpu[(j + 1) * nX + (i + 1)]
-      );
-      const double Syy = 0.25 * (
-        -P_cpu[j * nX + i] + tauYY_cpu[j * nX + i] + 
-        -P_cpu[j * nX + (i + 1)] + tauYY_cpu[j * nX + (i + 1)] + 
-        -P_cpu[(j + 1) * nX + i] + tauYY_cpu[(j + 1) * nX + i] + 
-        -P_cpu[(j + 1) * nX + (i + 1)] + tauYY_cpu[(j + 1) * nX + (i + 1)]
-      );
-
-      const double Sxy = tauXY_cpu[j * (nX - 1) + i];
-
-      Snurr[j * (nX - 1) + i] = Sxx * cosf * cosf + Syy * sinf * sinf + 2 * Sxy * sinf * cosf;
-      Snuff[j * (nX - 1) + i] = Sxx * sinf * sinf + Syy * cosf * cosf - 2 * Sxy * sinf * cosf;
     }
   }
 
@@ -620,6 +636,9 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
 
   SaveVector(Snuff, (nX - 1) * (nY - 1), "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
   delete[] Snuff;
+
+  SaveVector(plastZone, (nX - 1) * (nY - 1), "plast_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] plastZone;
 
   // double* Sanrr = new double[nX];
   // for (int i = 0; i < nX; i++) {
