@@ -6,7 +6,7 @@ colormap jet
 loadValue = -0.004;
 nGrid = 30;
 nTimeSteps = 1;
-nIter = 100000;
+nIter = 10000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
 needCompareStatic = true;
@@ -143,21 +143,21 @@ else
   % POSTPROCESSING
   if needCompareStatic
     % ANALYTIC SOLUTION FOR STATICS
-    fil = fopen(strcat('xxx_', int2str(Nx), '_.dat'), 'rb');
-    xxx = fread(fil, 'double');
-    fclose(fil);
-    xxx = reshape(xxx, Nx, 1);
-    
-    fil = fopen(strcat('Uanr_', int2str(Nx), '_.dat'), 'rb');
-    Uanr = fread(fil, 'double');
-    fclose(fil);
-    Uanr = reshape(Uanr, Nx, 1);
-    
-    fil = fopen(strcat('Unur_', int2str(Nx), '_.dat'), 'rb');
-    Unur = fread(fil, 'double');
-    fclose(fil);
-    Unur = reshape(Unur, Nx, 1);
-
+%    fil = fopen(strcat('xxx_', int2str(Nx), '_.dat'), 'rb');
+%    xxx = fread(fil, 'double');
+%    fclose(fil);
+%    xxx = reshape(xxx, Nx, 1);
+%    
+%    fil = fopen(strcat('Uanr_', int2str(Nx), '_.dat'), 'rb');
+%    Uanr = fread(fil, 'double');
+%    fclose(fil);
+%    Uanr = reshape(Uanr, Nx, 1);
+%    
+%    fil = fopen(strcat('Unur_', int2str(Nx), '_.dat'), 'rb');
+%    Unur = fread(fil, 'double');
+%    fclose(fil);
+%    Unur = reshape(Unur, Nx, 1);
+%
 %    fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
 %    Sanrr = fread(fil, 'double');
 %    fclose(fil);
@@ -187,6 +187,16 @@ else
 %    P = fread(fil, 'double');
 %    fclose(fil);
 %    P = reshape(P, Nx, Ny);
+
+    fil = fopen(strcat('Uanr_', int2str(Nx), '_.dat'), 'rb');
+    Uanr = fread(fil, 'double');
+    fclose(fil);
+    Uanr = reshape(Uanr, Nx, Ny);
+    
+    fil = fopen(strcat('Unur_', int2str(Nx), '_.dat'), 'rb');
+    Unur = fread(fil, 'double');
+    fclose(fil);
+    Unur = reshape(Unur, Nx, Ny);
 
     fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
     Sanrr = fread(fil, 'double');
@@ -228,6 +238,13 @@ else
     axis image
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
+    subplot(3, 3, 3)
+    imagesc(Unur)
+    colorbar
+    title('U_{r} numerical')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
     subplot(3, 3, 4)
     imagesc(Sanrr)
     colorbar
@@ -242,20 +259,32 @@ else
     axis image
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
+    subplot(3, 3, 6)
+    imagesc(Uanr)
+    colorbar
+    title('U_{r} analytics')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
     eps = 10e-18;
     
     errorSrr =  zeros(Nx - 1, Ny - 1);
     errorSff =  zeros(Nx - 1, Ny - 1);
+    errorUr = zeros(Nx, Ny);
     
-    for i = 1: (Nx - 1)
-      for j = 1: (Ny - 1)
+    for i = 1: Nx
+      for j = 1: Ny
 
-        if abs(Sanrr(j, i)) > eps
+        if i < Nx && j < Ny && abs(Sanrr(j, i)) > eps
           errorSrr(j, i) = abs((Snurr(j, i) - Sanrr(j, i)) / Sanrr(j, i));
         end %if
         
-        if abs(Sanff(j, i)) > eps
+        if i < Nx && j < Ny && abs(Sanff(j, i)) > eps
           errorSff(j, i) = abs((Snuff(j, i) - Sanff(j, i)) / Sanff(j, i));
+        end %if
+        
+        if abs(Uanr(j, i)) > eps
+          errorUr(j, i) = abs((Unur(j, i) - Uanr(j, i)) / Uanr(j, i));
         end %if
         
 %        if errorSrr(j, i) > 0.1
@@ -268,6 +297,10 @@ else
         
       end %for
     end %for
+    
+    maxErrorSrr = max(errorSrr(:))
+    maxErrorSff = max(errorSff(:))
+    maxErrorUr = max(errorUr(:))
     
     subplot(3, 3, 7)
     imagesc(errorSrr)
@@ -284,11 +317,18 @@ else
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
     subplot(3, 3, 9)
-    imagesc(plast)
+    imagesc(errorUr)
     colorbar
-    title('plast zone')
+    title('U_{r} error')
     axis image
     set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    
+%    subplot(3, 3, 9)
+%    imagesc(plast)
+%    colorbar
+%    title('plast zone')
+%    axis image
+%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
 %    subplot(1, 5, 3)
 %    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 
