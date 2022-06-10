@@ -338,7 +338,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / phi / exp(std::abs(deltaP) / Y - 1.0) / 
+    const double KexactPlast = G0 / (phi - dPhi) / exp(std::abs(deltaP) / Y - 1.0) / // phi or phi - dPhi ?
       (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
     //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
