@@ -4,9 +4,9 @@ clf
 colormap jet
 
 loadValue = -0.004;
-nGrid = 30;
+nGrid = 24;
 nTimeSteps = 1;
-nIter = 10000;
+nIter = 1000000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
 needCompareStatic = true;
@@ -20,54 +20,54 @@ Sxx = get_sigma_2D(loadValue, [1.0, 1.0, 0], nGrid, nTimeSteps, nIter, eIter, ne
 system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
 system(['.\a.exe']);
 
-%fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
-%Pc = fread(fil, 'double');
-%fclose(fil);
-%Pc = reshape(Pc, Nx, Ny);
-%Pc = transpose(Pc);
-%
-%fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
-%tauXXc = fread(fil, 'double');
-%fclose(fil);
-%tauXXc = reshape(tauXXc, Nx, Ny);
-%tauXXc = transpose(tauXXc);
-%
-%fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
-%tauYYc = fread(fil, 'double');
-%fclose(fil);
-%tauYYc = reshape(tauYYc, Nx, Ny);
-%tauYYc = transpose(tauYYc);
-%
-%fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
-%tauXYc = fread(fil, 'double');
-%fclose(fil);
-%tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
-%tauXYc = transpose(tauXYc);
-%
-%fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
-%tauXYavc = fread(fil, 'double');
-%fclose(fil);
-%tauXYavc = reshape(tauXYavc, Nx, Ny);
-%tauXYavc = transpose(tauXYavc);
-%
-%fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
-%J2c = fread(fil, 'double');
-%fclose(fil);
-%J2c = reshape(J2c, Nx, Ny);
-%J2c = transpose(J2c);
-%
-%fil = fopen(strcat('Uxc_', int2str(Nx), '_.dat'), 'rb');
-%Uxc = fread(fil, 'double');
-%fclose(fil);
-%Uxc = reshape(Uxc, Nx + 1, Ny);
-%Uxc = transpose(Uxc);
-%
-%fil = fopen(strcat('Uyc_', int2str(Nx), '_.dat'), 'rb');
-%Uyc = fread(fil, 'double');
-%fclose(fil);
-%Uyc = reshape(Uyc, Nx, Ny + 1);
-%Uyc = transpose(Uyc);
-%
+fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
+Pc = fread(fil, 'double');
+fclose(fil);
+Pc = reshape(Pc, Nx, Ny);
+Pc = transpose(Pc);
+
+fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
+tauXXc = fread(fil, 'double');
+fclose(fil);
+tauXXc = reshape(tauXXc, Nx, Ny);
+tauXXc = transpose(tauXXc);
+
+fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
+tauYYc = fread(fil, 'double');
+fclose(fil);
+tauYYc = reshape(tauYYc, Nx, Ny);
+tauYYc = transpose(tauYYc);
+
+fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
+tauXYc = fread(fil, 'double');
+fclose(fil);
+tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
+tauXYc = transpose(tauXYc);
+
+fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
+tauXYavc = fread(fil, 'double');
+fclose(fil);
+tauXYavc = reshape(tauXYavc, Nx, Ny);
+tauXYavc = transpose(tauXYavc);
+
+fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
+J2c = fread(fil, 'double');
+fclose(fil);
+J2c = reshape(J2c, Nx, Ny);
+J2c = transpose(J2c);
+
+fil = fopen(strcat('Uxc_', int2str(Nx), '_.dat'), 'rb');
+Uxc = fread(fil, 'double');
+fclose(fil);
+Uxc = reshape(Uxc, Nx + 1, Ny);
+Uxc = transpose(Uxc);
+
+fil = fopen(strcat('Uyc_', int2str(Nx), '_.dat'), 'rb');
+Uyc = fread(fil, 'double');
+fclose(fil);
+Uyc = reshape(Uyc, Nx, Ny + 1);
+Uyc = transpose(Uyc);
+
 %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
 
 if needCPUcalculation
@@ -229,14 +229,14 @@ else
     colorbar
     title('\sigma_{rr} numerical')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 2)
     imagesc(Snuff)
     colorbar
     title('\sigma_{\phi \phi} numerical')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 3)
     imagesc(Unur)
@@ -250,14 +250,14 @@ else
     colorbar
     title('\sigma_{rr} analytics')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 5)
     imagesc(Sanff)
     colorbar
     title('\sigma_{\phi \phi} analytics')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 6)
     imagesc(Uanr)
@@ -307,21 +307,21 @@ else
     colorbar
     title('\sigma_{rr} error')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 8)
     imagesc(errorSff)
     colorbar
     title('\sigma_{\phi \phi} error')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 9)
     imagesc(errorUr)
     colorbar
     title('U_{r} error')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
 %    subplot(3, 3, 9)
 %    imagesc(plast)
