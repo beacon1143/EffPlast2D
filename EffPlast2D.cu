@@ -573,8 +573,8 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
 
       plastZone[j * (nX - 1) + i] = 0.0;
 
-      const double dr = 40.0 * std::min(dX, dY);
-      const double R_max = 0.5 * dX * (nX - 3);
+      const double dr = 20.0 * std::min(dX, dY);
+      const double R_max = 0.4 * dX * (nX - 3);
 
       if (
       	x * x + y * y < (rad + dr) * (rad + dr) ||
