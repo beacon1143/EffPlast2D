@@ -13,3 +13,5 @@ a.lib
 *.tiff
 
 *.log
+
+/src
