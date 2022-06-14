@@ -5,7 +5,7 @@ colormap jet
 
 loadValue = -0.004;
 nGrid = 24;
-nTimeSteps = 1;
+nTimeSteps = 2;
 nIter = 1000000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
@@ -259,12 +259,12 @@ else
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 3, 6)
-    imagesc(Uanr)
-    colorbar
-    title('U_{r} analytics')
-    axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+%    subplot(3, 3, 6)
+%    imagesc(Uanr)
+%    colorbar
+%    title('U_{r} analytics')
+%    axis image
+%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
     eps = 10e-18;
     
@@ -316,19 +316,19 @@ else
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 3, 9)
+    subplot(3, 3, 6)
     imagesc(errorUr)
     colorbar
     title('U_{r} error')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-%    subplot(3, 3, 9)
-%    imagesc(plast)
-%    colorbar
-%    title('plast zone')
-%    axis image
-%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    subplot(3, 3, 9)
+    imagesc(plast)
+    colorbar
+    title('plast zone')
+    axis image
+    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
     
 %    subplot(1, 5, 3)
 %    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 

@@ -181,20 +181,25 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     i = {0.0, 0.0, 0.0};
   }
 
+  std::vector<double> deltaP(NT); 
+  std::vector<double> dPhi(NT);
+
+  const double incPercent = 0.005;
+
   /* ACTION LOOP */
   for (int it = 0; it < NT; it++) {
-    cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost);
     for (int i = 0; i < nX + 1; i++) {
       for (int j = 0; j < nY; j++) {
-        Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) / NT;
+        Ux_cpu[j * (nX + 1) + i] = ((-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (1.0 + it * incPercent);
       }
     }
     cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost);
     for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY + 1; j++) {
-        Uy_cpu[j * nX + i] += (-0.5 * dY * nY + dY * j) * dUydy / NT;
+        Uy_cpu[j * nX + i] = (-0.5 * dY * nY + dY * j) * dUydy * (1.0 + it * incPercent);
       }
     }
     cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice);
@@ -286,7 +291,9 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
     /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-    const double deltaP = GetDeltaP_honest();
+    deltaP[it] = GetDeltaP_honest();
+    std::cout << "deltaP = " << deltaP[it] << '\n';
+    log_file << "deltaP = " << deltaP[it] << '\n';
     //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
     const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
 
@@ -320,17 +327,17 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     std::cout << "dRxWrong = " << dRxWrong << '\n';*/
     const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
-    const double dPhi = 3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
-    // std::cout << "dPhi = " << dPhi << '\n';
-    // log_file << "dPhi = " << dPhi << '\n';
+    dPhi[it] = 3.1415926 * ( std::abs((rad + dRx) * (rad + dRy) - rad * rad) ) / (dX * (nX - 1) * dY * (nY - 1));
+    std::cout << "dPhi = " << dPhi[it] << '\n';
+    log_file << "dPhi = " << dPhi[it] << '\n';
 
-    const double KeffPhi = deltaP / dPhi;
+    const double KeffPhi = deltaP[it] / dPhi[it];
     //const double KeffPhi = deltaP_honest / dPhi;
     
     //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
     //log_file << "deltaP_honest = " << deltaP_honest << '\n';
-    std::cout << "deltaP / Y = " << deltaP / Y << '\n';
-    log_file << "deltaP / Y = " << deltaP / Y << '\n';
+    std::cout << "deltaP / Y = " << deltaP[it] / Y << '\n';
+    log_file << "deltaP / Y = " << deltaP[it] / Y << '\n';
     std::cout << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
     log_file << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
     std::cout << "KeffPhi = " << KeffPhi << '\n';
@@ -338,7 +345,7 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
 
     const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
     const double KexactElast = G0 / phi;
-    const double KexactPlast = G0 / (phi - dPhi) / exp(std::abs(deltaP) / Y - 1.0) / // phi or phi - dPhi ?
+    const double KexactPlast = G0 / (phi - dPhi[it]) / exp(std::abs(deltaP[it]) / Y - 1.0) / // phi or phi - dPhi ?
       (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
     //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
     std::cout << "KexactElast = " << KexactElast << '\n';
@@ -346,7 +353,16 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
     std::cout << "KexactPlast = " << KexactPlast << '\n';
     log_file << "KexactPlast = " << KexactPlast << '\n';
 
-    SaveAnStatic1D(deltaP);
+    if (it + 1 == NT)
+      SaveAnStatic1D(deltaP[it]);
+  }
+
+  if (NT == 2)
+  {
+  	const double KeffPhi = (deltaP[1] - deltaP[0]) / (dPhi[1] - dPhi[0]);
+  	std::cout << "==============\n"
+  	          << "KeffPhi = " << KeffPhi << '\n';
+    log_file << "KeffPhi = " << KeffPhi << '\n';
   }
 
   /* ANALYTIC 2D SOLUTION FOR STATICS */
