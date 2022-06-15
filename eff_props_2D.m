@@ -243,7 +243,7 @@ else
     colorbar
     title('U_{r} numerical')
     axis image
-    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 4)
     imagesc(Sanrr)
@@ -259,12 +259,12 @@ else
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-%    subplot(3, 3, 6)
-%    imagesc(Uanr)
-%    colorbar
-%    title('U_{r} analytics')
-%    axis image
-%    set(gca, 'FontSize', 15, 'fontWeight', 'bold')
+    subplot(3, 3, 6)
+    imagesc(Uanr)
+    colorbar
+    title('U_{r} analytics')
+    axis image
+    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     eps = 10e-18;
     
