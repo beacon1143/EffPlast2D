@@ -9,11 +9,25 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-//#define NGRID 24
-//#define NPARS 11
-//#define NT    2
-//#define NITER 100000
-//#define EITER 1.0e-10
+#if !defined(NGRID)
+#define NGRID 32
+#endif
+
+#if !defined(NPARS)
+#define NPARS 11
+#endif
+
+#if !defined(NT)
+#define NT 2
+#endif
+
+#if !defined(NITER)
+#define NITER 20'000
+#endif
+
+#if !defined(EITER)
+#define EITER 1.0e-10
+#endif
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char* file, int line)

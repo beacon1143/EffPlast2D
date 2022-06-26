@@ -169,6 +169,9 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
 std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadValue, const std::array<double, 3>& loadType) {
     /* INPUT DATA */
 
+    log_file << "\n\n\nload: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ")\n";
+    std::cout << "load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ")\n";
+
     // displacement
     const double dUxdx = loadValue * loadType[0];
     const double dUydy = loadValue * loadType[1];
@@ -536,6 +539,8 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
 
 void EffPlast2D::SaveAnStatic1D(const double deltaP) {
     /* ANALYTIC 1D SOLUTION FOR STATICS */
+    const double Rmin = rad + 20.0 * dX;
+    const double Rmax = 0.5 * dX * (nX - 1) - dX * 40.0;
 
     double* Uanr = new double[nX * nY];
     double* Unur = new double[nX * nY];
@@ -550,23 +555,20 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
             const double cosf = x / r;
             const double sinf = y / r;
 
-            const double Rmin = rad + 20.0 * std::min(dX, dY);
-            const double Rmax = 0.5 * dX * (nX - 1) - dX * 40;
-
-            const double Rconner = 0.5 * dX * (nX - 1);
-            const double left = -0.5 * dX * (nX - 1);
-            const double right = 0.5 * dX * (nX - 1);
-            const double top = 0.5 * dY * (nY - 1);
-            const double bottom = -0.5 * dY * (nY - 1);
+            // const double Rconner = 0.5 * dX * (nX - 1);
+            // const double left = -0.5 * dX * (nX - 1);
+            // const double right = 0.5 * dX * (nX - 1);
+            // const double top = 0.5 * dY * (nY - 1);
+            // const double bottom = -0.5 * dY * (nY - 1);
 
             if (
                 x * x + y * y < Rmin * Rmin ||
-                x * x + y * y > Rmax * Rmax ||
-                (x - left) * (x - left) + (y - top) * (y - top) < Rconner * Rconner ||
-                (x - right) * (x - right) + (y - top) * (y - top) < Rconner * Rconner ||
-                (x - left) * (x - left) + (y - bottom) * (y - bottom) < Rconner * Rconner ||
-                (x - right) * (x - right) + (y - bottom) * (y - bottom) < Rconner * Rconner
-                )
+                x * x + y * y > Rmax * Rmax
+                //|| (x - left) * (x - left) + (y - top) * (y - top) < Rconner * Rconner
+                //|| (x - right) * (x - right) + (y - top) * (y - top) < Rconner * Rconner
+                //|| (x - left) * (x - left) + (y - bottom) * (y - bottom) < Rconner * Rconner
+                //|| (x - right) * (x - right) + (y - bottom) * (y - bottom) < Rconner * Rconner
+            )
             {
                 Uanr[j * nX + i] = 0.0;
                 Unur[j * nX + i] = 0.0;
@@ -607,13 +609,10 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
             if (i < nX - 1 && j < nY - 1)
                 plastZone[j * (nX - 1) + i] = 0.0;
 
-            const double Rmin = rad + 20.0 * std::min(dX, dY);
-            const double Rmax = 0.5 * dX * (nX - 1) - dX * 40;
-
             if (
                 x * x + y * y < Rmin * Rmin ||
                 x * x + y * y > Rmax * Rmax
-                )
+            )
             {
                 Sanrr[j * (nX - 1) + i] = 0.0;
                 Sanff[j * (nX - 1) + i] = 0.0;
@@ -819,7 +818,7 @@ EffPlast2D::EffPlast2D() {
 
     /* UTILITIES */
     log_file.open("EffPlast2D.log", std::ios_base::app);
-    output_step = 1000;
+    output_step = 10000;
 }
 
 EffPlast2D::~EffPlast2D() {

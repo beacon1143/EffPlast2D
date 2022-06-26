@@ -1,30 +1,35 @@
 #include <chrono>
 #include "EffPlast2D.h"
 
-int main() {
-    std::vector<double> load_values = { -0.0004 };
-    constexpr std::array<double, 3> load_type = { 1.0, 1.0, 0.0 };
+int main(int argc, char** argv) {
 
-    for (auto lv : load_values)
+    if (argc < 5)
     {
-        const auto start = std::chrono::system_clock::now();
+        std::cout << "error: missing arguments\n";
+        exit(-1);
+    }
 
-        EffPlast2D eff_plast;
-        const std::vector< std::array<double, 3> > S = eff_plast.ComputeSigma(lv, load_type);
+    double load_value = std::stod(argv[1]);
+    std::array<double, 3> load_type = { std::stod(argv[2]),  std::stod(argv[3]),  std::stod(argv[4]) };
 
-        const auto end = std::chrono::system_clock::now();
-        const int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-        if (elapsed_sec < 60) {
-            std::cout << "Calculation time is " << elapsed_sec << " sec\n";
+    const auto start = std::chrono::system_clock::now();
+
+    EffPlast2D eff_plast;
+    const std::vector< std::array<double, 3> > S = eff_plast.ComputeSigma(load_value, load_type);
+
+    const auto end = std::chrono::system_clock::now();
+
+    const int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+    if (elapsed_sec < 60) {
+        std::cout << "Calculation time is " << elapsed_sec << " sec\n";
+    }
+    else {
+        const int elapsed_min = elapsed_sec / 60;
+        if (elapsed_min < 60) {
+            std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec % 60 << " sec\n";
         }
         else {
-            const int elapsed_min = elapsed_sec / 60;
-            if (elapsed_min < 60) {
-                std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec % 60 << " sec\n";
-            }
-            else {
-                std::cout << "Calculation time is " << elapsed_min / 60 << " hours " << elapsed_min % 60 << " min " << elapsed_sec % 60 << " sec\n";
-            }
+            std::cout << "Calculation time is " << elapsed_min / 60 << " hours " << elapsed_min % 60 << " min " << elapsed_sec % 60 << " sec\n";
         }
     }
 
