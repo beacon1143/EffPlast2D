@@ -5,6 +5,8 @@
 #include <string>
 #include <array>
 #include <limits>
+#include <algorithm>
+#include <complex>
 
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
@@ -92,5 +94,5 @@ private:
 	double GetDeltaP_approx(const double Exx, const double Eyy);
 	double GetTauInfty_approx(const double Exx, const double Eyy);
 
-	void SaveAnStatic1D(const double deltaP);
+	void SaveAnStatic1D(const double deltaP, const double tauInfty);
 };
