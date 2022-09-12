@@ -19,12 +19,12 @@
 #define NPARS 11
 #endif
 
-#if !defined(NT)
-#define NT 2
+#if !defined(NL)
+#define NL 2
 #endif
 
 #if !defined(NITER)
-#define NITER 20'000
+#define NITER 100'000
 #endif
 
 #if !defined(EITER)
@@ -45,7 +45,12 @@ inline void gpuAssert(cudaError_t code, const char* file, int line)
 
 class EffPlast2D {
 public:
-	std::vector< std::array<double, 3> > ComputeSigma(const double loadValue, const std::array<double, 3>& loadType);
+	std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
+		double initLoadValue, 
+		double loadValue, 
+		unsigned int nTimeSteps, 
+		const std::array<double, 3>& loadType
+	);
 
 	EffPlast2D();
 	~EffPlast2D();
@@ -72,8 +77,10 @@ private:
 	double* J2XY_cpu, * J2XY_cuda;
 	double* Ux_cpu, * Ux_cuda;                       // displacement
 	double* Uy_cpu, * Uy_cuda;
-	double* Vx_cpu, * Vx_cuda;                       // velocity
-	double* Vy_cpu, * Vy_cuda;
+	double* Vx_cpu, * Vx_cpu_old, * Vx_cuda;                       // velocity
+	double* Vxdt_cpu, * Vxdt_cuda;
+	double* Vy_cpu, * Vy_cpu_old, * Vy_cuda;
+	double* Vydt_cpu, * Vydt_cuda;
 
 	// utilities
 	std::ofstream log_file;
@@ -83,11 +90,14 @@ private:
 	void SetMaterials();
 	void SetInitPressure(const double coh);
 
+	static void SetMatrixZero(double** A_cpu, const int m, const int n);
 	static void SetMatrixZero(double** A_cpu, double** A_cuda, const int m, const int n);
 	static void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, const int n, const std::string& filename);
 	static void SaveVector(double* const arr, const int size, const std::string& filename);
 
 	static double FindMaxAbs(const double* const arr, const int size);
+	static double FindMinMaxDiff(const double* const arr, const int size);
+	static double FindMaxAbsDiff(const double* const arr1, const double* const arr2, const int size);
 	static double FindMaxAbs(const std::vector<double>& vec);
 
 	double GetDeltaP_honest();

@@ -3,19 +3,22 @@
 
 int main(int argc, char** argv) {
 
-    if (argc < 5)
+    if (argc < 7)
     {
-        std::cout << "error: missing arguments\n";
+        std::cout << "error: missing arguments\n" 
+            << "usage: " << argv[0] << " <init load value> <load value> <time steps> <load type>.x <load type>.y <load type>.z";
         exit(-1);
     }
 
-    double load_value = std::stod(argv[1]);
-    std::array<double, 3> load_type = { std::stod(argv[2]),  std::stod(argv[3]),  std::stod(argv[4]) };
+    double init_load_value = std::stod(argv[1]);
+    double load_value = std::stod(argv[2]);
+    unsigned int time_steps = std::stod(argv[3]);
+    std::array<double, 3> load_type = { std::stod(argv[4]),  std::stod(argv[5]),  std::stod(argv[6]) };
 
     const auto start = std::chrono::system_clock::now();
 
     EffPlast2D eff_plast;
-    const std::vector< std::array<double, 3> > S = eff_plast.ComputeSigma(load_value, load_type);
+    auto S = eff_plast.ComputeSigma(init_load_value, load_value, time_steps, load_type);
 
     const auto end = std::chrono::system_clock::now();
 

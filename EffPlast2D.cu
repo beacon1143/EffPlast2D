@@ -96,17 +96,12 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy,
     }
 }
 
-__global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
-    double* const tauXYav,
+__global__ void ComputeJ2(double* tauXX, double* tauYY, double* tauXY, 
+    double* const tauXYav, 
     double* const J2, double* const J2XY,
-    const double* const pa,
     const long int nX, const long int nY) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-
-    //const double dX = pa[0], dY = pa[1];
-    const double coh = pa[8];
-    //const double rad = pa[9];
 
     // tauXY for plasticity
     if (i > 0 && i < nX - 1 &&
@@ -138,11 +133,6 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
         tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 2] + tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1]);
     }
 
-    /*if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
-      tauXYav[j * nX + i] = 0.0;
-    }*/
-
-    // plasticity
     J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
     if (i < nX - 1 && j < nY - 1) {
         J2XY[j * (nX - 1) + i] = sqrt(
@@ -152,6 +142,25 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
         );
     }
 
+}
+
+__global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
+    double* const tauXYav,
+    double* const J2, double* const J2XY,
+    const double* const pa,
+    const long int nX, const long int nY) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    //const double dX = pa[0], dY = pa[1];
+    const double coh = pa[8];
+    //const double rad = pa[9];
+
+    /*if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
+      tauXYav[j * nX + i] = 0.0;
+    }*/
+
+    // plasticity
     if (J2[j * nX + i] > coh) {
         tauXX[j * nX + i] *= coh / J2[j * nX + i];
         tauYY[j * nX + i] *= coh / J2[j * nX + i];
@@ -166,203 +175,229 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
     }
 }
 
-std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadValue, const std::array<double, 3>& loadType) {
-    /* INPUT DATA */
-
-    log_file << "\n\n\nload: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ")\n";
-    std::cout << "load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ")\n";
-
-    // displacement
-    const double dUxdx = loadValue * loadType[0];
-    const double dUydy = loadValue * loadType[1];
-    const double dUxdy = loadValue * loadType[2];
-
-    //std::cout << "Before loop...\n";
-
-    std::vector< std::array<double, 3> > Sigma(NT);
-    for (auto& i : Sigma) {
-        i = { 0.0, 0.0, 0.0 };
-    }
-
-    std::vector<double> deltaP(NT);
-    std::vector<double> dPhi(NT);
+std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
+	const double initLoadValue, 
+	const double loadValue, 
+    const unsigned int nTimeSteps, 
+	const std::array<double, 3>& loadType
+)
+{    
+    log_file << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
+             << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << '\n';
+    std::cout << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
+              << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << '\n';
 
     const double incPercent = 0.005;
+    const double incLoad =  0.5 * (loadValue * loadType[0] + loadValue * loadType[1]) * incPercent;
 
-    /* ACTION LOOP */
-    for (int it = 0; it < NT; it++) {
-        //gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        for (int i = 0; i < nX + 1; i++) {
-            for (int j = 0; j < nY; j++) {
-                Ux_cpu[j * (nX + 1) + i] = ((-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (1.0 + it * incPercent);
+    std::array<std::vector<std::array<double, 3>>, NL> Sigma;
+    std::array<std::vector<double>, NL> deltaP;
+    std::array<std::vector<double>, NL> dPhi;
+
+    for (int nload = 0; nload < NL; nload++)
+    {
+        Sigma[nload].resize(nTimeSteps);
+        deltaP[nload].resize(nTimeSteps);
+        dPhi[nload].resize(nTimeSteps);
+
+        double dUxdx = initLoadValue * loadType[0];
+        double dUydy = initLoadValue * loadType[1];
+        double dUxdy = initLoadValue * loadType[2];
+
+        memset(Ux_cpu, 0, (nX + 1) * nY * sizeof(double));
+        memset(Uy_cpu, 0, nX * (nY + 1) * sizeof(double));
+
+        /* ACTION LOOP */
+        for (int it = 0; it < nTimeSteps; it++) {
+            log_file << "\n\nload step " << (it + 1) << '\n';
+            std::cout << "\n\nload step " << (it + 1) << '\n';
+
+            if (it > 0)
+            {
+                dUxdx = loadValue * loadType[0];
+                dUydy = loadValue * loadType[1];
+                dUxdy = loadValue * loadType[2];
+
+                gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
+                gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
             }
-        }
-        gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
 
-        //gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
-        for (int i = 0; i < nX; i++) {
-            for (int j = 0; j < nY + 1; j++) {
-                Uy_cpu[j * nX + i] = (-0.5 * dY * nY + dY * j) * dUydy * (1.0 + it * incPercent);
-            }
-        }
-        gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
-
-        double error = 0.0;
-
-        /* ITERATION LOOP */
-        for (int iter = 0; iter < NITER; iter++) {
-            ComputeStress << <grid, block >> > (Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, /*tauXYav_cuda, J2_cuda, J2XY_cuda,*/ pa_cuda, nX, nY);
-            gpuErrchk(cudaDeviceSynchronize());    // wait for compute device to finish
-            ComputePlasticity << <grid, block >> > (tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
-            gpuErrchk(cudaDeviceSynchronize());    // wait for compute device to finish
-            //std::cout << "After computing sigma...\n";
-            ComputeDisp << <grid, block >> > (Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
-            gpuErrchk(cudaDeviceSynchronize());    // wait for compute device to finish
-
-            if ((iter + 1) % output_step == 0) {
-                gpuErrchk(cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
-                gpuErrchk(cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
-                error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
-                    (std::abs(loadValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
-                std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
-                // log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
-                if (error < EITER) {
-                    std::cout << "Number of iterations is " << iter + 1 << '\n';
-                    log_file << "Number of iterations is " << iter + 1 << '\n';
-                    break;
-                }
-                else if (iter == NITER - 1) {
-                    std::cout << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
-                    log_file << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
-                }
-                // std::cout << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
-                // log_file << "Vx on step " << it << " is " << Vx_cpu[nY/2 * (nX + 1) + nX/2] << std::endl;
-            }
-        }
-        /* AVERAGING */
-        gpuErrchk(cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(J2_cpu, J2_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
-        gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
-
-        /*for (int i = 0; i < nX; i++) {
-          for (int j = 0; j < nY; j++) {
-            Sigma[it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
-            Sigma[it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
-          }
-        }
-        Sigma[it][0] /= nX * nY;
-        Sigma[it][1] /= nX * nY;
-
-        for (int i = 0; i < nX - 1; i++) {
-          for (int j = 0; j < nY - 1; j++) {
-            Sigma[it][2] += tauXY_cpu[j * (nX - 1) + i];
-          }
-        }
-        Sigma[it][2] /= (nX - 1) * (nY - 1);*/
-
-        // -P_eff
-        for (int i = 0; i < nX; i++) {
-            for (int j = 0; j < nY; j++) {
-                if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad) {
-                    Sigma[it][0] += -P_cpu[j * nX + i];
-                }
-                else {
-                    // std::cout << "In the hole!\n";
-                    // log_file << "In the hole!\n";
+            for (int i = 0; i < nX + 1; i++) {
+                for (int j = 0; j < nY; j++) {
+                    Ux_cpu[j * (nX + 1) + i] += (-0.5 * dX * nX + dX * i) * (dUxdx + nload * incLoad) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy;
                 }
             }
-        }
-        Sigma[it][0] /= nX * nY;
+            gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
 
-        // Tau_eff
-        for (int i = 0; i < nX; i++) {
-            for (int j = 0; j < nY; j++) {
-                if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad) {
-                    Sigma[it][1] += tauXX_cpu[j * nX + i];
-                    Sigma[it][2] += tauYY_cpu[j * nX + i];
+            for (int i = 0; i < nX; i++) {
+                for (int j = 0; j < nY + 1; j++) {
+                    Uy_cpu[j * nX + i] += (-0.5 * dY * nY + dY * j) * (dUydy + nload * incLoad);
                 }
             }
+            gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
+
+            double error = 0.0;
+
+            /* ITERATION LOOP */
+            for (int iter = 0; iter < NITER; iter++) {
+                ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, /*tauXYav_cuda, J2_cuda, J2XY_cuda,*/ pa_cuda, nX, nY);
+                gpuErrchk(cudaDeviceSynchronize());
+                ComputeJ2<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, nX, nY);
+                gpuErrchk(cudaDeviceSynchronize());
+                ComputePlasticity<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
+                gpuErrchk(cudaDeviceSynchronize());
+                ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
+                gpuErrchk(cudaDeviceSynchronize());
+
+                if ((iter + 1) % output_step == 0) {
+                    gpuErrchk(cudaMemcpy(Vx_cpu, Vx_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
+                    gpuErrchk(cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
+
+                    error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
+                        (std::abs(loadValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
+
+                    std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+                    log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+
+                    if (error < EITER) {
+                        std::cout << "Number of iterations is " << iter + 1 << '\n';
+                        log_file << "Number of iterations is " << iter + 1 << '\n';
+                        break;
+                    }
+                    else if (iter == NITER - 1) {
+                        std::cout << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
+                        log_file << "WARNING: Maximum number of iterations reached!\nError is " << error << '\n';
+                    }
+                }
+            }
+            /* AVERAGING */
+            gpuErrchk(cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(J2_cpu, J2_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
+
+            /*Sigma[nload][it] = {0.0, 0.0, 0.0};
+            for (int i = 0; i < nX; i++) {
+              for (int j = 0; j < nY; j++) {
+                Sigma[nload][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
+                Sigma[nload][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
+              }
+            }
+            Sigma[nload][it][0] /= nX * nY;
+            Sigma[nload][it][1] /= nX * nY;
+
+            for (int i = 0; i < nX - 1; i++) {
+              for (int j = 0; j < nY - 1; j++) {
+                Sigma[nload][it][2] += tauXY_cpu[j * (nX - 1) + i];
+              }
+            }
+            Sigma[nload][it][2] /= (nX - 1) * (nY - 1);*/
+
+            // -P_eff
+            for (int i = 0; i < nX; i++) {
+                for (int j = 0; j < nY; j++) {
+                    if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad) {
+                        Sigma[nload][it][0] += -P_cpu[j * nX + i];
+                    }
+                    else {
+                        // std::cout << "In the hole!\n";
+                        // log_file << "In the hole!\n";
+                    }
+                }
+            }
+            Sigma[nload][it][0] /= nX * nY;
+
+            // Tau_eff
+            for (int i = 0; i < nX; i++) {
+                for (int j = 0; j < nY; j++) {
+                    if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) >= rad) {
+                        Sigma[nload][it][1] += tauXX_cpu[j * nX + i];
+                        Sigma[nload][it][2] += tauYY_cpu[j * nX + i];
+                    }
+                }
+            }
+            Sigma[nload][it][1] /= nX * nY;
+            Sigma[nload][it][2] /= nX * nY;
+
+            // std::cout << Sigma[nload][it][0] / loadValue << '\t' << Sigma[nload][it][1] / loadValue << '\t' << Sigma[nload][it][2] / loadValue << '\n';
+            // log_file << Sigma[nload][it][0] / loadValue << '\t' << Sigma[nload][it][1] / loadValue << '\t' << Sigma[nload][it][2] / loadValue << '\n';
+
+            /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
+            deltaP[nload][it] = GetDeltaP_honest();
+            //std::cout << "deltaP = " << deltaP[nload][it] << '\n';
+            log_file << "deltaP = " << deltaP[nload][it] << '\n';
+            //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
+            const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
+
+            int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
+            std::vector<double> dispX((nX + 1) / 2);
+            for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2; i++) {
+                dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
+            }
+
+            int holeY = static_cast<int>((nY + 1) * 2 * rad / nY / dY);    // approx Y-axis index of hole boundary
+            std::vector<double> dispY((nY + 1) / 2);
+            for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2; j++) {
+                dispY[j] = Uy_cpu[j * nX + nX / 2];
+            }
+
+            /*std::vector<double> dispXwrong((nY + 1) / 2);
+            for (int j = nY / 2 - holeY - 2; j < nY / 2; j++) {
+              dispXwrong[j] = Ux_cpu[j * nX + nX / 2];
+            }*/
+
+            /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
+            std::cout << "dR = " << dR << '\n';
+            log_file << "dR = " << dR << '\n';*/
+            const double dRx = -FindMaxAbs(dispX);
+            //std::cout << "dRx = " << dRx << '\n';
+            log_file << "dRx = " << dRx << '\n';
+            const double dRy = -FindMaxAbs(dispY);
+            //std::cout << "dRy = " << dRy << '\n';
+            log_file << "dRy = " << dRy << '\n';
+            /*const double dRxWrong = -FindMaxAbs(dispXwrong);
+            std::cout << "dRxWrong = " << dRxWrong << '\n';*/
+            const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
+            const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
+            dPhi[nload][it] = 3.1415926 * (std::abs((rad + dRx) * (rad + dRy) - rad * rad)) / (dX * (nX - 1) * dY * (nY - 1));
+            //std::cout << "dPhi = " << dPhi[nload][it] << '\n';
+            log_file << "dPhi = " << dPhi[nload][it] << '\n';
+
+            const double KeffPhi = deltaP[nload][it] / dPhi[nload][it];
+            //const double KeffPhi = deltaP_honest / dPhi;
+
+            //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
+            //log_file << "deltaP_honest = " << deltaP_honest << '\n';
+            std::cout << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
+            log_file << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
+            //std::cout << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
+            log_file << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
+            //std::cout << "KeffPhi = " << KeffPhi << '\n';
+            log_file << "KeffPhi = " << KeffPhi << '\n';
+
+            const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
+            const double KexactElast = G0 / phi;
+            const double KexactPlast = G0 / (phi - dPhi[nload][it]) / exp(std::abs(deltaP[nload][it]) / Y - 1.0) / // phi or phi - dPhi ?
+                (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
+            //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
+            //std::cout << "KexactElast = " << KexactElast << '\n';
+            log_file << "KexactElast = " << KexactElast << '\n';
+            std::cout << "KexactPlast = " << KexactPlast << '\n';
+            log_file << "KexactPlast = " << KexactPlast << '\n';
+
+            if (it + 1 == nTimeSteps && nload + 1 == NL)
+                SaveAnStatic1D(deltaP[nload][it], tauInfty_approx);
         }
-        Sigma[it][1] /= nX * nY;
-        Sigma[it][2] /= nX * nY;
-
-        // std::cout << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
-        // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
-
-        /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-        deltaP[it] = GetDeltaP_honest();
-        std::cout << "deltaP = " << deltaP[it] << '\n';
-        log_file << "deltaP = " << deltaP[it] << '\n';
-        //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-        const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
-
-        int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
-        std::vector<double> dispX((nX + 1) / 2);
-        for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2; i++) {
-            dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
-        }
-
-        int holeY = static_cast<int>((nY + 1) * 2 * rad / nY / dY);    // approx Y-axis index of hole boundary
-        std::vector<double> dispY((nY + 1) / 2);
-        for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2; j++) {
-            dispY[j] = Uy_cpu[j * nX + nX / 2];
-        }
-
-        /*std::vector<double> dispXwrong((nY + 1) / 2);
-        for (int j = nY / 2 - holeY - 2; j < nY / 2; j++) {
-          dispXwrong[j] = Ux_cpu[j * nX + nX / 2];
-        }*/
-
-        /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
-        std::cout << "dR = " << dR << '\n';
-        log_file << "dR = " << dR << '\n';*/
-        const double dRx = -FindMaxAbs(dispX);
-        std::cout << "dRx = " << dRx << '\n';
-        log_file << "dRx = " << dRx << '\n';
-        const double dRy = -FindMaxAbs(dispY);
-        std::cout << "dRy = " << dRy << '\n';
-        log_file << "dRy = " << dRy << '\n';
-        /*const double dRxWrong = -FindMaxAbs(dispXwrong);
-        std::cout << "dRxWrong = " << dRxWrong << '\n';*/
-        const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-        const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
-        dPhi[it] = 3.1415926 * (std::abs((rad + dRx) * (rad + dRy) - rad * rad)) / (dX * (nX - 1) * dY * (nY - 1));
-        std::cout << "dPhi = " << dPhi[it] << '\n';
-        log_file << "dPhi = " << dPhi[it] << '\n';
-
-        const double KeffPhi = deltaP[it] / dPhi[it];
-        //const double KeffPhi = deltaP_honest / dPhi;
-
-        //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
-        //log_file << "deltaP_honest = " << deltaP_honest << '\n';
-        std::cout << "deltaP / Y = " << deltaP[it] / Y << '\n';
-        log_file << "deltaP / Y = " << deltaP[it] / Y << '\n';
-        std::cout << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
-        log_file << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
-        std::cout << "KeffPhi = " << KeffPhi << '\n';
-        log_file << "KeffPhi = " << KeffPhi << '\n';
-
-        const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-        const double KexactElast = G0 / phi;
-        const double KexactPlast = G0 / (phi - dPhi[it]) / exp(std::abs(deltaP[it]) / Y - 1.0) / // phi or phi - dPhi ?
-            (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
-        //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
-        std::cout << "KexactElast = " << KexactElast << '\n';
-        log_file << "KexactElast = " << KexactElast << '\n';
-        std::cout << "KexactPlast = " << KexactPlast << '\n';
-        log_file << "KexactPlast = " << KexactPlast << '\n';
-
-        if (it + 1 == NT)
-            SaveAnStatic1D(deltaP[it], tauInfty_approx);
     }
 
-    if (NT == 2)
+    if (NL > 1)
     {
-        const double KeffPhi = (deltaP[1] - deltaP[0]) / (dPhi[1] - dPhi[0]);
+        const double KeffPhi = (deltaP[NL - 1][nTimeSteps - 1] - deltaP[NL - 2][nTimeSteps - 1]) / 
+            (dPhi[NL - 1][nTimeSteps - 1] - dPhi[NL - 2][nTimeSteps - 1]);
+        
         std::cout << "==============\n" << "KeffPhi = " << KeffPhi << '\n';
         log_file << "==============\n" << "KeffPhi = " << KeffPhi << '\n';
     }
@@ -539,7 +574,7 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
 
 void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
     /* ANALYTIC 1D SOLUTION FOR STATICS */
-    const double Rmin = rad + 20.0 * dX;
+    const double Rmin = rad + 0.0 * dX;
     const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
 
     const double xi = (deltaP > 0.0) ? 1.0 : -1.0;
@@ -764,87 +799,6 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
 
     SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] plastZoneNu;
-
-    // double* xxx = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   xxx[i] = -0.5 * dX * (nX - 1) + dX * i;
-    // }
-    // SaveVector(xxx, nX, "xxx_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] xxx;
-
-    // double* Uanr = new double[nX];
-    // double coef = - 0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / G0;
-    // for (int i = 0; i < nX; i++) {
-    //   if (std::abs(-0.5 * dX * (nX - 1) + dX * i) < rad) {
-    //     Uanr[i] = 0.0;
-    //   }
-    //   else {
-    //     //Uanr[i] = -0.5 * deltaP * (xxx[i] / (K0 + G0/3.0) + rad * rad / (G0 * xxx[i]));
-    //     Uanr[i] = coef / xxx[i];
-    //   }
-    // }
-    // SaveVector(Uanr, nX, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Uanr;
-
-    // double* Unur = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   Unur[i] = Ux_cpu[nY * (nX + 1) / 2 + i];
-    // }
-    // SaveVector(Unur, nX, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Unur;
-
-    // double* Sanrr = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
-    //     Sanrr[i] = 0.0;
-    //   }
-    //   else {
-    //     double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-    //     //Sanrr[i] = -deltaP + deltaP * relR * relR - tauInfty_approx * (1.0 - 4.0 * relR * relR + 3.0 * pow(relR, 4.0));
-    //     if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
-    //       Sanrr[i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
-    //     }
-    //     else {
-    //       Sanrr[i] = -2.0 * Y * log(1.0 / relR);
-    //     }
-    //   }
-    // }
-    // SaveVector(Sanrr, nX * nY, "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Sanrr;
-    //
-    // double* Sanff = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   if (std::abs(-0.5 * dX * (nX - 1) + dX * i) <= rad) {
-    //     Sanff[i] = 0.0;
-    //   }
-    //   else {
-    //     double relR = rad / (-0.5 * dX * (nX - 1) + dX * i);
-    //     //Sanff[i] = -deltaP - deltaP * relR * relR + tauInfty_approx * (1.0 + 3.0 * pow(relR, 4.0));
-    //     if (J2_cpu[nY * nX / 2 + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
-    //       Sanff[i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
-    //     }
-    //     else {
-    //       Sanff[i] = -2.0 * Y * (1.0 + log(1.0 / relR));
-    //     }
-    //   }
-    // }
-    // SaveVector(Sanff, nX, "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Sanff;
-    //
-    // double* Snurr = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   Snurr[i] = -P_cpu[nY * nX / 2 + i] + tauXX_cpu[nY * nX / 2 + i];
-    //   // std::cout << Snurr[i] << '\n';
-    // }
-    // SaveVector(Snurr, nX, "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Snurr;
-
-    // double* Snuff = new double[nX];
-    // for (int i = 0; i < nX; i++) {
-    //   Snuff[i] = -P_cpu[nY * nX / 2 + i] + tauYY_cpu[nY * nX / 2 + i];
-    // }
-    // SaveVector(Snuff, nX, "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
-    // delete[] Snuff;
 }
 
 EffPlast2D::EffPlast2D() {
@@ -909,7 +863,7 @@ EffPlast2D::EffPlast2D() {
 
     /* UTILITIES */
     log_file.open("EffPlast2D.log", std::ios_base::app);
-    output_step = 10000;
+    output_step = 10'000;
 }
 
 EffPlast2D::~EffPlast2D() {

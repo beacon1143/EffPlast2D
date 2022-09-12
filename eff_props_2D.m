@@ -3,10 +3,12 @@ figure(1)
 clf
 colormap jet
 
+initLoadValue = -0.00008;
 loadValue = -0.0001;
-loadType = [15.0, -10.0, 0.0];
+loadType = [1.0, 1.0, 0.0];
 nGrid = 32;
-nTimeSteps = 2;
+nTimeSteps = 1;
+nTasks = 2;
 nIter = 100000;
 eIter = 1.0e-10;
 needCPUcalculation = false;
@@ -19,8 +21,8 @@ Sxx = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, needCPU
 
 % GPU CALCULATION
 system(['rm a.*']);
-system(['nvcc -DNGRID=', int2str(nGrid), ' -DNT=', int2str(nTimeSteps), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
-system(['.\a.exe ', num2str(loadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3))]);
+system(['nvcc -O 3 -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
+system(['.\a.exe ', num2str(initLoadValue), ' ', num2str(loadValue), ' ', num2str(nTimeSteps), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3))]);
 
 fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
 Pc = fread(fil, 'double');
