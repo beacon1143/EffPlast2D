@@ -1,6 +1,9 @@
 
 C_ijkl.png
 
+*.gpl
+
+.vscode
 *.dat
 
 a.exe
