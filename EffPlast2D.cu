@@ -291,11 +291,11 @@ std::vector< std::array<double, 3> > EffPlast2D::ComputeSigma(const double loadV
         // log_file << Sigma[it][0] / loadValue << '\t' << Sigma[it][1] / loadValue << '\t' << Sigma[it][2] / loadValue << '\n';
 
         /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-        deltaP[it] = GetDeltaP_honest();
+        deltaP[it] = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetDeltaP_honest();
         std::cout << "deltaP = " << deltaP[it] << '\n';
         log_file << "deltaP = " << deltaP[it] << '\n';
         //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-        const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
+        const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetTauInfty_honest();
 
         int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
         std::vector<double> dispX((nX + 1) / 2);
@@ -501,7 +501,7 @@ double EffPlast2D::GetDeltaP_honest() {
 double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
     double deltaP = 0.0;
 
-    if (Exx < Eyy) {
+    /*if (Exx < Eyy) {
         deltaP += tauXX_cpu[(nY / 2) * nX + 0] - P_cpu[(nY / 2) * nX + 0];
         deltaP += tauYY_cpu[(nY / 2) * nX + 0] - P_cpu[(nY / 2) * nX + 0];
         deltaP += tauXX_cpu[(nY / 2) * nX + nX - 1] - P_cpu[(nY / 2) * nX + nX - 1];
@@ -514,14 +514,44 @@ double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
         deltaP += tauYY_cpu[(nY - 1) * nX + nX / 2] - P_cpu[(nY - 1) * nX + nX / 2];
     }
 
-    deltaP *= -0.25;
+    deltaP *= -0.25;*/
+
+    deltaP += tauXX_cpu[(nY / 2) * nX + 0] - P_cpu[(nY / 2) * nX + 0];
+    deltaP += tauYY_cpu[(nY / 2) * nX + 0] - P_cpu[(nY / 2) * nX + 0];
+    deltaP += tauXX_cpu[(nY / 2) * nX + nX - 1] - P_cpu[(nY / 2) * nX + nX - 1];
+    deltaP += tauYY_cpu[(nY / 2) * nX + nX - 1] - P_cpu[(nY / 2) * nX + nX - 1];
+    deltaP += tauXX_cpu[0 * nX + nX / 2] - P_cpu[0 * nX + nX / 2];
+    deltaP += tauYY_cpu[0 * nX + nX / 2] - P_cpu[0 * nX + nX / 2];
+    deltaP += tauXX_cpu[(nY - 1) * nX + nX / 2] - P_cpu[(nY - 1) * nX + nX / 2];
+    deltaP += tauYY_cpu[(nY - 1) * nX + nX / 2] - P_cpu[(nY - 1) * nX + nX / 2];
+
+    deltaP *= -0.125;
     return deltaP;
+}
+
+double EffPlast2D::GetTauInfty_honest() {
+    double tauInfty = 0.0, tauInftyx = 0.0, tauInftyy = 0.0;
+
+    for (int i = 1; i < nX - 1; i++) {
+        tauInftyx += tauXX_cpu[0 * nX + i] - tauYY_cpu[0 * nX + i];
+        tauInftyx += tauXX_cpu[(nY - 1) * nX + i] - tauYY_cpu[(nY - 1) * nX + i];
+    }
+    tauInftyx /= (nX - 2);
+
+    for (int j = 1; j < nY - 1; j++) {
+        tauInftyy += tauXX_cpu[j * nX + 0] - tauYY_cpu[j * nX + 0];
+        tauInftyy += tauXX_cpu[j * nX + nY - 1] - tauYY_cpu[j * nX + nY - 1];
+    }
+    tauInftyy /= (nY - 2);
+
+    tauInfty = -0.125 * (tauInftyx + tauInftyy);
+    return tauInfty;
 }
 
 double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
     double tauInfty = 0.0;
 
-    if (Exx < Eyy) {
+    /*if (Exx < Eyy) {
         tauInfty += tauYY_cpu[(nY / 2) * nX + 0] - tauXX_cpu[(nY / 2) * nX + 0];
         tauInfty += tauYY_cpu[(nY / 2) * nX + nX - 1] - tauXX_cpu[(nY / 2) * nX + nX - 1];
     }
@@ -530,7 +560,15 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
         tauInfty += tauYY_cpu[(nY - 1) * nX + nX / 2] - tauXX_cpu[(nY - 1) * nX + nX / 2];
     }
 
-    tauInfty *= 0.25;
+    tauInfty *= 0.25;*/
+
+    tauInfty += tauYY_cpu[(nY / 2) * nX + 0] - tauXX_cpu[(nY / 2) * nX + 0];
+    tauInfty += tauYY_cpu[(nY / 2) * nX + nX - 1] - tauXX_cpu[(nY / 2) * nX + nX - 1];
+    tauInfty += tauYY_cpu[0 * nX + nX / 2] - tauXX_cpu[0 * nX + nX / 2];
+    tauInfty += tauYY_cpu[(nY - 1) * nX + nX / 2] - tauXX_cpu[(nY - 1) * nX + nX / 2];
+
+    tauInfty *= 0.125;
+
     return tauInfty;
 }
 
@@ -607,7 +645,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP) {
             if (i < nX - 1 && j < nY - 1)
                 plastZone[j * (nX - 1) + i] = 0.0;
 
-            const double Rmin = rad + 20.0 * std::min(dX, dY);
+            const double Rmin = rad + /*2*/0.0 * std::min(dX, dY);
             const double Rmax = 0.5 * dX * (nX - 1) - dX * 40;
 
             if (

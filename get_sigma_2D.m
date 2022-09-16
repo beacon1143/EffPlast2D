@@ -92,6 +92,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
       error = 0.0;
       
       for iter = 1 : nIter
+        Vx_old = Vx
+        Vy_old = Vy
         % displacement divergence
         divU = diff(Ux,1,1) / dX + diff(Uy,1,2) / dY;
         
