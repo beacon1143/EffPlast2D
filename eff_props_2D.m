@@ -347,12 +347,12 @@ else
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 3, 9)
-    imagesc(plast)
-    colorbar
-    title('plast zone')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    %subplot(3, 3, 9)
+    %imagesc(plast)
+    %colorbar
+    %title('plast zone')
+    %axis image
+    %set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
 %    subplot(1, 5, 3)
 %    plot(xxx(Nx/2 + 1:Nx), Sanrr(Nx/2 + 1:Nx), 'LineWidth' , 2, 'g', xxx(Nx/2 + 1:Nx), Snurr(Nx/2 + 1:Nx), 'LineWidth', 2, 'r') 

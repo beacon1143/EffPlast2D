@@ -326,16 +326,11 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             // log_file << Sigma[nload][it][0] / loadValue << '\t' << Sigma[nload][it][1] / loadValue << '\t' << Sigma[nload][it][2] / loadValue << '\n';
 
             /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-            deltaP[nload][it] = GetDeltaP_honest();
-            //std::cout << "deltaP = " << deltaP[nload][it] << '\n';
+            deltaP[nload][it] = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetDeltaP_honest();
+            std::cout << "deltaP = " << deltaP[nload][it] << '\n';
             log_file << "deltaP = " << deltaP[nload][it] << '\n';
             //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-            const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);
-        deltaP[it] = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetDeltaP_honest();
-        std::cout << "deltaP = " << deltaP[it] << '\n';
-        log_file << "deltaP = " << deltaP[it] << '\n';
-        //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-        const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetTauInfty_honest();
+            const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetTauInfty_honest();
 
             int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
             std::vector<double> dispX((nX + 1) / 2);
