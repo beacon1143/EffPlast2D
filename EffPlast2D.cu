@@ -224,14 +224,14 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
 
             for (int i = 0; i < nX + 1; i++) {
                 for (int j = 0; j < nY; j++) {
-                    Ux_cpu[j * (nX + 1) + i] += (-0.5 * dX * nX + dX * i) * (dUxdx + nload * incLoad) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy;
+                    Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * (dUxdx) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (1.0 + nload * incPercent);
                 }
             }
             gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
 
             for (int i = 0; i < nX; i++) {
                 for (int j = 0; j < nY + 1; j++) {
-                    Uy_cpu[j * nX + i] += (-0.5 * dY * nY + dY * j) * (dUydy + nload * incLoad);
+                    Uy_cpu[j * nX + i] += ((-0.5 * dY * nY + dY * j) * (dUydy)) * (1.0 + nload * incPercent);
                 }
             }
             gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
