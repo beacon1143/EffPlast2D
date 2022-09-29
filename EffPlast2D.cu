@@ -811,7 +811,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
 
                 Snurr[j * (nX - 1) + i] = Sxx * cosf * cosf + Syy * sinf * sinf + 2 * Sxy * sinf * cosf;
                 Snuff[j * (nX - 1) + i] = Sxx * sinf * sinf + Syy * cosf * cosf - 2 * Sxy * sinf * cosf;
-                Snurf[j * (nX - 1) + i] = (Syy - Sxx) * sinf * cosf + Sxy * (cosf * cosf - sinf * cosf);
+                Snurf[j * (nX - 1) + i] = (Syy - Sxx) * sinf * cosf + Sxy * (cosf * cosf - sinf * sinf);
             }
         }
     }
