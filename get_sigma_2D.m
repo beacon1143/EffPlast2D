@@ -350,4 +350,4 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
     %axis image
   end %if
   
-endfunction
+end
