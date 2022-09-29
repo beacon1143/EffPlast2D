@@ -326,11 +326,11 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             // log_file << Sigma[nload][it][0] / loadValue << '\t' << Sigma[nload][it][1] / loadValue << '\t' << Sigma[nload][it][2] / loadValue << '\n';
 
             /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-            deltaP[nload][it] = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetDeltaP_honest();
+            deltaP[nload][it] = /*GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetDeltaP_honest();
             std::cout << "deltaP = " << deltaP[nload][it] << '\n';
             log_file << "deltaP = " << deltaP[nload][it] << '\n';
             //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-            const double tauInfty_approx = GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]); // GetTauInfty_honest();
+            const double tauInfty = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
             int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
             std::vector<double> dispX((nX + 1) / 2);
@@ -363,7 +363,7 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
             const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadValue * loadType[0]) * (1 + loadValue * loadType[1]));
             dPhi[nload][it] = 3.1415926 * (std::abs((rad + dRx) * (rad + dRy) - rad * rad)) / (dX * (nX - 1) * dY * (nY - 1));
-            //std::cout << "dPhi = " << dPhi[nload][it] << '\n';
+            std::cout << "dPhi = " << dPhi[nload][it] << '\n';
             log_file << "dPhi = " << dPhi[nload][it] << '\n';
 
             const double KeffPhi = deltaP[nload][it] / dPhi[nload][it];
@@ -373,15 +373,15 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             //log_file << "deltaP_honest = " << deltaP_honest << '\n';
             std::cout << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
             log_file << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
-            //std::cout << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
-            log_file << "tauInfty / Y = " << tauInfty_approx / Y << '\n';
+            std::cout << "tauInfty / Y = " << tauInfty / Y << '\n';
+            log_file << "tauInfty / Y = " << tauInfty / Y << '\n';
             //std::cout << "KeffPhi = " << KeffPhi << '\n';
             log_file << "KeffPhi = " << KeffPhi << '\n';
 
             const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
             const double KexactElast = G0 / phi;
             const double KexactPlast = G0 / (phi - dPhi[nload][it]) / exp(std::abs(deltaP[nload][it]) / Y - 1.0) / // phi or phi - dPhi ?
-                (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / Y / Y);
+                (1.0 + 5.0 * tauInfty * tauInfty / Y / Y);
             //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
             //std::cout << "KexactElast = " << KexactElast << '\n';
             log_file << "KexactElast = " << KexactElast << '\n';
@@ -389,7 +389,7 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             log_file << "KexactPlast = " << KexactPlast << '\n';
 
             if (it + 1 == nTimeSteps && nload + 1 == NL)
-                SaveAnStatic1D(deltaP[nload][it], tauInfty_approx);
+                SaveAnStatic1D(deltaP[nload][it], tauInfty);
         }
     }
 
@@ -774,8 +774,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
                     plastZoneNu[j * (nX - 1) + i] = 1.0;
                 }
 
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
-                {
+                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) {
                     // elast
                     // Sanrr[j * (nX - 1) + i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
                     // Sanff[j * (nX - 1) + i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
@@ -784,8 +783,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
                     Sanff[j * (nX - 1) + i] = 2.0 * real(phi) + real(F) / 2.0;
                     Sanrf[j * (nX - 1) + i] = imag(F) / 2.0;
                 }
-                else 
-                {
+                else {
                     // plast
                     Sanrr[j * (nX - 1) + i] = -2.0 * Y * log(1.0 / relR);
                     Sanff[j * (nX - 1) + i] = -2.0 * Y * (1.0 + log(1.0 / relR));
