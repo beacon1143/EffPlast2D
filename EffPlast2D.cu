@@ -622,33 +622,6 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
     const double Rx = c0 * (1.0 - kappa);
     const double Ry = c0 * (1.0 + kappa);
 
-    // double Rxnu = 0.5 * (nX - 1) * dX;
-    // for (int i = 0; i < nX / 2; i++)
-    //     if (J2_cpu[(nY / 2) * nX + i] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
-    //         Rxnu -= dX;
-    //     else
-    //         break;
-
-    // double Rynu = 0.5 * (nY - 1) * dY;
-    // for (int i = 0; i < nY / 2; i++)
-    //     if (J2_cpu[i * nX + (nX / 2)] <= (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
-    //         Rynu -= dY;
-    //     else
-    //         break;
-
-    // std::array<double, 2> conformParams = { 
-    //     (Rxnu + Rynu) / 2.0,
-    //     std::abs(Rxnu - Rynu) / 2.0
-    // };
-    // std::sort(conformParams.begin(), conformParams.end());
-
-    // const double c0nu = conformParams[1];
-    // const double kappaSignNu = (tauInfty * deltaP > 0.0) ? 1.0 : -1.0;
-    // const double kappaNu = kappaSign * conformParams[0] / conformParams[1];
-
-    // std::cout << "kappa num = " << kappaNu << "; kappa an = " << kappa << "\n"
-    //           << "c0 num = " << c0nu << "; c0 an = " << c0 << "\n";
-
     double* Uanr = new double[nX * nY];
     double* Unur = new double[nX * nY];
 
@@ -672,7 +645,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
             }
             else
             {
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 0) 
+                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
                 {
                     const std::complex<double> z = std::complex<double>(x, y);
 
@@ -690,7 +663,7 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
                     const std::complex<double> psi = c0 * Y * xi * (1.0 / zeta + kappa * zeta);
                     const std::complex<double> dphi = Phi * dw;
                     const std::complex<double> dpsi = Psi * dw;
-                    const std::complex<double> U = (1.0 / (2.0 * G0) + 3.0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi);
+                    const std::complex<double> U = ((1.0 + 6.0 * G0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi)) / 2.0 / G0;
 
                     Uanr[j * nX + i] = real(U) * cosf + imag(U) * sinf;
                 }
