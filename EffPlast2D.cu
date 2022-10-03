@@ -688,7 +688,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     const double kappa = tauInfty / Y * xi;
     const double c0 = rad * exp(abs(deltaP) / 2.0 / Y - 0.5);
 
-    const double rx = getAnalyticUrPlast(rad, deltaP);
+    const double rx = rad + getAnalyticUrPlast(rad, deltaP);
     const double ry = rx;
 
     const double Rx = c0 * (1.0 - kappa);
