@@ -643,7 +643,7 @@ void EffPlast2D::getAnalytic(
     Psi  = -Y * xi / zeta * wv / dw;
 }
 
-double EffPlast2D::getAnalyticUrElast(double x, double y, double tauInfty, double xi, double kappa, double c0)
+double EffPlast2D::getAnalyticUabsElast(double x, double y, double tauInfty, double xi, double kappa, double c0)
 {
     double cosf, sinf;
     std::complex<double> zeta, w, dw, wv, Phi, Psi;
@@ -655,7 +655,7 @@ double EffPlast2D::getAnalyticUrElast(double x, double y, double tauInfty, doubl
     const std::complex<double> dpsi = Psi * dw;
     const std::complex<double> U    = ((1.0 + 6.0 * G0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi)) / 2.0 / G0;
 
-    return real(U) * cosf + imag(U) * sinf;
+    return abs(U);
 }
 
 double EffPlast2D::getAnalyticUrPlast(double r, double deltaP)
@@ -663,7 +663,17 @@ double EffPlast2D::getAnalyticUrPlast(double r, double deltaP)
     return -0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / (G0 * r);
 }
 
-void EffPlast2D::getAnalyticSigmaElast(double x, double y, double xi, double kappa, double c0, double& Srr, double& Sff, double& Srf)
+double getJ1(double S11, double S22)
+{
+    return  0.5 * (S11 + S22);
+}
+
+double getJ2(double S11, double S22, double S12)
+{
+    return (S11 - S22) * (S11 - S22) + 4.0 * S12 * S12;
+}
+
+void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2)
 {
     double cosf, sinf;
     std::complex<double> zeta, w, dw, wv, Phi, Psi;
@@ -673,9 +683,22 @@ void EffPlast2D::getAnalyticSigmaElast(double x, double y, double xi, double kap
     const std::complex<double> dPhi = -2.0 * xi * Y * kappa / zeta / (zeta * zeta - kappa);
     const std::complex<double> F    = 2.0 * (conj(w) / dw * dPhi + Psi) / exp(-2.0 * arg(z) * std::complex<double>(0.0, 1.0));
 
-    Srr = 2.0 * real(Phi) - real(F) / 2.0;
-    Sff = 2.0 * real(Phi) + real(F) / 2.0;
-    Srf = imag(F) / 2.0;
+    const double Srr = 2.0 * real(Phi) - real(F) / 2.0;
+    const double Sff = 2.0 * real(Phi) + real(F) / 2.0;
+    const double Srf = imag(F) / 2.0;
+
+    J1 = getJ1(Srr, Sff);
+    J2 = getJ2(Srr, Sff, Srf);
+}
+
+void EffPlast2D::getAnalyticJplast(double relR, double& J1, double& J2)
+{
+    const double Srr = -2.0 * Y * log(1.0 / relR);
+    const double Sff = -2.0 * Y * (1.0 + log(1.0 / relR));
+    const double Srf = 0;
+
+    J1 = getJ1(Srr, Sff);
+    J2 = getJ2(Srr, Sff, Srf);
 }
 
 void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
@@ -694,25 +717,21 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     const double Rx = c0 * (1.0 - kappa);
     const double Ry = c0 * (1.0 + kappa);
 
-    double* Uanr = new double[nX * nY];
-    double* Unur = new double[nX * nY];
-    double* errorUr = new double[nX * nY];
-    double errorUrMax = 0.0, errorUrAvg = 0.0;
-    size_t errorUrN = 0;
+    double* UanAbs = new double[nX * nY];
+    double* UnuAbs = new double[nX * nY];
+    double* errorUabs = new double[nX * nY];
+    double errorUabsMax = 0.0, errorUabsAvg = 0.0;
+    size_t errorUabsN = 0;
 
-    double* Sanrr = new double[(nX - 1) * (nY - 1)];
-    double* Sanff = new double[(nX - 1) * (nY - 1)];
-    double* Sanrf = new double[(nX - 1) * (nY - 1)];
-    double* Snurr = new double[(nX - 1) * (nY - 1)];
-    double* Snuff = new double[(nX - 1) * (nY - 1)];
-    double* Snurf = new double[(nX - 1) * (nY - 1)];
-    double* errorSrr = new double[(nX - 1) * (nY - 1)];
-    double* errorSff = new double[(nX - 1) * (nY - 1)];
-    double* errorSrf = new double[(nX - 1) * (nY - 1)];
-    double errorSrrMax = 0.0, errorSrrAvg = 0.0;
-    double errorSffMax = 0.0, errorSffAvg = 0.0;
-    double errorSrfMax = 0.0, errorSrfAvg = 0.0;
-    size_t errorSigmaN = 0;
+    double* J1an = new double[(nX - 1) * (nY - 1)];
+    double* J2an = new double[(nX - 1) * (nY - 1)];
+    double* J1nu = new double[(nX - 1) * (nY - 1)];
+    double* J2nu = new double[(nX - 1) * (nY - 1)];
+    double* errorJ1 = new double[(nX - 1) * (nY - 1)];
+    double* errorJ2 = new double[(nX - 1) * (nY - 1)];
+    double errorJ1Max = 0.0, errorJ1Avg = 0.0;
+    double errorJ2Max = 0.0, errorJ2Avg = 0.0;
+    size_t errorJN = 0;
 
     double* plastZoneAn = new double[(nX - 1) * (nY - 1)];
     double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
@@ -732,34 +751,34 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
             if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
             {
                 // elast
-                Uanr[j * nX + i] = getAnalyticUrElast(x, y, tauInfty, xi, kappa, c0);
+                UanAbs[j * nX + i] = getAnalyticUabsElast(x, y, tauInfty, xi, kappa, c0);
             }
             else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
             {
                 // plast
-                Uanr[j * nX + i] = getAnalyticUrPlast(r, deltaP);
+                UanAbs[j * nX + i] = abs(getAnalyticUrPlast(r, deltaP));
             }
             else
             {
                 // hole
-                Uanr[j * nX + i] = 0.0;
+                UanAbs[j * nX + i] = 0.0;
             }
             
             // numerical solution for Ur
-            Unur[j * nX + i] = Ux_cpu[(nX + 1) * j + i] * cosf + Uy_cpu[nX * j + i] * sinf;
+            UnuAbs[j * nX + i] = sqrt(Ux_cpu[(nX + 1) * j + i] * Ux_cpu[(nX + 1) * j + i] + Uy_cpu[nX * j + i] * Uy_cpu[nX * j + i]);
 
             // relative error between analytical and numerical solution for Ur
-            errorUr[j * nX + i] = 0.0;
+            errorUabs[j * nX + i] = 0.0;
             if (
                 x * x + y * y > Rmin * Rmin &&
                 x * x + y * y < Rmax * Rmax &&
-                abs(Unur[j * nX + i]) > eps
+                abs(UnuAbs[j * nX + i]) > eps
             )
             {
-                errorUr[j * nX + i] = abs((Uanr[j * nX + i] - Unur[j * nX + i]) / Unur[j * nX + i]);
-                errorUrMax = std::max(errorUrMax, errorUr[j * nX + i]);
-                errorUrAvg += errorUr[j * nX + i];
-                errorUrN++;
+                errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UnuAbs[j * nX + i]);
+                errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
+                errorUabsAvg += errorUabs[j * nX + i];
+                errorUabsN++;
             }
 
             // stress
@@ -788,23 +807,20 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 {
                     // elast
                     plastZoneAn[j * (nX - 1) + i] = 0.0;
-                    getAnalyticSigmaElast(x, y, xi, kappa, c0, Sanrr[j * (nX - 1) + i], Sanff[j * (nX - 1) + i], Sanrf[j * (nX - 1) + i]);
+                    getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
                 }
                 else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) 
                 {
                     // plast
                     plastZoneAn[j * (nX - 1) + i] = 1.0;
-                    Sanrr[j * (nX - 1) + i] = -2.0 * Y * log(1.0 / relR);
-                    Sanff[j * (nX - 1) + i] = -2.0 * Y * (1.0 + log(1.0 / relR));
-                    Sanrf[j * (nX - 1) + i] = 0;
+                    getAnalyticJplast(relR, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
                 }
                 else
                 {
                     // hole
                     plastZoneAn[j * (nX - 1) + i] = 0.0;
-                    Sanrr[j * (nX - 1) + i] = 0.0;
-                    Sanff[j * (nX - 1) + i] = 0.0;
-                    Sanrf[j * (nX - 1) + i] = 0.0;
+                    J1an[j * (nX - 1) + i] = 0.0;
+                    J2an[j * (nX - 1) + i] = 0.0;
                 }
 
                 // numerical solution for sigma
@@ -822,98 +838,77 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 );
                 const double Sxy = tauXY_cpu[j * (nX - 1) + i];
 
-                Snurr[j * (nX - 1) + i] = Sxx * cosf * cosf + Syy * sinf * sinf + 2 * Sxy * sinf * cosf;
-                Snuff[j * (nX - 1) + i] = Sxx * sinf * sinf + Syy * cosf * cosf - 2 * Sxy * sinf * cosf;
-                Snurf[j * (nX - 1) + i] = (Syy - Sxx) * sinf * cosf + Sxy * (cosf * cosf - sinf * sinf);
+                J1nu[j * (nX - 1) + i] = getJ1(Sxx, Syy);
+                J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy); //= J2;
 
                 // relative error between analytical and numerical solution for sigma
-                errorSrr[j * (nX - 1) + i] = 0.0;
-                errorSff[j * (nX - 1) + i] = 0.0;
-                errorSrf[j * (nX - 1) + i] = 0.0;
+                errorJ1[j * (nX - 1) + i] = 0.0;
+                errorJ2[j * (nX - 1) + i] = 0.0;
                 if (
                     x * x + y * y > Rmin * Rmin &&
                     x * x + y * y < Rmax * Rmax
                 )
                 {
-                    if (abs(Snurr[j * (nX - 1) + i]) > eps)
+                    if (abs(J1nu[j * (nX - 1) + i]) > eps)
                     {
-                        errorSrr[j * (nX - 1) + i] = abs((Sanrr[j * (nX - 1) + i] - Snurr[j * (nX - 1) + i]) / Snurr[j * (nX - 1) + i]);
-                        errorSrrMax = std::max(errorSrrMax, errorSrr[j * (nX - 1) + i]);
-                        errorSrrAvg += errorSrr[j * (nX - 1) + i];
+                        errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1nu[j * (nX - 1) + i]);
+                        errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
+                        errorJ1Avg += errorJ1[j * (nX - 1) + i];
                     }
 
-                    if (abs(Snuff[j * (nX - 1) + i]) > eps)
+                    if (abs(J2nu[j * (nX - 1) + i]) > eps)
                     {
-                        errorSff[j * (nX - 1) + i] = abs((Sanff[j * (nX - 1) + i] - Snuff[j * (nX - 1) + i]) / Snuff[j * (nX - 1) + i]);
-                        errorSffMax = std::max(errorSffMax, errorSff[j * (nX - 1) + i]);
-                        errorSffAvg += errorSff[j * (nX - 1) + i];
+                        errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2nu[j * (nX - 1) + i]);
+                        errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
+                        errorJ2Avg += errorJ2[j * (nX - 1) + i];
                     }
 
-                    if (abs(Snurf[j * (nX - 1) + i]) > eps)
-                    {
-                        errorSrf[j * (nX - 1) + i] = abs((Sanrf[j * (nX - 1) + i] - Snurf[j * (nX - 1) + i]) / Snurf[j * (nX - 1) + i]);
-                        errorSrfMax = std::max(errorSrfMax, errorSrf[j * (nX - 1) + i]);
-                        errorSrfAvg += errorSrf[j * (nX - 1) + i];
-                    }
-
-                    errorSigmaN++;
+                    errorJN++;
                 }
             } 
         }
     }
 
-    errorUrAvg /= errorUrN;
-    errorSrrAvg /= errorSigmaN;
-    errorSffAvg /= errorSigmaN;
-    errorSrfAvg /= errorSigmaN;
+    errorUabsAvg /= errorUabsN;
+    errorJ1Avg /= errorJN;
+    errorJ2Avg /= errorJN;
 
     std::cout << "\n"
-        << "Ur max error  = " << errorUrMax << ", avg = " << errorUrAvg << '\n'
-        << "Srr max error = " << errorSrrMax << ", avg = " << errorSrrAvg << '\n'
-        << "Sff max error = " << errorSffMax << ", avg = " << errorSffAvg << '\n'
-        << "Srf max error = " << errorSrfMax << ", avg = " << errorSrfAvg << std::endl;
+        << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+        << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+        << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
 
     log_file  << "\n"
-        << "Ur max error  = " << errorUrMax << ", avg = " << errorUrAvg << '\n'
-        << "Srr max error = " << errorSrrMax << ", avg = " << errorSrrAvg << '\n'
-        << "Sff max error = " << errorSffMax << ", avg = " << errorSffAvg << '\n'
-        << "Srf max error = " << errorSrfMax << ", avg = " << errorSrfAvg << std::endl;
+        << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+        << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+        << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
 
-    SaveVector(Uanr, nX * nY, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Uanr;
+    SaveVector(UanAbs, nX * nY, "UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] UanAbs;
 
-    SaveVector(Unur, nX * nY, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Unur;
+    SaveVector(UnuAbs, nX * nY, "UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] UnuAbs;
 
-    SaveVector(errorUr, nX * nY, "errorUr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorUr;
+    SaveVector(errorUabs, nX * nY, "errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorUabs;
 
-    SaveVector(Sanrr, (nX - 1) * (nY - 1), "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Sanrr;
+    SaveVector(J1an, (nX - 1) * (nY - 1), "J1an_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J1an;
 
-    SaveVector(Sanff, (nX - 1) * (nY - 1), "Sanff_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Sanff;
+    SaveVector(J2an, (nX - 1) * (nY - 1), "J2an_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J2an;
 
-    SaveVector(Sanrf, (nX - 1) * (nY - 1), "Sanrf_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Sanrf;
+    SaveVector(J1nu, (nX - 1) * (nY - 1), "J1nu_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J1nu;
 
-    SaveVector(Snurr, (nX - 1) * (nY - 1), "Snurr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Snurr;
+    SaveVector(J2nu, (nX - 1) * (nY - 1), "J2nu_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J2nu;
 
-    SaveVector(Snuff, (nX - 1) * (nY - 1), "Snuff_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Snuff;
+    SaveVector(errorJ1, (nX - 1) * (nY - 1), "errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorJ1;
 
-    SaveVector(Snurf, (nX - 1) * (nY - 1), "Snurf_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Snurf;
-
-    SaveVector(errorSrr, (nX - 1) * (nY - 1), "errorSrr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorSrr;
-
-    SaveVector(errorSff, (nX - 1)* (nY - 1), "errorSff_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorSff;
-
-    SaveVector(errorSrf, (nX - 1)* (nY - 1), "errorSrf_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorSrf;
+    SaveVector(errorJ2, (nX - 1) * (nY - 1), "errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorJ2;
 
     SaveVector(plastZoneAn, (nX - 1) * (nY - 1), "plast_an_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] plastZoneAn;

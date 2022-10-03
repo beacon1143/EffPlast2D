@@ -147,65 +147,50 @@ else
   if needCompareStatic
     % ANALYTIC SOLUTION FOR STATICS
 
-    fil = fopen(strcat('Uanr_', int2str(Nx), '_.dat'), 'rb');
-    Uanr = fread(fil, 'double');
+    fil = fopen(strcat('UanAbs_', int2str(Nx), '_.dat'), 'rb');
+    UanAbs = fread(fil, 'double');
     fclose(fil);
-    Uanr = reshape(Uanr, Nx, Ny);
+    UanAbs = reshape(UanAbs, Nx, Ny);
     
-    fil = fopen(strcat('Unur_', int2str(Nx), '_.dat'), 'rb');
-    Unur = fread(fil, 'double');
+    fil = fopen(strcat('UnuAbs_', int2str(Nx), '_.dat'), 'rb');
+    UnuAbs = fread(fil, 'double');
     fclose(fil);
-    Unur = reshape(Unur, Nx, Ny);
+    UnuAbs = reshape(UnuAbs, Nx, Ny);
 
-    fil = fopen(strcat('errorUr_', int2str(Nx), '_.dat'), 'rb');
-    errorUr = fread(fil, 'double');
+    fil = fopen(strcat('errorUabs_', int2str(Nx), '_.dat'), 'rb');
+    errorUabs = fread(fil, 'double');
     fclose(fil);
-    errorUr = reshape(errorUr, Nx, Ny);
+    errorUabs = reshape(errorUabs, Nx, Ny);
 
-    fil = fopen(strcat('Sanrr_', int2str(Nx), '_.dat'), 'rb');
-    Sanrr = fread(fil, 'double');
+    fil = fopen(strcat('J1an_', int2str(Nx), '_.dat'), 'rb');
+    J1an = fread(fil, 'double');
     fclose(fil);
-    Sanrr = reshape(Sanrr, Nx - 1, Ny - 1);
+    J1an = reshape(J1an, Nx - 1, Ny - 1);
     
-    fil = fopen(strcat('Sanff_', int2str(Nx), '_.dat'), 'rb');
-    Sanff = fread(fil, 'double');
+    fil = fopen(strcat('J2an_', int2str(Nx), '_.dat'), 'rb');
+    J2an = fread(fil, 'double');
     fclose(fil);
-    Sanff = reshape(Sanff, Nx - 1, Ny - 1);
+    J2an = reshape(J2an, Nx - 1, Ny - 1);
 
-    fil = fopen(strcat('Sanrf_', int2str(Nx), '_.dat'), 'rb');
-    Sanrf = fread(fil, 'double');
+    fil = fopen(strcat('J1nu_', int2str(Nx), '_.dat'), 'rb');
+    J1nu = fread(fil, 'double');
     fclose(fil);
-    Sanrf = reshape(Sanrf, Nx - 1, Ny - 1);
-
-    fil = fopen(strcat('Snurr_', int2str(Nx), '_.dat'), 'rb');
-    Snurr = fread(fil, 'double');
-    fclose(fil);
-    Snurr = reshape(Snurr, Nx - 1, Ny - 1);
+    J1nu = reshape(J1nu, Nx - 1, Ny - 1);
     
-    fil = fopen(strcat('Snuff_', int2str(Nx), '_.dat'), 'rb');
-    Snuff = fread(fil, 'double');
+    fil = fopen(strcat('J2nu_', int2str(Nx), '_.dat'), 'rb');
+    J2nu = fread(fil, 'double');
     fclose(fil);
-    Snuff = reshape(Snuff, Nx - 1, Ny - 1);
+    J2nu = reshape(J2nu, Nx - 1, Ny - 1);
 
-    fil = fopen(strcat('Snurf_', int2str(Nx), '_.dat'), 'rb');
-    Snurf = fread(fil, 'double');
+    fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
+    errorJ1 = fread(fil, 'double');
     fclose(fil);
-    Snurf = reshape(Snurf, Nx - 1, Ny - 1);
-
-    fil = fopen(strcat('errorSrr_', int2str(Nx), '_.dat'), 'rb');
-    errorSrr = fread(fil, 'double');
-    fclose(fil);
-    errorSrr = reshape(errorSrr, Nx - 1, Ny - 1);
+    errorJ1 = reshape(errorJ1, Nx - 1, Ny - 1);
     
-    fil = fopen(strcat('errorSff_', int2str(Nx), '_.dat'), 'rb');
-    errorSff = fread(fil, 'double');
+    fil = fopen(strcat('errorJ2_', int2str(Nx), '_.dat'), 'rb');
+    errorJ2 = fread(fil, 'double');
     fclose(fil);
-    errorSff = reshape(errorSff, Nx - 1, Ny - 1);
-
-    fil = fopen(strcat('errorSrf_', int2str(Nx), '_.dat'), 'rb');
-    errorSrf = fread(fil, 'double');
-    fclose(fil);
-    errorSrf = reshape(errorSrf, Nx - 1, Ny - 1);
+    errorJ2 = reshape(errorJ2, Nx - 1, Ny - 1);
     
     fil = fopen(strcat('plast_an_', int2str(Nx), '_.dat'), 'rb');
     plast_an = fread(fil, 'double');
@@ -220,108 +205,87 @@ else
     plastDiff =  abs(plast_an - plast_nu);
 
     % POSTPROCESSING
-    subplot(3, 5, 1)
-    imagesc(Snurr)
+    subplot(3, 4, 1)
+    imagesc(J1nu)
     colorbar
-    title('\sigma_{rr} numerical')
+    title('J1 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 5, 2)
-    imagesc(Snuff)
+    subplot(3, 4, 2)
+    imagesc(J2nu)
     colorbar
-    title('\sigma_{\phi \phi} numerical')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-
-    subplot(3, 5, 3)
-    imagesc(Snurf)
-    colorbar
-    title('\sigma_{r \phi} numerical')
+    title('J2 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 5, 4)
+    subplot(3, 4, 3)
     imagesc(plast_nu)
     colorbar
     title('plast zone numerical')
     axis image
     set(gca, 'FontSize', 10)
 
-    subplot(3, 5, 5)
-    imagesc(Unur)
+    subplot(3, 4, 4)
+    imagesc(UnuAbs)
     colorbar
-    title('U_{r} numerical')
+    title('abs(U) numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 5, 6)
-    imagesc(Sanrr)
+    subplot(3, 4, 5)
+    imagesc(J1an)
     colorbar
-    title('\sigma_{rr} analytics')
+    title('J1 analytics')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 5, 7)
-    imagesc(Sanff)
+    subplot(3, 4, 6)
+    imagesc(J2an)
     colorbar
-    title('\sigma_{\phi \phi} analytics')
+    title('J2 analytics')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
 
-    subplot(3, 5, 8)
-    imagesc(Sanrf)
-    colorbar
-    title('\sigma_{r \phi} analytics')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-
-    subplot(3, 5, 9)
+    subplot(3, 4, 7)
     imagesc(plast_an)
     colorbar
     title('plast zone analytics')
     axis image
     set(gca, 'FontSize', 10)
     
-    subplot(3, 5, 10)
-    imagesc(Uanr)
+    subplot(3, 4, 8)
+    imagesc(UanAbs)
     colorbar
-    title('U_{r} analytics')
+    title('abs(U) analytics')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
 
-    subplot(3, 5, 11)
-    imagesc(errorSrr)
+    subplot(3, 4, 9)
+    imagesc(errorJ1)
     colorbar
-    title('\sigma_{rr} error')
+    title('J1 error')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 5, 12)
-    imagesc(errorSff)
+    subplot(3, 4, 10)
+    imagesc(errorJ2)
     colorbar
-    title('\sigma_{\phi \phi} error')
+    title('J2 error')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
 
-    subplot(3, 5, 13)
-    imagesc(errorSrf)
-    colorbar
-    title('\sigma_{r \phi} error')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-
-    subplot(3, 5, 14)
+    subplot(3, 4, 11)
     imagesc(plastDiff)
     colorbar
     title('plast zone diff')
     axis image
     set(gca, 'FontSize', 10)
     
-    subplot(3, 5, 15)
-    imagesc(errorUr)
+    subplot(3, 4, 12)
+    imagesc(errorUabs)
     colorbar
-    title('U_{r} error')
+    title('abs(U) error')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
