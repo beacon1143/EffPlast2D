@@ -183,21 +183,23 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
 )
 {    
     log_file << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
-             << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << '\n';
+        << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
     std::cout << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
-              << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << '\n';
+        << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
 
     const double incPercent = 0.005;
     const double incLoad =  0.5 * (loadValue * loadType[0] + loadValue * loadType[1]) * incPercent;
 
     std::array<std::vector<std::array<double, 3>>, NL> Sigma;
     std::array<std::vector<double>, NL> deltaP;
+    std::array<std::vector<double>, NL> tauInfty;
     std::array<std::vector<double>, NL> dPhi;
 
     for (int nload = 0; nload < NL; nload++)
     {
         Sigma[nload].resize(nTimeSteps);
         deltaP[nload].resize(nTimeSteps);
+        tauInfty[nload].resize(nTimeSteps);
         dPhi[nload].resize(nTimeSteps);
 
         double dUxdx = initLoadValue * loadType[0];
@@ -209,8 +211,8 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
 
         /* ACTION LOOP */
         for (int it = 0; it < nTimeSteps; it++) {
-            log_file << "\n\nload step " << (it + 1) << '\n';
-            std::cout << "\n\nload step " << (it + 1) << '\n';
+            log_file << "\n\nload step " << (it + 1) << std::endl;
+            std::cout << "\n\nload step " << (it + 1) << std::endl;
 
             if (it > 0)
             {
@@ -256,8 +258,8 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
                     error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
                         (std::abs(loadValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
 
-                    std::cout << "Iteration " << iter + 1 << ": Error is " << error << '\n';
-                    log_file << "Iteration " << iter + 1 << ": Error is " << error << '\n';
+                    std::cout << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
+                    log_file << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
 
                     if (error < EITER) {
                         std::cout << "Number of iterations is " << iter + 1 << '\n';
@@ -330,7 +332,7 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             std::cout << "deltaP = " << deltaP[nload][it] << '\n';
             log_file << "deltaP = " << deltaP[nload][it] << '\n';
             //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-            const double tauInfty = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
+            tauInfty[nload][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
             int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
             std::vector<double> dispX((nX + 1) / 2);
@@ -373,23 +375,20 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
             //log_file << "deltaP_honest = " << deltaP_honest << '\n';
             std::cout << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
             log_file << "deltaP / Y = " << deltaP[nload][it] / Y << '\n';
-            std::cout << "tauInfty / Y = " << tauInfty / Y << '\n';
-            log_file << "tauInfty / Y = " << tauInfty / Y << '\n';
+            std::cout << "tauInfty / Y = " << tauInfty[nload][it] / Y << '\n';
+            log_file << "tauInfty / Y = " << tauInfty[nload][it] / Y << '\n';
             //std::cout << "KeffPhi = " << KeffPhi << '\n';
             log_file << "KeffPhi = " << KeffPhi << '\n';
 
             const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
             const double KexactElast = G0 / phi;
             const double KexactPlast = G0 / (phi - dPhi[nload][it]) / exp(std::abs(deltaP[nload][it]) / Y - 1.0) / // phi or phi - dPhi ?
-                (1.0 + 5.0 * tauInfty * tauInfty / Y / Y);
+                (1.0 + 5.0 * tauInfty[nload][it] * tauInfty[nload][it] / Y / Y);
             //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
             //std::cout << "KexactElast = " << KexactElast << '\n';
             log_file << "KexactElast = " << KexactElast << '\n';
             std::cout << "KexactPlast = " << KexactPlast << '\n';
             log_file << "KexactPlast = " << KexactPlast << '\n';
-
-            if (it + 1 == nTimeSteps && nload + 1 == NL)
-                SaveAnStatic1D(deltaP[nload][it], tauInfty);
         }
     }
 
@@ -398,8 +397,13 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
         const double KeffPhi = (deltaP[NL - 1][nTimeSteps - 1] - deltaP[NL - 2][nTimeSteps - 1]) / 
             (dPhi[NL - 1][nTimeSteps - 1] - dPhi[NL - 2][nTimeSteps - 1]);
         
-        std::cout << "==============\n" << "KeffPhi = " << KeffPhi << '\n';
-        log_file << "==============\n" << "KeffPhi = " << KeffPhi << '\n';
+        std::cout << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
+        log_file << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
+    }
+
+    if (NL && nTimeSteps)
+    {
+        SaveAnStatic2D(deltaP[NL - 1][nTimeSteps - 1], tauInfty[NL - 1][nTimeSteps - 1]);
     }
 
     /* ANALYTIC 2D SOLUTION FOR STATICS */
@@ -610,161 +614,200 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
     return tauInfty;
 }
 
-void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
-    /* ANALYTIC 1D SOLUTION FOR STATICS */
-    const double Rmin = rad + 0.0 * dX;
+void EffPlast2D::getAnalytic(
+    double x, double y, double xi, double kappa, double c0,
+    double& cosf, 
+    double& sinf,
+    std::complex<double>& zeta,
+    std::complex<double>& w,
+    std::complex<double>& dw,
+    std::complex<double>& wv,
+    std::complex<double>& Phi,
+    std::complex<double>& Psi
+)
+{
+    const std::complex<double> z = std::complex<double>(x, y);
+    const double r = sqrt(x * x + y * y);
+    cosf = x / r;
+    sinf = y / r;
+
+    double signx = x > 0.0 ? 1.0 : -1.0;
+    if (abs(x) < std::numeric_limits<double>::epsilon())
+        signx = 1.0;
+
+    zeta = (z + signx * sqrt(z * z + 4.0 * c0 * c0 * kappa)) / 2.0 / c0;
+    w    = c0 * (zeta - kappa / zeta);
+    dw   = c0 * (1.0 + kappa / (zeta * zeta));
+    wv   = c0 * (1.0 / zeta - kappa * zeta);
+    Phi  = -Y * xi / 2.0 - Y * xi * log(w / zeta / rad);
+    Psi  = -Y * xi / zeta * wv / dw;
+}
+
+double EffPlast2D::getAnalyticUrElast(double x, double y, double tauInfty, double xi, double kappa, double c0)
+{
+    double cosf, sinf;
+    std::complex<double> zeta, w, dw, wv, Phi, Psi;
+    getAnalytic(x, y, xi, kappa, c0, cosf, sinf, zeta, w, dw, wv, Phi, Psi);
+
+    const std::complex<double> phi  = -Y * xi * w * (log(w / zeta / rad) + 0.5) - 2.0 * c0 * tauInfty / zeta;
+    const std::complex<double> psi  = c0 * Y * xi * (1.0 / zeta + kappa * zeta);
+    const std::complex<double> dphi = Phi * dw;
+    const std::complex<double> dpsi = Psi * dw;
+    const std::complex<double> U    = ((1.0 + 6.0 * G0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi)) / 2.0 / G0;
+
+    return real(U) * cosf + imag(U) * sinf;
+}
+
+double EffPlast2D::getAnalyticUrPlast(double r, double deltaP)
+{
+    return -0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / (G0 * r);
+}
+
+void EffPlast2D::getAnalyticSigmaElast(double x, double y, double xi, double kappa, double c0, double& Srr, double& Sff, double& Srf)
+{
+    double cosf, sinf;
+    std::complex<double> zeta, w, dw, wv, Phi, Psi;
+    getAnalytic(x, y, xi, kappa, c0, cosf, sinf, zeta, w, dw, wv, Phi, Psi);
+
+    const std::complex<double> z    = std::complex<double>(x, y);
+    const std::complex<double> dPhi = -2.0 * xi * Y * kappa / zeta / (zeta * zeta - kappa);
+    const std::complex<double> F    = 2.0 * (conj(w) / dw * dPhi + Psi) / exp(-2.0 * arg(z) * std::complex<double>(0.0, 1.0));
+
+    Srr = 2.0 * real(Phi) - real(F) / 2.0;
+    Sff = 2.0 * real(Phi) + real(F) / 2.0;
+    Srf = imag(F) / 2.0;
+}
+
+void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
+    /* ANALYTIC 2D SOLUTION FOR STATICS */
+    const double Rmin = rad + 20.0 * dX;
     const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
+    const double eps = 1.0e-18;
 
     const double xi = (deltaP > 0.0) ? 1.0 : -1.0;
     const double kappa = tauInfty / Y * xi;
     const double c0 = rad * exp(abs(deltaP) / 2.0 / Y - 0.5);
+
+    const double rx = getAnalyticUrPlast(rad, deltaP);
+    const double ry = rx;
 
     const double Rx = c0 * (1.0 - kappa);
     const double Ry = c0 * (1.0 + kappa);
 
     double* Uanr = new double[nX * nY];
     double* Unur = new double[nX * nY];
+    double* errorUr = new double[nX * nY];
+    double errorUrMax = 0.0, errorUrAvg = 0.0;
+    size_t errorUrN = 0;
+
+    double* Sanrr = new double[(nX - 1) * (nY - 1)];
+    double* Sanff = new double[(nX - 1) * (nY - 1)];
+    double* Sanrf = new double[(nX - 1) * (nY - 1)];
+    double* Snurr = new double[(nX - 1) * (nY - 1)];
+    double* Snuff = new double[(nX - 1) * (nY - 1)];
+    double* Snurf = new double[(nX - 1) * (nY - 1)];
+    double* errorSrr = new double[(nX - 1) * (nY - 1)];
+    double* errorSff = new double[(nX - 1) * (nY - 1)];
+    double* errorSrf = new double[(nX - 1) * (nY - 1)];
+    double errorSrrMax = 0.0, errorSrrAvg = 0.0;
+    double errorSffMax = 0.0, errorSffAvg = 0.0;
+    double errorSrfMax = 0.0, errorSrfAvg = 0.0;
+    size_t errorSigmaN = 0;
+
+    double* plastZoneAn = new double[(nX - 1) * (nY - 1)];
+    double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
 
     for (int i = 0; i < nX; i++)
     {
         for (int j = 0; j < nY; j++)
         {
+            // displacement
             const double x = -0.5 * dX * (nX - 1) + dX * i;
             const double y = -0.5 * dY * (nY - 1) + dY * j;
             const double r = sqrt(x * x + y * y);
             const double cosf = x / r;
             const double sinf = y / r;
 
-            if (
-                x * x + y * y < Rmin * Rmin ||
-                x * x + y * y > Rmax * Rmax
-            )
+            // analytical solution for Ur
+            if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
             {
+                // elast
+                Uanr[j * nX + i] = getAnalyticUrElast(x, y, tauInfty, xi, kappa, c0);
+            }
+            else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
+            {
+                // plast
+                Uanr[j * nX + i] = getAnalyticUrPlast(r, deltaP);
+            }
+            else
+            {
+                // hole
                 Uanr[j * nX + i] = 0.0;
-                Unur[j * nX + i] = 0.0;
             }
-            else
-            {
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
-                {
-                    const std::complex<double> z = std::complex<double>(x, y);
+            
+            // numerical solution for Ur
+            Unur[j * nX + i] = Ux_cpu[(nX + 1) * j + i] * cosf + Uy_cpu[nX * j + i] * sinf;
 
-                    double signx = x > 0.0 ? 1.0 : -1.0;
-                    if (abs(x) < std::numeric_limits<double>::epsilon())
-                        signx = 1.0;
-
-                    const std::complex<double> zeta = (z + signx * sqrt(z * z + 4.0 * c0 * c0 * kappa)) / 2.0 / c0;
-                    const std::complex<double> w = c0 * (zeta - kappa / zeta);
-                    const std::complex<double> dw = c0 * (1.0 + kappa / (zeta * zeta));
-                    const std::complex<double> wv = c0 * (1.0 / zeta - kappa * zeta);
-                    const std::complex<double> Phi = -Y * xi / 2.0 - Y * xi * log(w / zeta / rad); 
-                    const std::complex<double> Psi = -Y * xi / zeta * wv / dw;
-                    const std::complex<double> phi = - Y * xi * w * (log(w / zeta / rad) + 0.5) - 2.0 * c0 * tauInfty / zeta;
-                    const std::complex<double> psi = c0 * Y * xi * (1.0 / zeta + kappa * zeta);
-                    const std::complex<double> dphi = Phi * dw;
-                    const std::complex<double> dpsi = Psi * dw;
-                    const std::complex<double> U = ((1.0 + 6.0 * G0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi)) / 2.0 / G0;
-
-                    Uanr[j * nX + i] = real(U) * cosf + imag(U) * sinf;
-                }
-                else
-                {
-                    Uanr[j * nX + i] = -0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / (G0 * r);
-                }
-                
-                Unur[j * nX + i] = Ux_cpu[(nX + 1) * j + i] * cosf + Uy_cpu[nX * j + i] * sinf;
-            }
-        }
-    }
-
-    SaveVector(Uanr, nX * nY, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Uanr;
-
-    SaveVector(Unur, nX * nY, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] Unur;
-
-    double* Sanrr = new double[(nX - 1) * (nY - 1)];
-    double* Sanff = new double[(nX - 1) * (nY - 1)];
-    double* Sanrf = new double[(nX - 1) * (nY - 1)];
-
-    double* Snurr = new double[(nX - 1) * (nY - 1)];
-    double* Snuff = new double[(nX - 1) * (nY - 1)];
-    double* Snurf = new double[(nX - 1) * (nY - 1)];
-
-    double* plastZoneAn = new double[(nX - 1) * (nY - 1)];
-    double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
-
-    for (int i = 0; i < nX - 1; i++)
-    {
-        for (int j = 0; j < nY - 1; j++)
-        {
-            const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
-            const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
-            const double r = sqrt(x * x + y * y);
-            const double cosf = x / r;
-            const double sinf = y / r;
-
-            const std::complex<double> z = std::complex<double>(x, y);
-
-            const double Rmin = rad + /*2*/0.0 * std::min(dX, dY);
-            const double Rmax = 0.5 * dX * (nX - 1) - dX * 40;
-            double signx = x > 0.0 ? 1.0 : -1.0;
-            if (abs(x) < std::numeric_limits<double>::epsilon())
-                signx = 1.0;
-
-            const std::complex<double> zeta = (z + signx * sqrt(z * z + 4.0 * c0 * c0 * kappa)) / 2.0 / c0;
-            const std::complex<double> w = c0 * (zeta - kappa / zeta);
-            const std::complex<double> dw = c0 * (1.0 + kappa / (zeta * zeta));
-            const std::complex<double> wv = c0 * (1.0 / zeta - kappa * zeta);
-            const std::complex<double> phi = -Y * xi / 2.0 - Y * xi * log(w / zeta / rad); 
-            const std::complex<double> psi = -Y * xi / zeta * wv / dw;
-            const std::complex<double> dphi = - 2.0 * xi * Y * kappa / zeta / ( zeta * zeta - kappa );
-            const std::complex<double> F = 2.0 * (conj(w) / dw * dphi + psi) / exp(-2.0 * arg(z) * std::complex<double>(0.0, 1.0));
-
-            plastZoneAn[j * (nX - 1) + i] = 0.0;
-            plastZoneNu[j * (nX - 1) + i] = 0.0;
-
+            // relative error between analytical and numerical solution for Ur
+            errorUr[j * nX + i] = 0.0;
             if (
-                x * x + y * y < Rmin * Rmin ||
-                x * x + y * y > Rmax * Rmax
+                x * x + y * y > Rmin * Rmin &&
+                x * x + y * y < Rmax * Rmax &&
+                abs(Unur[j * nX + i]) > eps
             )
             {
-                Sanrr[j * (nX - 1) + i] = 0.0;
-                Sanff[j * (nX - 1) + i] = 0.0;
-                Sanrf[j * (nX - 1) + i] = 0.0;
-
-                Snurr[j * (nX - 1) + i] = 0.0;
-                Snuff[j * (nX - 1) + i] = 0.0;
-                Snurf[j * (nX - 1) + i] = 0.0;
+                errorUr[j * nX + i] = abs((Uanr[j * nX + i] - Unur[j * nX + i]) / Unur[j * nX + i]);
+                errorUrMax = std::max(errorUrMax, errorUr[j * nX + i]);
+                errorUrAvg += errorUr[j * nX + i];
+                errorUrN++;
             }
-            else
-            {
-                const double relR = rad / r;
-                const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
 
-                if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) 
+            // stress
+            if (i < nX - 1 && j < nY - 1)
+            {
+                const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
+                const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
+                const double r = sqrt(x * x + y * y);
+                const double cosf = x / r;
+                const double sinf = y / r;
+
+                // numerical plast zone
+                const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
+                if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
                 {
                     plastZoneNu[j * (nX - 1) + i] = 1.0;
                 }
-
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) {
-                    // elast
-                    // Sanrr[j * (nX - 1) + i] = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
-                    // Sanff[j * (nX - 1) + i] = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
-
-                    Sanrr[j * (nX - 1) + i] = 2.0 * real(phi) - real(F) / 2.0;
-                    Sanff[j * (nX - 1) + i] = 2.0 * real(phi) + real(F) / 2.0;
-                    Sanrf[j * (nX - 1) + i] = imag(F) / 2.0;
+                else
+                {
+                    plastZoneNu[j * (nX - 1) + i] = 0.0;
                 }
-                else {
+
+                // analytical solution for sigma
+                const double relR = rad / r;
+                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
+                {
+                    // elast
+                    plastZoneAn[j * (nX - 1) + i] = 0.0;
+                    getAnalyticSigmaElast(x, y, xi, kappa, c0, Sanrr[j * (nX - 1) + i], Sanff[j * (nX - 1) + i], Sanrf[j * (nX - 1) + i]);
+                }
+                else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) 
+                {
                     // plast
+                    plastZoneAn[j * (nX - 1) + i] = 1.0;
                     Sanrr[j * (nX - 1) + i] = -2.0 * Y * log(1.0 / relR);
                     Sanff[j * (nX - 1) + i] = -2.0 * Y * (1.0 + log(1.0 / relR));
                     Sanrf[j * (nX - 1) + i] = 0;
-
-                    plastZoneAn[j * (nX - 1) + i] = 1.0;
+                }
+                else
+                {
+                    // hole
+                    plastZoneAn[j * (nX - 1) + i] = 0.0;
+                    Sanrr[j * (nX - 1) + i] = 0.0;
+                    Sanff[j * (nX - 1) + i] = 0.0;
+                    Sanrf[j * (nX - 1) + i] = 0.0;
                 }
 
+                // numerical solution for sigma
                 const double Sxx = 0.25 * (
                     -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] +
                     -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] +
@@ -777,15 +820,73 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
                     -P_cpu[(j + 1) * nX + i] + tauYY_cpu[(j + 1) * nX + i] +
                     -P_cpu[(j + 1) * nX + (i + 1)] + tauYY_cpu[(j + 1) * nX + (i + 1)]
                 );
-
                 const double Sxy = tauXY_cpu[j * (nX - 1) + i];
 
                 Snurr[j * (nX - 1) + i] = Sxx * cosf * cosf + Syy * sinf * sinf + 2 * Sxy * sinf * cosf;
                 Snuff[j * (nX - 1) + i] = Sxx * sinf * sinf + Syy * cosf * cosf - 2 * Sxy * sinf * cosf;
                 Snurf[j * (nX - 1) + i] = (Syy - Sxx) * sinf * cosf + Sxy * (cosf * cosf - sinf * sinf);
-            }
+
+                // relative error between analytical and numerical solution for sigma
+                errorSrr[j * (nX - 1) + i] = 0.0;
+                errorSff[j * (nX - 1) + i] = 0.0;
+                errorSrf[j * (nX - 1) + i] = 0.0;
+                if (
+                    x * x + y * y > Rmin * Rmin &&
+                    x * x + y * y < Rmax * Rmax
+                )
+                {
+                    if (abs(Snurr[j * (nX - 1) + i]) > eps)
+                    {
+                        errorSrr[j * (nX - 1) + i] = abs((Sanrr[j * (nX - 1) + i] - Snurr[j * (nX - 1) + i]) / Snurr[j * (nX - 1) + i]);
+                        errorSrrMax = std::max(errorSrrMax, errorSrr[j * (nX - 1) + i]);
+                        errorSrrAvg += errorSrr[j * (nX - 1) + i];
+                    }
+
+                    if (abs(Snuff[j * (nX - 1) + i]) > eps)
+                    {
+                        errorSff[j * (nX - 1) + i] = abs((Sanff[j * (nX - 1) + i] - Snuff[j * (nX - 1) + i]) / Snuff[j * (nX - 1) + i]);
+                        errorSffMax = std::max(errorSffMax, errorSff[j * (nX - 1) + i]);
+                        errorSffAvg += errorSff[j * (nX - 1) + i];
+                    }
+
+                    if (abs(Snurf[j * (nX - 1) + i]) > eps)
+                    {
+                        errorSrf[j * (nX - 1) + i] = abs((Sanrf[j * (nX - 1) + i] - Snurf[j * (nX - 1) + i]) / Snurf[j * (nX - 1) + i]);
+                        errorSrfMax = std::max(errorSrfMax, errorSrf[j * (nX - 1) + i]);
+                        errorSrfAvg += errorSrf[j * (nX - 1) + i];
+                    }
+
+                    errorSigmaN++;
+                }
+            } 
         }
     }
+
+    errorUrAvg /= errorUrN;
+    errorSrrAvg /= errorSigmaN;
+    errorSffAvg /= errorSigmaN;
+    errorSrfAvg /= errorSigmaN;
+
+    std::cout << "\n"
+        << "Ur max error  = " << errorUrMax << ", avg = " << errorUrAvg << '\n'
+        << "Srr max error = " << errorSrrMax << ", avg = " << errorSrrAvg << '\n'
+        << "Sff max error = " << errorSffMax << ", avg = " << errorSffAvg << '\n'
+        << "Srf max error = " << errorSrfMax << ", avg = " << errorSrfAvg << std::endl;
+
+    log_file  << "\n"
+        << "Ur max error  = " << errorUrMax << ", avg = " << errorUrAvg << '\n'
+        << "Srr max error = " << errorSrrMax << ", avg = " << errorSrrAvg << '\n'
+        << "Sff max error = " << errorSffMax << ", avg = " << errorSffAvg << '\n'
+        << "Srf max error = " << errorSrfMax << ", avg = " << errorSrfAvg << std::endl;
+
+    SaveVector(Uanr, nX * nY, "Uanr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Uanr;
+
+    SaveVector(Unur, nX * nY, "Unur_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] Unur;
+
+    SaveVector(errorUr, nX * nY, "errorUr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorUr;
 
     SaveVector(Sanrr, (nX - 1) * (nY - 1), "Sanrr_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] Sanrr;
@@ -804,6 +905,15 @@ void EffPlast2D::SaveAnStatic1D(const double deltaP, const double tauInfty) {
 
     SaveVector(Snurf, (nX - 1) * (nY - 1), "Snurf_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] Snurf;
+
+    SaveVector(errorSrr, (nX - 1) * (nY - 1), "errorSrr_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorSrr;
+
+    SaveVector(errorSff, (nX - 1)* (nY - 1), "errorSff_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorSff;
+
+    SaveVector(errorSrf, (nX - 1)* (nY - 1), "errorSrf_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorSrf;
 
     SaveVector(plastZoneAn, (nX - 1) * (nY - 1), "plast_an_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] plastZoneAn;

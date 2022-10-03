@@ -105,5 +105,19 @@ private:
 	double GetTauInfty_honest();
 	double GetTauInfty_approx(const double Exx, const double Eyy);
 
-	void SaveAnStatic1D(const double deltaP, const double tauInfty);
+	void getAnalytic(
+		double x, double y, double xi, double kappa, double c0,
+		double& cosf,
+		double& sinf,
+		std::complex<double>& zeta,
+		std::complex<double>& w,
+		std::complex<double>& dw,
+		std::complex<double>& wv,
+		std::complex<double>& Phi,
+		std::complex<double>& Psi
+	);
+	double getAnalyticUrElast(double x, double y, double tauInfty, double xi, double kappa, double c0);
+	double getAnalyticUrPlast(double r, double deltaP);
+	void getAnalyticSigmaElast(double x, double y, double xi, double kappa, double c0, double& Srr, double& Sff, double& Srf);
+	void SaveAnStatic2D(const double deltaP, const double tauInfty);
 };
