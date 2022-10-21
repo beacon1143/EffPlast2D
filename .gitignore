@@ -16,5 +16,6 @@ a.lib
 *.tiff
 
 *.log
+*.asv
 
 /src

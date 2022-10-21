@@ -116,9 +116,9 @@ private:
 		std::complex<double>& Phi,
 		std::complex<double>& Psi
 	);
-	double getAnalyticUabsElast(double x, double y, double tauInfty, double xi, double kappa, double c0);
+	std::complex<double> getAnalyticUelast(double x, double y, double tauInfty, double xi, double kappa, double c0);
 	double getAnalyticUrPlast(double r, double deltaP);
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
-	void getAnalyticJplast(double relR, double& J1, double& J2);
+	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
 	void SaveAnStatic2D(const double deltaP, const double tauInfty);
 };

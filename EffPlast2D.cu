@@ -230,7 +230,6 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
                 }
             }
             gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
-
             for (int i = 0; i < nX; i++) {
                 for (int j = 0; j < nY + 1; j++) {
                     Uy_cpu[j * nX + i] += ((-0.5 * dY * nY + dY * j) * (dUydy)) * (1.0 + nload * incPercent);
@@ -643,7 +642,7 @@ void EffPlast2D::getAnalytic(
     Psi  = -Y * xi / zeta * wv / dw;
 }
 
-double EffPlast2D::getAnalyticUabsElast(double x, double y, double tauInfty, double xi, double kappa, double c0)
+std::complex<double> EffPlast2D::getAnalyticUelast(double x, double y, double tauInfty, double xi, double kappa, double c0)
 {
     double cosf, sinf;
     std::complex<double> zeta, w, dw, wv, Phi, Psi;
@@ -655,7 +654,7 @@ double EffPlast2D::getAnalyticUabsElast(double x, double y, double tauInfty, dou
     const std::complex<double> dpsi = Psi * dw;
     const std::complex<double> U    = ((1.0 + 6.0 * G0 / (G0 + 3.0 * K0)) * phi - w / conj(dw) * conj(dphi) - conj(psi)) / 2.0 / G0;
 
-    return abs(U);
+    return U;
 }
 
 double EffPlast2D::getAnalyticUrPlast(double r, double deltaP)
@@ -691,11 +690,11 @@ void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, 
     J2 = getJ2(Srr, Sff, Srf);
 }
 
-void EffPlast2D::getAnalyticJplast(double relR, double& J1, double& J2)
+void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2)
 {
-    const double Srr = -2.0 * Y * log(1.0 / relR);
-    const double Sff = -2.0 * Y * (1.0 + log(1.0 / relR));
-    const double Srf = 0;
+    const double Srr = -2.0 * xi * Y * log(r / rad);
+    const double Sff = -2.0 * xi * Y * (1.0 + log(r / rad));
+    const double Srf = 0.0;
 
     J1 = getJ1(Srr, Sff);
     J2 = getJ2(Srr, Sff, Srf);
@@ -751,7 +750,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
             if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
             {
                 // elast
-                UanAbs[j * nX + i] = getAnalyticUabsElast(x, y, tauInfty, xi, kappa, c0);
+                UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
             }
             else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
             {
@@ -765,7 +764,9 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
             }
             
             // numerical solution for Ur
-            UnuAbs[j * nX + i] = sqrt(Ux_cpu[(nX + 1) * j + i] * Ux_cpu[(nX + 1) * j + i] + Uy_cpu[nX * j + i] * Uy_cpu[nX * j + i]);
+            const double ux = 0.5 * (Ux_cpu[(nX + 1) * j + i] + Ux_cpu[(nX + 1) * j + (i + 1)]);
+            const double uy = 0.5 * (Uy_cpu[nX * j + i] + Uy_cpu[nX * (j + 1) + i]);
+            UnuAbs[j * nX + i] = sqrt(ux * ux + uy * uy);
 
             // relative error between analytical and numerical solution for Ur
             errorUabs[j * nX + i] = 0.0;
@@ -802,7 +803,6 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 }
 
                 // analytical solution for sigma
-                const double relR = rad / r;
                 if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
                 {
                     // elast
@@ -813,7 +813,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 {
                     // plast
                     plastZoneAn[j * (nX - 1) + i] = 1.0;
-                    getAnalyticJplast(relR, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+                    getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
                 }
                 else
                 {
@@ -839,7 +839,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 const double Sxy = tauXY_cpu[j * (nX - 1) + i];
 
                 J1nu[j * (nX - 1) + i] = getJ1(Sxx, Syy);
-                J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy); //= J2;
+                J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy);
 
                 // relative error between analytical and numerical solution for sigma
                 errorJ1[j * (nX - 1) + i] = 0.0;
