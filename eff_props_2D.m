@@ -3,9 +3,9 @@ figure(1)
 clf
 colormap jet
 
-initLoadValue = -0.0001;
+initLoadValue = -0.000025;
 loadValue = -0.0001;
-loadType = [16.0, -8.0, 0.0];
+loadType = [5.0, -3.0, 0.0];
 nGrid = 32;
 nTimeSteps = 1;
 nTasks = 2;

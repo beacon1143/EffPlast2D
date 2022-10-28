@@ -776,7 +776,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 abs(UnuAbs[j * nX + i]) > eps
             )
             {
-                errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UnuAbs[j * nX + i]);
+                errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UanAbs[j * nX + i]);
                 errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
                 errorUabsAvg += errorUabs[j * nX + i];
                 errorUabsN++;
@@ -851,14 +851,14 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 {
                     if (abs(J1nu[j * (nX - 1) + i]) > eps)
                     {
-                        errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1nu[j * (nX - 1) + i]);
+                        errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
                         errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
                         errorJ1Avg += errorJ1[j * (nX - 1) + i];
                     }
 
                     if (abs(J2nu[j * (nX - 1) + i]) > eps)
                     {
-                        errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2nu[j * (nX - 1) + i]);
+                        errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
                         errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
                         errorJ2Avg += errorJ2[j * (nX - 1) + i];
                     }
