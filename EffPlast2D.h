@@ -90,14 +90,11 @@ private:
 	void SetMaterials();
 	void SetInitPressure(const double coh);
 
-	static void SetMatrixZero(double** A_cpu, const int m, const int n);
 	static void SetMatrixZero(double** A_cpu, double** A_cuda, const int m, const int n);
 	static void SaveMatrix(double* const A_cpu, const double* const A_cuda, const int m, const int n, const std::string& filename);
 	static void SaveVector(double* const arr, const int size, const std::string& filename);
 
 	static double FindMaxAbs(const double* const arr, const int size);
-	static double FindMinMaxDiff(const double* const arr, const int size);
-	static double FindMaxAbsDiff(const double* const arr1, const double* const arr2, const int size);
 	static double FindMaxAbs(const std::vector<double>& vec);
 
 	double GetDeltaP_honest();
@@ -117,8 +114,8 @@ private:
 		std::complex<double>& Psi
 	);
 	std::complex<double> getAnalyticUelast(double x, double y, double tauInfty, double xi, double kappa, double c0);
-	double getAnalyticUrPlast(double r, double deltaP);
+	double getAnalyticUrHydro(double r, double deltaP);
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
-	void SaveAnStatic2D(const double deltaP, const double tauInfty);
+	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 };

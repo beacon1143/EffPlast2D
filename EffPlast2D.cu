@@ -402,7 +402,7 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
 
     if (NL && nTimeSteps)
     {
-        SaveAnStatic2D(deltaP[NL - 1][nTimeSteps - 1], tauInfty[NL - 1][nTimeSteps - 1]);
+        SaveAnStatic2D(deltaP[NL - 1][nTimeSteps - 1], tauInfty[NL - 1][nTimeSteps - 1], loadType);
     }
 
     /* ANALYTIC 2D SOLUTION FOR STATICS */
@@ -657,7 +657,7 @@ std::complex<double> EffPlast2D::getAnalyticUelast(double x, double y, double ta
     return U;
 }
 
-double EffPlast2D::getAnalyticUrPlast(double r, double deltaP)
+double EffPlast2D::getAnalyticUrHydro(double r, double deltaP)
 {
     return -0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / (G0 * r);
 }
@@ -670,6 +670,12 @@ double getJ1(double S11, double S22)
 double getJ2(double S11, double S22, double S12)
 {
     return (S11 - S22) * (S11 - S22) + 4.0 * S12 * S12;
+}
+
+void cutError(double& e)
+{
+    if (abs(e) > 0.5)
+        e = -0.5;
 }
 
 void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2)
@@ -700,8 +706,12 @@ void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2)
     J2 = getJ2(Srr, Sff, Srf);
 }
 
-void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
+void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType) {
     /* ANALYTIC 2D SOLUTION FOR STATICS */
+    bool ishydro = 
+        (abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::min()) && 
+        abs(loadType[2]) < std::numeric_limits<double>::min();
+
     const double Rmin = rad + 20.0 * dX;
     const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
     const double eps = 1.0e-18;
@@ -710,7 +720,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     const double kappa = tauInfty / Y * xi;
     const double c0 = rad * exp(abs(deltaP) / 2.0 / Y - 0.5);
 
-    const double rx = rad + getAnalyticUrPlast(rad, deltaP);
+    const double rx = rad + getAnalyticUrHydro(rad, deltaP);
     const double ry = rx;
 
     const double Rx = c0 * (1.0 - kappa);
@@ -750,12 +760,15 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
             if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
             {
                 // elast
-                UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
+                if (ishydro)
+                    UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
+                else
+                    UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
             }
             else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
             {
                 // plast
-                UanAbs[j * nX + i] = abs(getAnalyticUrPlast(r, deltaP));
+                UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
             }
             else
             {
@@ -780,6 +793,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
                 errorUabsAvg += errorUabs[j * nX + i];
                 errorUabsN++;
+
+                cutError(errorUabs[j * nX + i]);
             }
 
             // stress
@@ -793,6 +808,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
 
                 // numerical plast zone
                 const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
+
                 if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
                 {
                     plastZoneNu[j * (nX - 1) + i] = 1.0;
@@ -807,7 +823,17 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                 {
                     // elast
                     plastZoneAn[j * (nX - 1) + i] = 0.0;
-                    getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+                    if (ishydro)
+                    {
+                        const double relR = rad / r;
+                        const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
+                        const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
+
+                        J1an[j * (nX - 1) + i] = getJ1(Srr, Sff);
+                        J2an[j * (nX - 1) + i] = getJ2(Srr, Sff, 0.0);
+                    }
+                    else
+                        getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
                 }
                 else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) 
                 {
@@ -854,6 +880,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                         errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
                         errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
                         errorJ1Avg += errorJ1[j * (nX - 1) + i];
+
+                        cutError(errorJ1[j * (nX - 1) + i]);
                     }
 
                     if (abs(J2nu[j * (nX - 1) + i]) > eps)
@@ -861,6 +889,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
                         errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
                         errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
                         errorJ2Avg += errorJ2[j * (nX - 1) + i];
+
+                        cutError(errorJ2[j * (nX - 1) + i]);
                     }
 
                     errorJN++;
