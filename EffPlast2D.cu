@@ -176,12 +176,12 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
 }
 
 std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
-	const double initLoadValue, 
-	const double loadValue, 
+    const double initLoadValue, 
+    const double loadValue, 
     const unsigned int nTimeSteps, 
-	const std::array<double, 3>& loadType
+    const std::array<double, 3>& loadType
 )
-{    
+{
     log_file << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
         << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
     std::cout << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
@@ -195,6 +195,9 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
     std::array<std::vector<double>, NL> tauInfty;
     std::array<std::vector<double>, NL> dPhi;
 
+    memset(Ux_cpu, 0, (nX + 1) * nY * sizeof(double));
+    memset(Uy_cpu, 0, nX * (nY + 1) * sizeof(double));
+
     for (int nload = 0; nload < NL; nload++)
     {
         Sigma[nload].resize(nTimeSteps);
@@ -206,16 +209,17 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
         double dUydy = initLoadValue * loadType[1];
         double dUxdy = initLoadValue * loadType[2];
 
-        memset(Ux_cpu, 0, (nX + 1) * nY * sizeof(double));
-        memset(Uy_cpu, 0, nX * (nY + 1) * sizeof(double));
+        if (nload > 0) {
+            gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
+            gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
+        }
 
         /* ACTION LOOP */
         for (int it = 0; it < nTimeSteps; it++) {
             log_file << "\n\nload step " << (it + 1) << std::endl;
             std::cout << "\n\nload step " << (it + 1) << std::endl;
 
-            if (it > 0)
-            {
+            if (it > 0) {    // non-first time step
                 dUxdx = loadValue * loadType[0];
                 dUydy = loadValue * loadType[1];
                 dUxdy = loadValue * loadType[2];
@@ -224,18 +228,34 @@ std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
                 gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
             }
 
-            for (int i = 0; i < nX + 1; i++) {
-                for (int j = 0; j < nY; j++) {
-                    Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * (dUxdx) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (1.0 + nload * incPercent);
+            if (nload == 0) {
+                for (int i = 0; i < nX + 1; i++) {
+                    for (int j = 0; j < nY; j++) {
+                        Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * (dUxdx) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (1.0 + nload * incPercent);
+                    }
                 }
-            }
-            gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
-            for (int i = 0; i < nX; i++) {
-                for (int j = 0; j < nY + 1; j++) {
-                    Uy_cpu[j * nX + i] += ((-0.5 * dY * nY + dY * j) * (dUydy)) * (1.0 + nload * incPercent);
+                gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
+                for (int i = 0; i < nX; i++) {
+                    for (int j = 0; j < nY + 1; j++) {
+                        Uy_cpu[j * nX + i] += ((-0.5 * dY * nY + dY * j) * (dUydy)) * (1.0 + nload * incPercent);
+                    }
                 }
+                gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
+            } // if(nload)
+            else {
+                for (int i = 0; i < nX + 1; i++) {
+                    for (int j = 0; j < nY; j++) {
+                        Ux_cpu[j * (nX + 1) + i] += ((-0.5 * dX * nX + dX * i) * (dUxdx) + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy) * (nload * incPercent);
+                    }
+                }
+                gpuErrchk(cudaMemcpy(Ux_cuda, Ux_cpu, (nX + 1) * nY * sizeof(double), cudaMemcpyHostToDevice));
+                for (int i = 0; i < nX; i++) {
+                    for (int j = 0; j < nY + 1; j++) {
+                        Uy_cpu[j * nX + i] += ((-0.5 * dY * nY + dY * j) * (dUydy)) * (nload * incPercent);
+                    }
+                }
+                gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
             }
-            gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
 
             double error = 0.0;
 
