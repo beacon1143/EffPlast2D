@@ -183,7 +183,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValu
     std::cout << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
         << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
 
-    const double incPercent = 0.005;
+    const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
 
     ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
     ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
@@ -240,9 +240,9 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         log_file << "\nTime step " << (it + 1) << std::endl;
         std::cout << "\nTime step " << (it + 1) << std::endl;
 
-        dUxdx += loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
-        dUydy += loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
-        dUxdy += loadStepValue * loadType[2] / static_cast<double>(nTimeSteps);
+        dUxdx = loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
+        dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
+        dUxdy = loadStepValue * loadType[2] / static_cast<double>(nTimeSteps);
 
         if (it > 0) {    // non-first time step
             gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
