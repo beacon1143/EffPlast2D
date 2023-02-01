@@ -3,9 +3,9 @@ figure(1)
 clf
 colormap jet
 
-initLoadValue = -0.000025;
-loadValue = -0.0001;
-loadType = [5.0, -3.0, 0.0];
+initLoadValue = -0.000015;
+addLoadValueStep = -0.000025;
+loadType = [4.0, -2.0, 0.0];
 nGrid = 32;
 nTimeSteps = 1;
 nTasks = 2;
@@ -17,11 +17,11 @@ needCompareStatic = true;
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
+Sxx = get_sigma_2D(addLoadValueStep, loadType, nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
 
 % GPU CALCULATION
 system(['nvcc -O 3 -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
-system(['.\a.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps), ' ' num2str(loadValue)]);
+system(['.\a.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps), ' ' num2str(addLoadValueStep)]);
 
 fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
 Pc = fread(fil, 'double');

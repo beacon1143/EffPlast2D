@@ -45,11 +45,8 @@ inline void gpuAssert(cudaError_t code, const char* file, int line)
 
 class EffPlast2D {
 public:
-	std::array<std::vector<std::array<double, 3>>, NL> EffPlast2D::ComputeSigma(
-		double initLoadValue, 
-		double loadValue, 
-		unsigned int nTimeSteps, 
-		const std::array<double, 3>& loadType
+	double EffPlast2D::ComputeKphi( double initLoadValue, double loadValue, 
+		unsigned int nTimeSteps, const std::array<double, 3>& loadType
 	);
 
 	EffPlast2D();
@@ -58,7 +55,7 @@ private:
 	dim3 grid, block;
 	long int nX, nY;
 
-	// parameters
+	// input parameters
 	double* pa_cuda, * pa_cpu;
 	double dX, dY, dT;
 	double rad;                                      // radius of hole
@@ -85,6 +82,19 @@ private:
 	// utilities
 	std::ofstream log_file;
 	size_t output_step;
+
+	// output parameters
+	std::array<std::vector<double>, NL> deltaP;
+	std::array<std::vector<double>, NL> tauInfty;
+	std::array<std::vector<double>, NL> dPhi;
+
+	/*struct EffParams {
+		double pres;
+		double tau;
+		double dPhi;
+	};*/
+
+	void ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps);
 
 	void ReadParams(const std::string& filename);
 	void SetMaterials();

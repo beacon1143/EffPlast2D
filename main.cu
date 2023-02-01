@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     const auto start = std::chrono::system_clock::now();
 
     EffPlast2D eff_plast;
-    auto S = eff_plast.ComputeSigma(init_load_value, load_value, time_steps, load_type);
+    auto S = eff_plast.ComputeKphi(init_load_value, load_value, time_steps, load_type);
 
     const auto end = std::chrono::system_clock::now();
 
