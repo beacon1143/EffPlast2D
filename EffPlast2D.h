@@ -82,17 +82,12 @@ private:
 	// utilities
 	std::ofstream log_file;
 	size_t output_step;
+	std::array<double, 3> curEffStrain;
 
 	// output parameters
 	std::array<std::vector<double>, NL> deltaP;
 	std::array<std::vector<double>, NL> tauInfty;
 	std::array<std::vector<double>, NL> dPhi;
-
-	/*struct EffParams {
-		double pres;
-		double tau;
-		double dPhi;
-	};*/
 
 	void ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps);
 

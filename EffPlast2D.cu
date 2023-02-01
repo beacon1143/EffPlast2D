@@ -178,11 +178,6 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
 double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValue, 
     const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
-    log_file << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
-        << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
-    std::cout << "init load: (" << initLoadValue * loadType[0] << ", " << initLoadValue * loadType[1] << ", " << initLoadValue * loadType[2] << ")\n" 
-        << "   + load: (" << loadValue * loadType[0] << ", " << loadValue * loadType[1] << ", " << loadValue * loadType[2] << ") x" << (nTimeSteps - 1) << std::endl;
-
     const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
 
     ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
@@ -215,8 +210,8 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValu
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
-    log_file << "\n\nLOAD STEP " << step + 1 << std::endl;
-    std::cout << "\n\nLOAD STEP " << step + 1 << std::endl;
+    std::cout << "\nLOAD STEP " << step + 1 << std::endl;
+    log_file << "\nLOAD STEP " << step + 1 << std::endl;
 
     deltaP[step].resize(nTimeSteps);
     tauInfty[step].resize(nTimeSteps);
@@ -237,12 +232,19 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
     /* ACTION LOOP */
     for (int it = 0; it < nTimeSteps; it++) {
-        log_file << "\nTime step " << (it + 1) << std::endl;
         std::cout << "\nTime step " << (it + 1) << std::endl;
+        log_file << "\nTime step " << (it + 1) << std::endl;
 
         dUxdx = loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
         dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
         dUxdy = loadStepValue * loadType[2] / static_cast<double>(nTimeSteps);
+
+        curEffStrain[0] += dUxdx;
+        curEffStrain[1] += dUydy;
+        curEffStrain[2] += dUxdy;
+
+        std::cout << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
+        log_file << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
 
         if (it > 0) {    // non-first time step
             gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
