@@ -183,12 +183,22 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValu
     ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
     ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
 
-    double KeffPhi;
+    double KeffPhi, KeffD;
 
     if (NL > 1) {
-        KeffPhi = (deltaP[NL - 1][0] - deltaP[NL - 2][nTimeSteps - 1]) / (dPhi[NL - 1][0] - dPhi[NL - 2][nTimeSteps - 1]);
+        double deltaPInc = deltaP[NL - 1][0] - deltaP[NL - 2][nTimeSteps - 1];
+        double phiInc = dPhi[NL - 1][0] - dPhi[NL - 2][nTimeSteps - 1];
+                KeffPhi = deltaPInc / phiInc;
         std::cout << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
         log_file << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
+
+        //std::cout << "P = " << -0.5 * (sigma[NL - 2][nTimeSteps - 1][0] + sigma[NL - 2][nTimeSteps - 1][1]) << "\n";
+        //std::cout << "divU = " << epsilon[NL - 2][nTimeSteps - 1][0] + epsilon[NL - 2][nTimeSteps - 1][1] << "\n";
+        double pInc = -0.5 * (sigma[NL - 1][0][0] + sigma[NL - 1][0][1] - sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1]);
+        double epsInc = epsilon[NL - 1][0][0] + epsilon[NL - 1][0][1] - epsilon[NL - 2][nTimeSteps - 1][0] - epsilon[NL - 2][nTimeSteps - 1][1];
+        KeffD = -pInc / epsInc;
+        std::cout << "KeffD = " << KeffD << std::endl;
+        log_file << "KeffD = " << KeffD << std::endl;
     }
 
     if (NL && nTimeSteps) {
@@ -216,6 +226,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     deltaP[step].resize(nTimeSteps);
     tauInfty[step].resize(nTimeSteps);
     dPhi[step].resize(nTimeSteps);
+    epsilon[step].resize(nTimeSteps);
+    sigma[step].resize(nTimeSteps);
 
     double dUxdx = 0.0;
     double dUydy = 0.0;
@@ -242,6 +254,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         curEffStrain[0] += dUxdx;
         curEffStrain[1] += dUydy;
         curEffStrain[2] += dUxdy;
+        epsilon[step][it] = curEffStrain;
 
         std::cout << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
         log_file << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
@@ -310,6 +323,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
             }
         } // for(iter), iteration loop
 
+        /* AVERAGING */
         gpuErrchk(cudaMemcpy(P_cpu, P_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
@@ -317,6 +331,26 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         gpuErrchk(cudaMemcpy(J2_cpu, J2_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
+
+        for (int i = 0; i < nX; i++) {
+            for (int j = 0; j < nY; j++) {
+                double x = -0.5 * dX * (nX - 1) + dX * i;
+                double y = -0.5 * dY * (nY - 1) + dY * j;
+                if (sqrt(x * x + y * y) > rad) {
+                    sigma[step][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
+                    sigma[step][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
+                }
+            }
+        }
+        sigma[step][it][0] /= nX * nY;
+        sigma[step][it][1] /= nX * nY;
+
+        for (int i = 0; i < nX - 1; i++) {
+            for (int j = 0; j < nY - 1; j++) {
+                sigma[step][it][2] += tauXY_cpu[j * (nX - 1) + i];
+            }
+        }
+        sigma[step][it][2] /= (nX - 1) * (nY - 1);
 
         /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
         deltaP[step][it] = /*GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetDeltaP_honest();
