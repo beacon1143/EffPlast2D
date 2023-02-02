@@ -194,7 +194,8 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValu
 
         //std::cout << "P = " << -0.5 * (sigma[NL - 2][nTimeSteps - 1][0] + sigma[NL - 2][nTimeSteps - 1][1]) << "\n";
         //std::cout << "divU = " << epsilon[NL - 2][nTimeSteps - 1][0] + epsilon[NL - 2][nTimeSteps - 1][1] << "\n";
-        double pInc = -0.5 * (sigma[NL - 1][0][0] + sigma[NL - 1][0][1] - sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1]);
+        double pInc = -0.33333333 * (sigma[NL - 1][0][0] + sigma[NL - 1][0][1] + sigma[NL - 1][0][2] - 
+          sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1] - sigma[NL - 2][nTimeSteps - 1][2]);
         double epsInc = epsilon[NL - 1][0][0] + epsilon[NL - 1][0][1] - epsilon[NL - 2][nTimeSteps - 1][0] - epsilon[NL - 2][nTimeSteps - 1][1];
         KeffD = -pInc / epsInc;
         std::cout << "KeffD = " << KeffD << std::endl;
@@ -339,18 +340,20 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
                 if (sqrt(x * x + y * y) > rad) {
                     sigma[step][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
                     sigma[step][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
+                    sigma[step][it][2] += nu0 * (tauXX_cpu[j * nX + i] + tauYY_cpu[j * nX + i] - 2.0 * P_cpu[j * nX + i]);
                 }
             }
         }
         sigma[step][it][0] /= nX * nY;
         sigma[step][it][1] /= nX * nY;
+        sigma[step][it][2] /= nX * nY;
 
         for (int i = 0; i < nX - 1; i++) {
             for (int j = 0; j < nY - 1; j++) {
-                sigma[step][it][2] += tauXY_cpu[j * (nX - 1) + i];
+                sigma[step][it][3] += tauXY_cpu[j * (nX - 1) + i];
             }
         }
-        sigma[step][it][2] /= (nX - 1) * (nY - 1);
+        sigma[step][it][3] /= (nX - 1) * (nY - 1);
 
         /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
         deltaP[step][it] = /*GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetDeltaP_honest();
@@ -971,6 +974,8 @@ EffPlast2D::EffPlast2D() {
     dT = pa_cpu[2];
     K0 = pa_cpu[3];
     G0 = pa_cpu[4];
+    E0 = 9.0 * K0 * G0 / (3.0 * K0 + G0);
+    nu0 = (1.5 * K0 - G0) / (3.0 * K0 + G0);
     rad = pa_cpu[9];
     Y = pa_cpu[8] / sqrt(2.0);
     N = pa_cpu[10];

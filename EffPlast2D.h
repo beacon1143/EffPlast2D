@@ -60,6 +60,7 @@ private:
 	double dX, dY, dT;
 	double rad;                                      // radius of hole
 	double K0, G0;                                   // bulk modulus and shear modulus
+	double E0, nu0;                                  // Young's modulus and Poisson's ratio
 	double Y;                                        // yield stress
 	double N;
 
@@ -89,7 +90,7 @@ private:
 	std::array<std::vector<double>, NL> dPhi;
 	std::array<double, 3> curEffStrain;
 	std::array<std::vector<std::array<double, 3>>, NL> epsilon;
-	std::array<std::vector<std::array<double, 3>>, NL> sigma;
+	std::array<std::vector<std::array<double, 4>>, NL> sigma;    // sigma_zz is non-zero due to plane strain
 
 	void ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps);
 
