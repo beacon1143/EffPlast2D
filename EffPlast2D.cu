@@ -175,13 +175,27 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
     }
 }
 
-double EffPlast2D::ComputeKphi(const double initLoadValue, const double loadValue, 
+double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const double loadValue, 
     const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
     const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
+    std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
+    std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 
-    ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
-    ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
+    switch (NL) {
+    case 2:
+        ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
+        ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
+        break;
+    case 3:
+        ComputeEffParams(0, initLoadValue, sphericalLoadType, nTimeSteps);
+        ComputeEffParams(1, initLoadValue, deviatoricLoadType, nTimeSteps);
+        ComputeEffParams(2, initLoadValue * incPercent, loadType, 1);
+        break;
+    default:
+        std::cerr << "Error! Wrong number of loads!\n";
+        exit(1);
+    }
 
     double KeffPhi, KeffD;
 
