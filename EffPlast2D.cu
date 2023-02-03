@@ -377,18 +377,18 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
         int holeX = static_cast<int>((nX + 1) * rad / nX / dX);    // approx X-axis index of hole boundary
-        std::vector<double> dispX((nX + 1) / 2);
-        for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2 - holeX + 2; i++) {
-            dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
+        std::vector<double> dispX(4);
+        for (int i = 0; i < 4; i++) {
+            dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + (nX + 1) / 2 - holeX - 2 + i];
         }
         /*for (auto& i : dispX) {
             std::cout << "Ux = " << i << "\n";
         }*/
 
         int holeY = static_cast<int>((nY + 1) * rad / nY / dY);    // approx Y-axis index of hole boundary
-        std::vector<double> dispY((nY + 1) / 2);
-        for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2 - holeY + 2; j++) {
-            dispY[j] = Uy_cpu[j * nX + nX / 2];
+        std::vector<double> dispY(4);
+        for (int j = 0; j < 4; j++) {
+            dispY[j] = Uy_cpu[(j + (nY + 1) / 2 - holeY - 2) * nX + nX / 2];
         }
         /*for (auto& i : dispY) {
             std::cout << "Uy = " << i << "\n";
@@ -411,7 +411,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         /*const double dRxWrong = -FindMaxAbs(dispXwrong);
         std::cout << "dRxWrong = " << dRxWrong << '\n';*/
         const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-        const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) * (1 + loadStepValue * loadType[0]) * (1 + loadStepValue * loadType[1]));
+        const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) /** (1 + loadStepValue * loadType[0]) * (1 + loadStepValue * loadType[1])*/);
         dPhi[step][it] = 3.1415926 * (std::abs((rad + dRx) * (rad + dRy) - rad * rad)) / (dX * (nX - 1) * dY * (nY - 1));
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
