@@ -202,14 +202,14 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     if (NL > 1) {
         double deltaPInc = deltaP[NL - 1][0] - deltaP[NL - 2][nTimeSteps - 1];
         double phiInc = dPhi[NL - 1][0] - dPhi[NL - 2][nTimeSteps - 1];
-                KeffPhi = deltaPInc / phiInc;
+        KeffPhi = deltaPInc / phiInc;
         std::cout << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
         log_file << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
 
         //std::cout << "P = " << -0.5 * (sigma[NL - 2][nTimeSteps - 1][0] + sigma[NL - 2][nTimeSteps - 1][1]) << "\n";
         //std::cout << "divU = " << epsilon[NL - 2][nTimeSteps - 1][0] + epsilon[NL - 2][nTimeSteps - 1][1] << "\n";
         double pInc = -0.33333333 * (sigma[NL - 1][0][0] + sigma[NL - 1][0][1] + sigma[NL - 1][0][2] - 
-          sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1] - sigma[NL - 2][nTimeSteps - 1][2]);
+            sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1] - sigma[NL - 2][nTimeSteps - 1][2]);
         double epsInc = epsilon[NL - 1][0][0] + epsilon[NL - 1][0][1] - epsilon[NL - 2][nTimeSteps - 1][0] - epsilon[NL - 2][nTimeSteps - 1][1];
         KeffD = -pInc / epsInc;
         std::cout << "KeffD = " << KeffD << std::endl;
@@ -295,7 +295,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         gpuErrchk(cudaMemcpy(Uy_cuda, Uy_cpu, nX * (nY + 1) * sizeof(double), cudaMemcpyHostToDevice));
 
         //std::cout << "dUxdx = " << dUxdx << "\ndUydy = " << dUydy << "\ndUxdy = " << dUxdy << "\n";
-        //std::cout << "Ux = " << Ux_cpu[(3 * nY / 4) * (nX + 1) + 3 * nX / 4] << "\nUy = " << Uy_cpu[(3 * nY / 4) * nX + 3 * nX / 4] << "\n";
+        //std::cout << "Ux = " << Ux_cpu[(3 * nY / 4) * (nX + 1) /*+ 3 * nX / 4*/] << "\nUy = " << Uy_cpu[(3 * nY / 4) * nX /*+ 3 * nX / 4*/] << "\n";
 
         double error = 0.0;
 
@@ -376,17 +376,23 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
         tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
-        int holeX = static_cast<int>((nX + 1) * 2 * rad / nX / dX);    // approx X-axis index of hole boundary
+        int holeX = static_cast<int>((nX + 1) * rad / nX / dX);    // approx X-axis index of hole boundary
         std::vector<double> dispX((nX + 1) / 2);
-        for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2; i++) {
+        for (int i = (nX + 1) / 2 - holeX - 1; i < (nX + 1) / 2 - holeX + 2; i++) {
             dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + i];
         }
+        /*for (auto& i : dispX) {
+            std::cout << "Ux = " << i << "\n";
+        }*/
 
-        int holeY = static_cast<int>((nY + 1) * 2 * rad / nY / dY);    // approx Y-axis index of hole boundary
+        int holeY = static_cast<int>((nY + 1) * rad / nY / dY);    // approx Y-axis index of hole boundary
         std::vector<double> dispY((nY + 1) / 2);
-        for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2; j++) {
+        for (int j = (nY + 1) / 2 - holeY - 1; j < (nY + 1) / 2 - holeY + 2; j++) {
             dispY[j] = Uy_cpu[j * nX + nX / 2];
         }
+        /*for (auto& i : dispY) {
+            std::cout << "Uy = " << i << "\n";
+        }*/
 
         /*std::vector<double> dispXwrong((nY + 1) / 2);
         for (int j = nY / 2 - holeY - 2; j < nY / 2; j++) {
@@ -728,7 +734,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         (abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::min()) && 
         abs(loadType[2]) < std::numeric_limits<double>::min();
 
-    const double Rmin = rad + 20.0 * dX;
+    const double Rmin = rad/* + 20.0 * dX*/;
     const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
     const double eps = 1.0e-18;
 
@@ -990,6 +996,7 @@ EffPlast2D::EffPlast2D() {
     G0 = pa_cpu[4];
     E0 = 9.0 * K0 * G0 / (3.0 * K0 + G0);
     nu0 = (1.5 * K0 - G0) / (3.0 * K0 + G0);
+    //std::cout << "E = " << E0 << ", nu = " << nu0 << "\n";
     rad = pa_cpu[9];
     Y = pa_cpu[8] / sqrt(2.0);
     N = pa_cpu[10];
