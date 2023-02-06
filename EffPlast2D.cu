@@ -185,7 +185,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     switch (NL) {
     case 2:
         ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
-        ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
+        ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
         break;
     case 3:
         ComputeEffParams(0, initLoadValue, sphericalLoadType, nTimeSteps);
@@ -431,7 +431,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
         const double KexactElast = G0 / phi;
         const double KexactPlast = G0 / (phi - dPhi[step][it]) / exp(std::abs(deltaP[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
-            (1.0 + 5.0 * tauInfty[step][it] * tauInfty[step][it] / Y / Y);
+            (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
         //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
         //std::cout << "KexactElast = " << KexactElast << '\n';
         log_file << "KexactElast = " << KexactElast << '\n';
