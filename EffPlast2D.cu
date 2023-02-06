@@ -185,7 +185,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     switch (NL) {
     case 2:
         ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
-        ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
+        ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
         break;
     case 3:
         ComputeEffParams(0, initLoadValue, sphericalLoadType, nTimeSteps);
@@ -321,7 +321,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
                 gpuErrchk(cudaMemcpy(Vy_cpu, Vy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
 
                 error = (FindMaxAbs(Vx_cpu, (nX + 1) * nY) / (dX * (nX - 1)) + FindMaxAbs(Vy_cpu, nX * (nY + 1)) / (dY * (nY - 1))) * dT /
-                    (std::abs(loadStepValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
+                    (std::max(std::abs(curEffStrain[0]), std::max(curEffStrain[1], curEffStrain[2])));
+                    //(std::abs(loadStepValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
 
                 std::cout << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
                 log_file << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
