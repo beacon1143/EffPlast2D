@@ -539,6 +539,10 @@ double EffPlast2D::FindMaxAbs(const std::vector<double>& vec) {
 double EffPlast2D::GetDeltaP_honest() {
     double deltaP = 0.0, deltaPx = 0.0, deltaPy = 0.0;
 
+    /*for (int i = 1; i < nX - 2; i++) {
+        std::cout << "Sigma_xy = " << tauXY_cpu[0 * (nX - 1) + i] << "\n";
+    }*/
+
     for (int i = 1; i < nX - 1; i++) {
         deltaPx += tauXX_cpu[0 * nX + i] - P_cpu[0 * nX + i];
         deltaPx += tauYY_cpu[0 * nX + i] - P_cpu[0 * nX + i];
@@ -625,6 +629,11 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
     }
 
     tauInfty *= 0.25;*/
+
+    /*std::cout << "Sigma_xy = " << tauXY_cpu[((nY - 1) / 2) * (nX - 1) + 0] << "\n";
+    std::cout << "Sigma_xy = " << tauXY_cpu[((nY - 1) / 2) * (nX - 1) + nX - 2] << "\n";
+    std::cout << "Sigma_xy = " << tauXY_cpu[0 * (nX - 1) + (nX  - 1) / 2] << "\n";
+    std::cout << "Sigma_xy = " << tauXY_cpu[((nY - 2) / 2) * (nX - 2) + 0] << "\n";*/
 
     tauInfty += tauYY_cpu[(nY / 2) * nX + 0] - tauXX_cpu[(nY / 2) * nX + 0];
     tauInfty += tauYY_cpu[(nY / 2) * nX + nX - 1] - tauXX_cpu[(nY / 2) * nX + nX - 1];
