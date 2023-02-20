@@ -185,7 +185,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     switch (NL) {
     case 2:
         ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
-        ComputeEffParams(1, initLoadValue * incPercent, loadType, 1);
+        ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
         break;
     case 3:
         ComputeEffParams(0, initLoadValue, sphericalLoadType, nTimeSteps);
