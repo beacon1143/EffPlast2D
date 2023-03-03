@@ -344,6 +344,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         gpuErrchk(cudaMemcpy(tauXX_cpu, tauXX_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(tauYY_cpu, tauYY_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(tauXY_cpu, tauXY_cuda, (nX - 1) * (nY - 1) * sizeof(double), cudaMemcpyDeviceToHost));
+        gpuErrchk(cudaMemcpy(tauXYav_cpu, tauXYav_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(J2_cpu, J2_cuda, nX * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
         gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
@@ -595,6 +596,22 @@ double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
 
     deltaP *= -0.125;
     return deltaP;
+}
+
+double EffPlast2D::GetTauInfty_honestest() {
+    double tauInfty = 0.0;
+    for (int i = 1; i < nX - 1; i++) {
+        for (int j = 1; j < nY - 1; j++) {
+            double x = -0.5 * dX * (nX - 1) + dX * i;
+            double y = -0.5 * dY * (nY - 1) + dY * j;
+            if (sqrt(x * x + y * y) > rad) {
+                tauInfty += sqrt(0.25 * (tauXX_cpu[j * nX + i] - tauYY_cpu[j * nX + i]) * (tauXX_cpu[j * nX + i] - tauYY_cpu[j * nX + i]) /*+
+                    tauXY_cpu[j * (nX - 1) + i] * tauXY_cpu[j * (nX - 1) + i]*/);
+            }
+        }
+    }
+    tauInfty /= (nX - 2) * (nY - 2);
+    return tauInfty;
 }
 
 double EffPlast2D::GetTauInfty_honest() {

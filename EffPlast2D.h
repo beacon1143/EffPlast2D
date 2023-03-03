@@ -107,6 +107,7 @@ private:
 
 	double GetDeltaP_honest();
 	double GetDeltaP_approx(const double Exx, const double Eyy);
+	double GetTauInfty_honestest();
 	double GetTauInfty_honest();
 	double GetTauInfty_approx(const double Exx, const double Eyy);
 
