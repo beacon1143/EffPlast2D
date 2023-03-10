@@ -353,7 +353,27 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
             for (int j = 0; j < nY; j++) {
                 double x = -0.5 * dX * (nX - 1) + dX * i;
                 double y = -0.5 * dY * (nY - 1) + dY * j;
-                if (sqrt(x * x + y * y) > rad) {
+
+                bool inTheHole = false;
+                for (int k = 0; k < N; k++)
+                {
+                    for (int l = 0; l < N; l++)
+                    {
+                        const double cx = 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) - (dX * (nX - 1) / N) * k;
+                        const double cy = 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) - (dY * (nY - 1) / N) * l;
+
+                        if ((x - cx) * (x - cx) + (y - cy) * (y - cy) < rad * rad)
+                        {
+                            inTheHole = true;
+                            break;
+                        }
+                    }
+
+                    if (inTheHole)
+                        break;
+                }
+
+                if (!inTheHole) {
                     sigma[step][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
                     sigma[step][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
                     sigma[step][it][2] += nu0 * (tauXX_cpu[j * nX + i] + tauYY_cpu[j * nX + i] - 2.0 * P_cpu[j * nX + i]);
@@ -378,43 +398,41 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
         tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
-        int holeX = static_cast<int>((nX + 1) * rad / nX / dX);    // approx X-axis index of hole boundary
-        std::vector<double> dispX(4);
-        for (int i = 0; i < 4; i++) {
-            dispX[i] = Ux_cpu[(nY / 2) * (nX + 1) + (nX + 1) / 2 - holeX - 2 + i];
+        
+        double HoleAreaPi = 0.0; // HoleArea / Pi
+        for (int k = 0; k < N; k++)
+        {
+            for (int l = 0; l < N; l++)
+            {
+                const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / N) - ((nX - 1) / N) * k; // cx / dX
+                const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / N) - ((nY - 1) / N) * l; // cy / dY
+
+                const int cyIdx = static_cast<int>(cydY + 0.5 * (nY - 1));
+                const int rxIdx = static_cast<int>(cxdX - rad / dX + 0.5 * nX);
+
+                std::vector<double> dispX(4);
+                for (int i = 0; i < 4; i++) {
+                    dispX[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 2 + i];
+                }
+
+                const int cxIdx = static_cast<int>(cxdX + 0.5 * (nX - 1));
+                const int ryIdx = static_cast<int>(cydY - rad / dY + 0.5 * nY);
+
+                std::vector<double> dispY(4);
+                for (int j = 0; j < 4; j++) {
+                    dispY[j] = Uy_cpu[(ryIdx - 2 + j) * nX + cxIdx];
+                }
+
+                const double dRx = -FindMaxAbs(dispX);
+                const double dRy = -FindMaxAbs(dispY);
+
+                HoleAreaPi += (rad + dRx) * (rad + dRy);
+            }
         }
-        /*for (auto& i : dispX) {
-            std::cout << "Ux = " << i << "\n";
-        }*/
 
-        int holeY = static_cast<int>((nY + 1) * rad / nY / dY);    // approx Y-axis index of hole boundary
-        std::vector<double> dispY(4);
-        for (int j = 0; j < 4; j++) {
-            dispY[j] = Uy_cpu[(j + (nY + 1) / 2 - holeY - 2) * nX + nX / 2];
-        }
-        /*for (auto& i : dispY) {
-            std::cout << "Uy = " << i << "\n";
-        }*/
-
-        /*std::vector<double> dispXwrong((nY + 1) / 2);
-        for (int j = nY / 2 - holeY - 2; j < nY / 2; j++) {
-          dispXwrong[j] = Ux_cpu[j * nX + nX / 2];
-        }*/
-
-        /*const double dR = FindMaxAbs(Ux_cpu, (nX + 1) * nY);
-        std::cout << "dR = " << dR << '\n';
-        log_file << "dR = " << dR << '\n';*/
-        const double dRx = -FindMaxAbs(dispX);
-        //std::cout << "dRx = " << dRx << '\n';
-        log_file << "dRx = " << dRx << '\n';
-        const double dRy = -FindMaxAbs(dispY);
-        //std::cout << "dRy = " << dRy << '\n';
-        log_file << "dRy = " << dRy << '\n';
-        /*const double dRxWrong = -FindMaxAbs(dispXwrong);
-        std::cout << "dRxWrong = " << dRxWrong << '\n';*/
-        const double Phi0 = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-        const double Phi = 3.1415926 * (rad + dRx) * (rad + dRy) / (dX * (nX - 1) * dY * (nY - 1) /** (1 + loadStepValue * loadType[0]) * (1 + loadStepValue * loadType[1])*/);
-        dPhi[step][it] = 3.1415926 * (std::abs((rad + dRx) * (rad + dRy) - rad * rad)) / (dX * (nX - 1) * dY * (nY - 1));
+        const double Phi0 = 3.1415926 * rad * rad * N * N / (dX * (nX - 1) * dY * (nY - 1));
+        const double Phi = 3.1415926 * HoleAreaPi / (dX * (nX - 1) * dY * (nY - 1));
+        dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * N * N) / (dX * (nX - 1) * dY * (nY - 1));
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
 
@@ -775,130 +793,42 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     const double Rx = c0 * (1.0 - kappa);
     const double Ry = c0 * (1.0 + kappa);
 
-    double* UanAbs = new double[nX * nY];
-    double* UnuAbs = new double[nX * nY];
-    double* errorUabs = new double[nX * nY];
+    double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2, * plastZoneAn;
+    if (N == 1)
+    {
+        UanAbs = new double[nX * nY];
+        errorUabs = new double[nX * nY];
+        J1an = new double[(nX - 1) * (nY - 1)];
+        J2an = new double[(nX - 1) * (nY - 1)];
+        errorJ1 = new double[(nX - 1) * (nY - 1)];
+        errorJ2 = new double[(nX - 1) * (nY - 1)];
+        plastZoneAn = new double[(nX - 1) * (nY - 1)];
+    }
+
     double errorUabsMax = 0.0, errorUabsAvg = 0.0;
     size_t errorUabsN = 0;
 
-    double* J1an = new double[(nX - 1) * (nY - 1)];
-    double* J2an = new double[(nX - 1) * (nY - 1)];
-    double* J1nu = new double[(nX - 1) * (nY - 1)];
-    double* J2nu = new double[(nX - 1) * (nY - 1)];
-    double* errorJ1 = new double[(nX - 1) * (nY - 1)];
-    double* errorJ2 = new double[(nX - 1) * (nY - 1)];
     double errorJ1Max = 0.0, errorJ1Avg = 0.0;
     double errorJ2Max = 0.0, errorJ2Avg = 0.0;
     size_t errorJN = 0;
-
-    double* plastZoneAn = new double[(nX - 1) * (nY - 1)];
+    
+    double* UnuAbs = new double[nX * nY];
+    double* J1nu = new double[(nX - 1) * (nY - 1)];
+    double* J2nu = new double[(nX - 1) * (nY - 1)];
     double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
 
     for (int i = 0; i < nX; i++)
     {
         for (int j = 0; j < nY; j++)
         {
-            // displacement
-            const double x = -0.5 * dX * (nX - 1) + dX * i;
-            const double y = -0.5 * dY * (nY - 1) + dY * j;
-            const double r = sqrt(x * x + y * y);
-            const double cosf = x / r;
-            const double sinf = y / r;
-
-            // analytical solution for Ur
-            if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
-            {
-                // elast
-                if (ishydro)
-                    UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
-                else
-                    UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
-            }
-            else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
-            {
-                // plast
-                UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
-            }
-            else
-            {
-                // hole
-                UanAbs[j * nX + i] = 0.0;
-            }
-            
             // numerical solution for Ur
             const double ux = 0.5 * (Ux_cpu[(nX + 1) * j + i] + Ux_cpu[(nX + 1) * j + (i + 1)]);
             const double uy = 0.5 * (Uy_cpu[nX * j + i] + Uy_cpu[nX * (j + 1) + i]);
             UnuAbs[j * nX + i] = sqrt(ux * ux + uy * uy);
 
-            // relative error between analytical and numerical solution for Ur
-            errorUabs[j * nX + i] = 0.0;
-            if (
-                x * x + y * y > Rmin * Rmin &&
-                x * x + y * y < Rmax * Rmax &&
-                abs(UnuAbs[j * nX + i]) > eps
-            )
-            {
-                errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UanAbs[j * nX + i]);
-                errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
-                errorUabsAvg += errorUabs[j * nX + i];
-                errorUabsN++;
-
-                cutError(errorUabs[j * nX + i]);
-            }
-
-            // stress
+            // numerical solution for sigma
             if (i < nX - 1 && j < nY - 1)
             {
-                const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
-                const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
-                const double r = sqrt(x * x + y * y);
-                const double cosf = x / r;
-                const double sinf = y / r;
-
-                // numerical plast zone
-                const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
-
-                if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
-                {
-                    plastZoneNu[j * (nX - 1) + i] = 1.0;
-                }
-                else
-                {
-                    plastZoneNu[j * (nX - 1) + i] = 0.0;
-                }
-
-                // analytical solution for sigma
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) 
-                {
-                    // elast
-                    plastZoneAn[j * (nX - 1) + i] = 0.0;
-                    if (ishydro)
-                    {
-                        const double relR = rad / r;
-                        const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
-                        const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
-
-                        J1an[j * (nX - 1) + i] = getJ1(Srr, Sff);
-                        J2an[j * (nX - 1) + i] = getJ2(Srr, Sff, 0.0);
-                    }
-                    else
-                        getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
-                }
-                else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) 
-                {
-                    // plast
-                    plastZoneAn[j * (nX - 1) + i] = 1.0;
-                    getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
-                }
-                else
-                {
-                    // hole
-                    plastZoneAn[j * (nX - 1) + i] = 0.0;
-                    J1an[j * (nX - 1) + i] = 0.0;
-                    J2an[j * (nX - 1) + i] = 0.0;
-                }
-
-                // numerical solution for sigma
                 const double Sxx = 0.25 * (
                     -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] +
                     -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] +
@@ -915,82 +845,186 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
 
                 J1nu[j * (nX - 1) + i] = getJ1(Sxx, Syy);
                 J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy);
+            }
 
-                // relative error between analytical and numerical solution for sigma
-                errorJ1[j * (nX - 1) + i] = 0.0;
-                errorJ2[j * (nX - 1) + i] = 0.0;
+            // analytics
+            if (N == 1)
+            {
+                // displacement
+                // analytical solution for Ur
+                const double x = -0.5 * dX * (nX - 1) + dX * i;
+                const double y = -0.5 * dY * (nY - 1) + dY * j;
+
+                const double r = sqrt(x * x + y * y);
+                const double cosf = x / r;
+                const double sinf = y / r;
+
+                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
+                {
+                    // elast
+                    if (ishydro)
+                        UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
+                    else
+                        UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
+                }
+                else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
+                {
+                    // plast
+                    UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
+                }
+                else
+                {
+                    // hole
+                    UanAbs[j * nX + i] = 0.0;
+                }
+
+                // relative error between analytical and numerical solution for Ur
+                errorUabs[j * nX + i] = 0.0;
                 if (
                     x * x + y * y > Rmin * Rmin &&
-                    x * x + y * y < Rmax * Rmax
-                )
+                    x * x + y * y < Rmax * Rmax &&
+                    abs(UnuAbs[j * nX + i]) > eps
+                    )
                 {
-                    if (abs(J1nu[j * (nX - 1) + i]) > eps)
-                    {
-                        errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
-                        errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
-                        errorJ1Avg += errorJ1[j * (nX - 1) + i];
+                    errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UanAbs[j * nX + i]);
+                    errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
+                    errorUabsAvg += errorUabs[j * nX + i];
+                    errorUabsN++;
 
-                        cutError(errorJ1[j * (nX - 1) + i]);
-                    }
-
-                    if (abs(J2nu[j * (nX - 1) + i]) > eps)
-                    {
-                        errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
-                        errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
-                        errorJ2Avg += errorJ2[j * (nX - 1) + i];
-
-                        cutError(errorJ2[j * (nX - 1) + i]);
-                    }
-
-                    errorJN++;
+                    cutError(errorUabs[j * nX + i]);
                 }
-            } 
+
+                // stress
+                if (i < nX - 1 && j < nY - 1)
+                {
+                    const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
+                    const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
+                    const double r = sqrt(x * x + y * y);
+                    const double cosf = x / r;
+                    const double sinf = y / r;
+
+                    // numerical plast zone
+                    const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
+
+                    if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
+                    {
+                        plastZoneNu[j * (nX - 1) + i] = 1.0;
+                    }
+                    else
+                    {
+                        plastZoneNu[j * (nX - 1) + i] = 0.0;
+                    }
+
+                    // analytical solution for sigma
+                    if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
+                    {
+                        // elast
+                        plastZoneAn[j * (nX - 1) + i] = 0.0;
+                        if (ishydro)
+                        {
+                            const double relR = rad / r;
+                            const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
+                            const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
+
+                            J1an[j * (nX - 1) + i] = getJ1(Srr, Sff);
+                            J2an[j * (nX - 1) + i] = getJ2(Srr, Sff, 0.0);
+                        }
+                        else
+                            getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+                    }
+                    else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
+                    {
+                        // plast
+                        plastZoneAn[j * (nX - 1) + i] = 1.0;
+                        getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+                    }
+                    else
+                    {
+                        // hole
+                        plastZoneAn[j * (nX - 1) + i] = 0.0;
+                        J1an[j * (nX - 1) + i] = 0.0;
+                        J2an[j * (nX - 1) + i] = 0.0;
+                    }
+
+                    // relative error between analytical and numerical solution for sigma
+                    errorJ1[j * (nX - 1) + i] = 0.0;
+                    errorJ2[j * (nX - 1) + i] = 0.0;
+                    if (
+                        x * x + y * y > Rmin * Rmin &&
+                        x * x + y * y < Rmax * Rmax
+                        )
+                    {
+                        if (abs(J1nu[j * (nX - 1) + i]) > eps)
+                        {
+                            errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
+                            errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
+                            errorJ1Avg += errorJ1[j * (nX - 1) + i];
+
+                            cutError(errorJ1[j * (nX - 1) + i]);
+                        }
+
+                        if (abs(J2nu[j * (nX - 1) + i]) > eps)
+                        {
+                            errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
+                            errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
+                            errorJ2Avg += errorJ2[j * (nX - 1) + i];
+
+                            cutError(errorJ2[j * (nX - 1) + i]);
+                        }
+
+                        errorJN++;
+                    }
+                }
+            }
         }
     }
 
-    errorUabsAvg /= errorUabsN;
-    errorJ1Avg /= errorJN;
-    errorJ2Avg /= errorJN;
+    if (N == 1)
+    {
+        errorUabsAvg /= errorUabsN;
+        errorJ1Avg /= errorJN;
+        errorJ2Avg /= errorJN;
 
-    std::cout << "\n"
-        << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
-        << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
-        << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
+        std::cout << "\n"
+            << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+            << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+            << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
 
-    log_file  << "\n"
-        << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
-        << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
-        << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
+        log_file << "\n"
+            << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+            << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+            << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
 
-    SaveVector(UanAbs, nX * nY, "UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] UanAbs;
+        SaveVector(UanAbs, nX* nY, "UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] UanAbs;
 
+        SaveVector(errorUabs, nX* nY, "errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] errorUabs;
+
+        SaveVector(J1an, (nX - 1)* (nY - 1), "J1an_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] J1an;
+
+        SaveVector(J2an, (nX - 1)* (nY - 1), "J2an_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] J2an;
+
+        SaveVector(errorJ1, (nX - 1)* (nY - 1), "errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] errorJ1;
+
+        SaveVector(errorJ2, (nX - 1)* (nY - 1), "errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] errorJ2;
+
+        SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "plast_an_" + std::to_string(32 * NGRID) + "_.dat");
+        delete[] plastZoneAn;
+    }
+    
     SaveVector(UnuAbs, nX * nY, "UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] UnuAbs;
-
-    SaveVector(errorUabs, nX * nY, "errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorUabs;
-
-    SaveVector(J1an, (nX - 1) * (nY - 1), "J1an_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] J1an;
-
-    SaveVector(J2an, (nX - 1) * (nY - 1), "J2an_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] J2an;
 
     SaveVector(J1nu, (nX - 1) * (nY - 1), "J1nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] J1nu;
 
     SaveVector(J2nu, (nX - 1) * (nY - 1), "J2nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] J2nu;
-
-    SaveVector(errorJ1, (nX - 1) * (nY - 1), "errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorJ1;
-
-    SaveVector(errorJ2, (nX - 1) * (nY - 1), "errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] errorJ2;
-
-    SaveVector(plastZoneAn, (nX - 1) * (nY - 1), "plast_an_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] plastZoneAn;
 
     SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] plastZoneNu;

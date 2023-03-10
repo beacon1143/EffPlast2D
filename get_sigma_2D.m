@@ -1,4 +1,4 @@
-function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, needCPUcalc)
+function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, N, needCPUcalc)
     
   % PHYSICS
   Lx  = 20.0;                         % physical length
@@ -9,7 +9,6 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   coh  = 0.00001 * sqrt(2.0);
   P0 = 0.0; %1.0 * coh;
   porosity = 0.005;
-  N = 1;
   rad = sqrt(porosity * Lx * Lx / pi) / (N * N);  
 
   % NUMERICS

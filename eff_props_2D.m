@@ -6,18 +6,19 @@ colormap jet
 initLoadValue = -0.000015;
 addLoadValueStep = -0.000025;
 loadType = [4.0, -2.0, 0.0];
-nGrid = 32;
+nGrid = 16;
 nTimeSteps = 1;
 nTasks = 2;
 nIter = 500000;
 eIter = 1.0e-10;
+N = 2;
 needCPUcalculation = false;
 needCompareStatic = true;
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(addLoadValueStep, loadType, nGrid, nTimeSteps, nIter, eIter, needCPUcalculation);
+Sxx = get_sigma_2D(addLoadValueStep, loadType, nGrid, nTimeSteps, nIter, eIter, N, needCPUcalculation);
 
 % GPU CALCULATION
 system(['nvcc -O 3 -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
@@ -146,31 +147,10 @@ else
   % POSTPROCESSING
   if needCompareStatic
     % ANALYTIC SOLUTION FOR STATICS
-
-    fil = fopen(strcat('UanAbs_', int2str(Nx), '_.dat'), 'rb');
-    UanAbs = fread(fil, 'double');
-    fclose(fil);
-    UanAbs = reshape(UanAbs, Nx, Ny);
-    
     fil = fopen(strcat('UnuAbs_', int2str(Nx), '_.dat'), 'rb');
     UnuAbs = fread(fil, 'double');
     fclose(fil);
     UnuAbs = reshape(UnuAbs, Nx, Ny);
-
-    fil = fopen(strcat('errorUabs_', int2str(Nx), '_.dat'), 'rb');
-    errorUabs = fread(fil, 'double');
-    fclose(fil);
-    errorUabs = reshape(errorUabs, Nx, Ny);
-
-    fil = fopen(strcat('J1an_', int2str(Nx), '_.dat'), 'rb');
-    J1an = fread(fil, 'double');
-    fclose(fil);
-    J1an = reshape(J1an, Nx - 1, Ny - 1);
-    
-    fil = fopen(strcat('J2an_', int2str(Nx), '_.dat'), 'rb');
-    J2an = fread(fil, 'double');
-    fclose(fil);
-    J2an = reshape(J2an, Nx - 1, Ny - 1);
 
     fil = fopen(strcat('J1nu_', int2str(Nx), '_.dat'), 'rb');
     J1nu = fread(fil, 'double');
@@ -182,29 +162,11 @@ else
     fclose(fil);
     J2nu = reshape(J2nu, Nx - 1, Ny - 1);
 
-    fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
-    errorJ1 = fread(fil, 'double');
-    fclose(fil);
-    errorJ1 = reshape(errorJ1, Nx - 1, Ny - 1);
-    
-    fil = fopen(strcat('errorJ2_', int2str(Nx), '_.dat'), 'rb');
-    errorJ2 = fread(fil, 'double');
-    fclose(fil);
-    errorJ2 = reshape(errorJ2, Nx - 1, Ny - 1);
-    
-    fil = fopen(strcat('plast_an_', int2str(Nx), '_.dat'), 'rb');
-    plast_an = fread(fil, 'double');
-    fclose(fil);
-    plast_an = reshape(plast_an, Nx - 1, Ny - 1);
-
     fil = fopen(strcat('plast_nu_', int2str(Nx), '_.dat'), 'rb');
     plast_nu = fread(fil, 'double');
     fclose(fil);
     plast_nu = reshape(plast_nu, Nx - 1, Ny - 1);
-
-    plastDiff =  abs(plast_an - plast_nu);
-
-    % POSTPROCESSING
+    
     subplot(3, 4, 1)
     imagesc(J1nu)
     colorbar
@@ -233,61 +195,100 @@ else
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 4, 5)
-    imagesc(J1an)
-    colorbar
-    title('J1 analytics')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-    
-    subplot(3, 4, 6)
-    imagesc(J2an)
-    colorbar
-    title('J2 analytics')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    if N==1
+      fil = fopen(strcat('UanAbs_', int2str(Nx), '_.dat'), 'rb');
+      UanAbs = fread(fil, 'double');
+      fclose(fil);
+      UanAbs = reshape(UanAbs, Nx, Ny);
+      
+      fil = fopen(strcat('errorUabs_', int2str(Nx), '_.dat'), 'rb');
+      errorUabs = fread(fil, 'double');
+      fclose(fil);
+      errorUabs = reshape(errorUabs, Nx, Ny);
+      
+      fil = fopen(strcat('J1an_', int2str(Nx), '_.dat'), 'rb');
+      J1an = fread(fil, 'double');
+      fclose(fil);
+      J1an = reshape(J1an, Nx - 1, Ny - 1);
+      
+      fil = fopen(strcat('J2an_', int2str(Nx), '_.dat'), 'rb');
+      J2an = fread(fil, 'double');
+      fclose(fil);
+      J2an = reshape(J2an, Nx - 1, Ny - 1);
+      
+      fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
+      errorJ1 = fread(fil, 'double');
+      fclose(fil);
+      errorJ1 = reshape(errorJ1, Nx - 1, Ny - 1);
+      
+      fil = fopen(strcat('errorJ2_', int2str(Nx), '_.dat'), 'rb');
+      errorJ2 = fread(fil, 'double');
+      fclose(fil);
+      errorJ2 = reshape(errorJ2, Nx - 1, Ny - 1);
+      
+      fil = fopen(strcat('plast_an_', int2str(Nx), '_.dat'), 'rb');
+      plast_an = fread(fil, 'double');
+      fclose(fil);
+      plast_an = reshape(plast_an, Nx - 1, Ny - 1);
+      
+      plastDiff =  abs(plast_an - plast_nu);
 
-    subplot(3, 4, 7)
-    imagesc(plast_an)
-    colorbar
-    title('plast zone analytics')
-    axis image
-    set(gca, 'FontSize', 10)
-    
-    subplot(3, 4, 8)
-    imagesc(UanAbs)
-    colorbar
-    title('abs(U) analytics')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-
-    subplot(3, 4, 9)
-    imagesc(errorJ1)
-    colorbar
-    title('J1 error')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-    
-    subplot(3, 4, 10)
-    imagesc(errorJ2)
-    colorbar
-    title('J2 error')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-
-    subplot(3, 4, 11)
-    imagesc(plastDiff)
-    colorbar
-    title('plast zone diff')
-    axis image
-    set(gca, 'FontSize', 10)
-    
-    subplot(3, 4, 12)
-    imagesc(errorUabs)
-    colorbar
-    title('abs(U) error')
-    axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+      subplot(3, 4, 5)
+      imagesc(J1an)
+      colorbar
+      title('J1 analytics')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+      
+      subplot(3, 4, 6)
+      imagesc(J2an)
+      colorbar
+      title('J2 analytics')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  
+      subplot(3, 4, 7)
+      imagesc(plast_an)
+      colorbar
+      title('plast zone analytics')
+      axis image
+      set(gca, 'FontSize', 10)
+      
+      subplot(3, 4, 8)
+      imagesc(UanAbs)
+      colorbar
+      title('abs(U) analytics')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  
+      subplot(3, 4, 9)
+      imagesc(errorJ1)
+      colorbar
+      title('J1 error')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+      
+      subplot(3, 4, 10)
+      imagesc(errorJ2)
+      colorbar
+      title('J2 error')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  
+      subplot(3, 4, 11)
+      imagesc(plastDiff)
+      colorbar
+      title('plast zone diff')
+      axis image
+      set(gca, 'FontSize', 10)
+      
+      subplot(3, 4, 12)
+      imagesc(errorUabs)
+      colorbar
+      title('abs(U) error')
+      axis image
+      set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    end
     
     drawnow
   else  
