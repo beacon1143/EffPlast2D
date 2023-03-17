@@ -393,7 +393,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
         /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
         deltaP[step][it] = /*GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetDeltaP_honest();
-        std::cout << "deltaP = " << deltaP[step][it] << '\n';
+        //std::cout << "deltaP = " << deltaP[step][it] << '\n';
         log_file << "deltaP = " << deltaP[step][it] << '\n';
         //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
         tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
@@ -410,28 +410,34 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
                 const int cyIdx = static_cast<int>(cydY + 0.5 * (nY - 1));
                 const int rxIdx = static_cast<int>(cxdX - rad / dX + 0.5 * nX);
 
-                std::vector<double> dispX(4);
-                for (int i = 0; i < 4; i++) {
+                std::vector<double> dispX(5);
+                for (int i = 0; i < 5; i++) {
                     dispX[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 2 + i];
+                    //std::cout << dispX[i] << "\n";
                 }
 
                 const int cxIdx = static_cast<int>(cxdX + 0.5 * (nX - 1));
                 const int ryIdx = static_cast<int>(cydY - rad / dY + 0.5 * nY);
 
-                std::vector<double> dispY(4);
-                for (int j = 0; j < 4; j++) {
+                std::vector<double> dispY(5);
+                for (int j = 0; j < 5; j++) {
                     dispY[j] = Uy_cpu[(ryIdx - 2 + j) * nX + cxIdx];
+                    //std::cout << dispY[j] << "\n";
                 }
 
                 const double dRx = -FindMaxAbs(dispX);
                 const double dRy = -FindMaxAbs(dispY);
 
+                //std::cout << (rad + dRx) * (rad + dRy) << "\n";
                 HoleAreaPi += (rad + dRx) * (rad + dRy);
             }
         }
 
+        //std::cout << "HoleAreaPi = " << HoleAreaPi << "\n";
         const double Phi0 = 3.1415926 * rad * rad * N * N / (dX * (nX - 1) * dY * (nY - 1));
         const double Phi = 3.1415926 * HoleAreaPi / (dX * (nX - 1) * dY * (nY - 1));
+        /*std::cout << "Phi = " << Phi << '\n';
+        log_file << "Phi = " << Phi << '\n';*/
         dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * N * N) / (dX * (nX - 1) * dY * (nY - 1));
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
@@ -448,9 +454,9 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         //std::cout << "KeffPhi = " << KeffPhi << '\n';
         log_file << "KeffPhi = " << KeffPhi << '\n';
 
-        const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
-        const double KexactElast = G0 / phi;
-        const double KexactPlast = G0 / (phi - dPhi[step][it]) / exp(std::abs(deltaP[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
+        //const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
+        const double KexactElast = G0 / Phi0;
+        const double KexactPlast = G0 / Phi / exp(std::abs(deltaP[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
             (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
         //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
         //std::cout << "KexactElast = " << KexactElast << '\n';
