@@ -14,6 +14,9 @@ eIter = 1.0e-10;
 N = 2;
 needCPUcalculation = false;
 needCompareStatic = true;
+if N > 1
+  needCompareStatic = false;
+end %if
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
