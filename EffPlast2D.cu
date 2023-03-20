@@ -400,33 +400,53 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
         
         double HoleAreaPi = 0.0; // HoleArea / Pi
-        for (int k = 0; k < N; k++)
-        {
-            for (int l = 0; l < N; l++)
-            {
+        for (int k = 0; k < N; k++) {
+            for (int l = 0; l < N; l++) {
                 const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / N) - ((nX - 1) / N) * k; // cx / dX
                 const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / N) - ((nY - 1) / N) * l; // cy / dY
 
-                const int cyIdx = static_cast<int>(cydY + 0.5 * (nY - 1));
-                const int rxIdx = static_cast<int>(cxdX - rad / dX + 0.5 * nX);
+                // horizontal displacements
+                // left point of a hole
+                const size_t cyIdx = static_cast<size_t>(cydY + 0.5 * (nY - 1));
+                size_t rxIdx = static_cast<size_t>(cxdX - rad / dX + 0.5 * nX);
 
-                std::vector<double> dispX(5);
+                std::vector<double> dispXleft(5);
                 for (int i = 0; i < 5; i++) {
-                    dispX[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 2 + i];
-                    //std::cout << dispX[i] << "\n";
+                    dispXleft[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 1 + i];
+                    //std::cout << dispXleft[i] << "\n";
                 }
 
-                const int cxIdx = static_cast<int>(cxdX + 0.5 * (nX - 1));
-                const int ryIdx = static_cast<int>(cydY - rad / dY + 0.5 * nY);
+                // right point of a hole
+                rxIdx = static_cast<size_t>(cxdX + rad / dX + 0.5 * nX);
+                std::vector<double> dispXright(5);
+                for (int i = 0; i < 5; i++) {
+                    dispXright[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 2 + i];
+                    //std::cout << dispXright[i] << "\n";
+                }
 
-                std::vector<double> dispY(5);
+                // vertical displacements
+                // bottom point of a hole
+                const size_t cxIdx = static_cast<size_t>(cxdX + 0.5 * (nX - 1));
+                size_t ryIdx = static_cast<size_t>(cydY - rad / dY + 0.5 * nY);
+
+                std::vector<double> dispYbottom(5);
                 for (int j = 0; j < 5; j++) {
-                    dispY[j] = Uy_cpu[(ryIdx - 2 + j) * nX + cxIdx];
-                    //std::cout << dispY[j] << "\n";
+                    dispYbottom[j] = Uy_cpu[(ryIdx - 1 + j) * nX + cxIdx];
+                    //std::cout << dispYbottom[j] << "\n";
                 }
 
-                const double dRx = -FindMaxAbs(dispX);
-                const double dRy = -FindMaxAbs(dispY);
+                // top point of a hole
+                ryIdx = static_cast<size_t>(cydY + rad / dY + 0.5 * nY);
+                std::vector<double> dispYtop(5);
+                for (int j = 0; j < 5; j++) {
+                    dispYtop[j] = Uy_cpu[(ryIdx - 2 + j) * nX + cxIdx];
+                    //std::cout << dispYtop[j] << "\n";
+                }
+
+                //std::cout << "dRxLeft = " << FindMaxAbs(dispXleft) << ", dRxRight = " << FindMaxAbs(dispXright) << "\n";
+                const double dRx = -0.5 * (FindMaxAbs(dispXleft) - FindMaxAbs(dispXright));
+                const double dRy = -0.5 * (FindMaxAbs(dispYbottom) - FindMaxAbs(dispYtop));
+                //std::cout << "dRx = " << dRx << ", dRy = " << dRy << "\n";
 
                 //std::cout << (rad + dRx) * (rad + dRy) << "\n";
                 HoleAreaPi += (rad + dRx) * (rad + dRy);
