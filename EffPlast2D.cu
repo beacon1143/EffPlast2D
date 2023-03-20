@@ -544,7 +544,7 @@ void EffPlast2D::SaveVector(double* const arr, const int size, const std::string
 double EffPlast2D::FindMaxAbs(const double* const arr, const int size) {
     double max_el = 0.0;
     for (int i = 0; i < size; i++) {
-        if (std::abs(arr[i]) > max_el) {
+        if (std::abs(arr[i]) > std::abs(max_el)) {
             max_el = std::abs(arr[i]);
         }
     }
@@ -554,7 +554,7 @@ double EffPlast2D::FindMaxAbs(const double* const arr, const int size) {
 double EffPlast2D::FindMaxAbs(const std::vector<double>& vec) {
     double max_el = 0.0;
     for (auto i : vec) {
-        if (std::abs(i) > max_el) {
+        if (std::abs(i) > std::abs(max_el)) {
             max_el = i;
         }
     }
