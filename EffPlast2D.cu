@@ -398,12 +398,46 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
         tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
 
+        double Lx = dX * (nX - 1);
+        double Ly = dY * (nY - 1);
+        // set zero Ux in the pores
+        for (int i = 0; i < nX + 1; i++) {
+            for (int j = 0; j < nY; j++) {
+                double x = -0.5 * dX * nX + dX * i;
+                double y = -0.5 * dY * (nY - 1) + dY * j;
+                for (int k = 0; k < N; k++) {
+                    for (int l = 0; l < N; l++) {
+                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) +
+                            (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l)) < rad)
+                        {
+                            Ux_cpu[j * (nX + 1) + i] = 0.0;
+                        }
+                    }
+                }
+            }
+        }
+        // set zero Ux in the pores
+        for (int i = 0; i < nX; i++) {
+            for (int j = 0; j < nY + 1; j++) {
+                double x = -0.5 * dX * (nX - 1) + dX * i;
+                double y = -0.5 * dY * nY + dY * j;
+                for (int k = 0; k < N; k++) {
+                    for (int l = 0; l < N; l++) {
+                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) +
+                            (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l)) < rad)
+                        {
+                            Uy_cpu[j * nX + i] = 0.0;
+                        }
+                    }
+                }
+            }
+        }
         
         double HoleAreaPi = 0.0; // HoleArea / Pi
         for (int k = 0; k < N; k++) {
             for (int l = 0; l < N; l++) {
-                const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / N) - ((nX - 1) / N) * k; // cx / dX
-                const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / N) - ((nY - 1) / N) * l; // cy / dY
+                const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / N) - (static_cast<double>(nX - 1) / N) * k; // cx / dX
+                const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / N) - (static_cast<double>(nY - 1) / N) * l; // cy / dY
 
                 // horizontal displacements
                 // left point of a hole
