@@ -221,14 +221,14 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     }
 
     /* OUTPUT DATA WRITING */
-    SaveMatrix(P_cpu, P_cuda, nX, nY, "Pc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(J2_cpu, J2_cuda, nX, nY, "J2c_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "Uxc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "Uyc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(P_cpu, P_cuda, nX, nY, "data/Pc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "data/tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "data/tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "data/tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "data/tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(J2_cpu, J2_cuda, nX, nY, "data/J2c_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "data/Uxc_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
 
     //gpuErrchk(cudaDeviceReset());
     return KeffPhi;
@@ -523,7 +523,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 void EffPlast2D::ReadParams(const std::string& filename) {
     std::ifstream pa_fil(filename, std::ios_base::binary);
     if (!pa_fil) {
-        std::cerr << "Error! Cannot open file pa.dat!\n";
+        std::cerr << "Error! Cannot open file " << filename << "!\n";
         exit(1);
     }
     pa_fil.read((char*)pa_cpu, sizeof(double) * NPARS);
@@ -1055,38 +1055,38 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
             << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
             << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
 
-        SaveVector(UanAbs, nX* nY, "UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(UanAbs, nX* nY, "data/UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] UanAbs;
 
-        SaveVector(errorUabs, nX* nY, "errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(errorUabs, nX* nY, "data/errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] errorUabs;
 
-        SaveVector(J1an, (nX - 1)* (nY - 1), "J1an_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(J1an, (nX - 1)* (nY - 1), "data/J1an_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] J1an;
 
-        SaveVector(J2an, (nX - 1)* (nY - 1), "J2an_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(J2an, (nX - 1)* (nY - 1), "data/J2an_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] J2an;
 
-        SaveVector(errorJ1, (nX - 1)* (nY - 1), "errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(errorJ1, (nX - 1)* (nY - 1), "data/errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] errorJ1;
 
-        SaveVector(errorJ2, (nX - 1)* (nY - 1), "errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(errorJ2, (nX - 1)* (nY - 1), "data/errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] errorJ2;
 
-        SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "plast_an_" + std::to_string(32 * NGRID) + "_.dat");
+        SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] plastZoneAn;
     }
     
-    SaveVector(UnuAbs, nX * nY, "UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] UnuAbs;
 
-    SaveVector(J1nu, (nX - 1) * (nY - 1), "J1nu_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveVector(J1nu, (nX - 1) * (nY - 1), "data/J1nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] J1nu;
 
-    SaveVector(J2nu, (nX - 1) * (nY - 1), "J2nu_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveVector(J2nu, (nX - 1) * (nY - 1), "data/J2nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] J2nu;
 
-    SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
+    SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] plastZoneNu;
 }
 
@@ -1108,7 +1108,7 @@ EffPlast2D::EffPlast2D() {
     /* PARAMETERS */
     pa_cpu = new double[NPARS];
     gpuErrchk(cudaMalloc(&pa_cuda, NPARS * sizeof(double)));
-    ReadParams("pa.dat");
+    ReadParams("data/pa.dat");
 
     dX = pa_cpu[0];
     dY = pa_cpu[1];

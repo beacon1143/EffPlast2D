@@ -78,9 +78,12 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   Keff = zeros(nTimeSteps);
 
   % parameters
+  mkdir data;
+  cd data;
   fil = fopen('pa.dat', 'wb');
   fwrite(fil, pa(:), 'double');
   fclose(fil);
+  cd ..
 
   if needCPUcalc
     % CPU CALCULATION
