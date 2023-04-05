@@ -32,8 +32,8 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   [xUx, yUx] = ndgrid((-(Lx + dX)/2) : dX : ((Lx + dX)/2), (-Ly/2) : dY : (Ly/2));
   [xUy, yUy] = ndgrid((-Lx/2) : dX : (Lx/2), (-(Ly+dY)/2) : dY : ((Ly+dY)/2));
   dt     = CFL * min(dX, dY) / sqrt( (K0 + 4*G0/3) / rho0);    % time step
-  dampX   = 2.0 / dt / Nx;
-  dampY   = 2.0 / dt / Ny;
+  dampX   = 4.0 / dt / Nx;
+  dampY   = 4.0 / dt / Ny;
   
   % MATERIALS
   K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
