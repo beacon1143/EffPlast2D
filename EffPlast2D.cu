@@ -259,8 +259,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
     /* ACTION LOOP */
     for (int it = 0; it < nTimeSteps; it++) {
-        std::cout << "\nTime step " << (it + 1) << std::endl;
-        log_file << "\nTime step " << (it + 1) << std::endl;
+        std::cout << "\nTime step " << (it + 1) << " from " << nTimeSteps << std::endl;
+        log_file << "\nTime step " << (it + 1) << " from " << nTimeSteps << std::endl;
 
         dUxdx = loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
         dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
