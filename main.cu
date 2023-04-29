@@ -40,17 +40,32 @@ int main(int argc, char** argv) {
 
     const auto end = std::chrono::system_clock::now();
 
-    const int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+    int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
     if (elapsed_sec < 60) {
         std::cout << "Calculation time is " << elapsed_sec << " sec\n";
     }
     else {
-        const int elapsed_min = elapsed_sec / 60;
+        int elapsed_min = elapsed_sec / 60;
+        elapsed_sec = elapsed_sec % 60;
         if (elapsed_min < 60) {
-            std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec % 60 << " sec\n";
+            std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
         }
         else {
-            std::cout << "Calculation time is " << elapsed_min / 60 << " hours " << elapsed_min % 60 << " min " << elapsed_sec % 60 << " sec\n";
+            int elapsed_hour = elapsed_min / 60;
+            elapsed_min = elapsed_min % 60;
+            if (elapsed_hour < 24) {
+                std::cout << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+            }
+            else {
+                const int elapsed_day = elapsed_hour / 24;
+                elapsed_hour = elapsed_hour % 24;
+                if (elapsed_day < 7) {
+                    std::cout << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+                }
+                else {
+                    std::cout << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+                }
+            }
         }
     }
 
