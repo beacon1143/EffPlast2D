@@ -355,12 +355,12 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
                 double y = -0.5 * dY * (nY - 1) + dY * j;
 
                 bool inTheHole = false;
-                for (int k = 0; k < N; k++)
+                for (int k = 0; k < nPores; k++)
                 {
-                    for (int l = 0; l < N; l++)
+                    for (int l = 0; l < nPores; l++)
                     {
-                        const double cx = 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) - (dX * (nX - 1) / N) * k;
-                        const double cy = 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) - (dY * (nY - 1) / N) * l;
+                        const double cx = 0.5 * dX * (nX - 1) * (1.0 - 1.0 / nPores) - (dX * (nX - 1) / nPores) * k;
+                        const double cy = 0.5 * dY * (nY - 1) * (1.0 - 1.0 / nPores) - (dY * (nY - 1) / nPores) * l;
 
                         if ((x - cx) * (x - cx) + (y - cy) * (y - cy) < rad * rad)
                         {
@@ -405,10 +405,10 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
             for (int j = 0; j < nY; j++) {
                 double x = -0.5 * dX * nX + dX * i;
                 double y = -0.5 * dY * (nY - 1) + dY * j;
-                for (int k = 0; k < N; k++) {
-                    for (int l = 0; l < N; l++) {
-                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) +
-                            (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l)) < rad)
+                for (int k = 0; k < nPores; k++) {
+                    for (int l = 0; l < nPores; l++) {
+                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) +
+                            (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l)) < rad)
                         {
                             Ux_cpu[j * (nX + 1) + i] = 0.0;
                         }
@@ -421,10 +421,10 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
             for (int j = 0; j < nY + 1; j++) {
                 double x = -0.5 * dX * (nX - 1) + dX * i;
                 double y = -0.5 * dY * nY + dY * j;
-                for (int k = 0; k < N; k++) {
-                    for (int l = 0; l < N; l++) {
-                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) +
-                            (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l)) < rad)
+                for (int k = 0; k < nPores; k++) {
+                    for (int l = 0; l < nPores; l++) {
+                        if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) +
+                            (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l)) < rad)
                         {
                             Uy_cpu[j * nX + i] = 0.0;
                         }
@@ -434,10 +434,10 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
         
         double HoleAreaPi = 0.0; // HoleArea / Pi
-        for (int k = 0; k < N; k++) {
-            for (int l = 0; l < N; l++) {
-                const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / N) - (static_cast<double>(nX - 1) / N) * k; // cx / dX
-                const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / N) - (static_cast<double>(nY - 1) / N) * l; // cy / dY
+        for (int k = 0; k < nPores; k++) {
+            for (int l = 0; l < nPores; l++) {
+                const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / nPores) - (static_cast<double>(nX - 1) / nPores) * k; // cx / dX
+                const double cydY = 0.5 * (nY - 1) * (1.0 - 1.0 / nPores) - (static_cast<double>(nY - 1) / nPores) * l; // cy / dY
 
                 // horizontal displacements
                 // left point of a hole
@@ -488,11 +488,11 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
 
         //std::cout << "HoleAreaPi = " << HoleAreaPi << "\n";
-        const double Phi0 = 3.1415926 * rad * rad * N * N / (dX * (nX - 1) * dY * (nY - 1));
+        const double Phi0 = 3.1415926 * rad * rad * nPores * nPores / (dX * (nX - 1) * dY * (nY - 1));
         const double Phi = 3.1415926 * HoleAreaPi / (dX * (nX - 1) * dY * (nY - 1));
         /*std::cout << "Phi = " << Phi << '\n';
         log_file << "Phi = " << Phi << '\n';*/
-        dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * N * N) / (dX * (nX - 1) * dY * (nY - 1));
+        dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * nPores * nPores) / (dX * (nX - 1) * dY * (nY - 1));
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
 
@@ -542,10 +542,10 @@ void EffPlast2D::SetMaterials() {
             double y = -0.5 * dY * (nY - 1) + dY * j;
             double Lx = dX * (nX - 1);
             double Ly = dY * (nY - 1);
-            for (int k = 0; k < N; k++) {
-                for (int l = 0; l < N; l++) {
-                    if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / N) + (Lx / N) * k) +
-                        (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / N) + (Ly / N) * l)) < rad) {
+            for (int k = 0; k < nPores; k++) {
+                for (int l = 0; l < nPores; l++) {
+                    if (sqrt((x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) * (x - 0.5 * Lx * (1.0 - 1.0 / nPores) + (Lx / nPores) * k) +
+                        (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l)) < rad) {
                         K_cpu[j * nX + i] = 0.01 * K0;
                         G_cpu[j * nX + i] = 0.01 * G0;
                     }
@@ -854,7 +854,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     const double Ry = c0 * (1.0 + kappa);
 
     double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2, * plastZoneAn;
-    if (N == 1)
+    if (nPores == 1)
     {
         UanAbs = new double[nX * nY];
         errorUabs = new double[nX * nY];
@@ -908,7 +908,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
             }
 
             // analytics
-            if (N == 1)
+            if (nPores == 1)
             {
                 // displacement
                 // analytical solution for Ur
@@ -1039,7 +1039,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         }
     }
 
-    if (N == 1)
+    if (nPores == 1)
     {
         errorUabsAvg /= errorUabsN;
         errorJ1Avg /= errorJN;
@@ -1120,7 +1120,7 @@ EffPlast2D::EffPlast2D() {
     //std::cout << "E = " << E0 << ", nu = " << nu0 << "\n";
     rad = pa_cpu[9];
     Y = pa_cpu[8] / sqrt(2.0);
-    N = pa_cpu[10];
+    nPores = pa_cpu[10];
 
     /* SPACE ARRAYS */
     // materials

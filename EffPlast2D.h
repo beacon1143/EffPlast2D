@@ -62,7 +62,7 @@ private:
 	double K0, G0;                                   // bulk modulus and shear modulus
 	double E0, nu0;                                  // Young's modulus and Poisson's ratio
 	double Y;                                        // yield stress
-	double N;
+	double nPores;
 
 	// space arrays
 	double* K_cpu, * K_cuda, * G_cpu, * G_cuda;      // materials
