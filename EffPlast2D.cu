@@ -857,7 +857,7 @@ double getJ2(double S11, double S22, double S12)
 
 void cutError(double& e)
 {
-    if (abs(e) > 0.5)
+    if (std::abs(e) > 0.5)
         e = -0.5;
 }
 
