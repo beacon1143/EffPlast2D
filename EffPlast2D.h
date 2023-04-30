@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <set>
 #include <limits>
 #include <algorithm>
 #include <complex>
@@ -83,6 +84,7 @@ private:
 	// utilities
 	std::ofstream log_file;
 	size_t output_step;
+	std::set<std::pair<int, int>> empty_spaces;
 
 	// output parameters
 	std::array<std::vector<double>, NL> deltaP;
@@ -110,6 +112,7 @@ private:
 	double GetTauInfty_honestest();
 	double GetTauInfty_honest();
 	double GetTauInfty_approx(const double Exx, const double Eyy);
+	[[deprecated]] double GetdPhi();
 
 	void getAnalytic(
 		double x, double y, double xi, double kappa, double c0,

@@ -447,6 +447,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
                 std::vector<double> dispXleft(5);
                 for (int i = 0; i < 5; i++) {
                     dispXleft[i] = Ux_cpu[cyIdx * (nX + 1) + rxIdx - 1 + i];
+                    //std::cout << "j = " << cyIdx << " i = " << rxIdx - 1 + i << "\n";
                     //std::cout << dispXleft[i] << "\n";
                 }
 
@@ -489,12 +490,15 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
         //std::cout << "HoleAreaPi = " << HoleAreaPi << "\n";
         const double Phi0 = 3.1415926 * rad * rad * nPores * nPores / (dX * (nX - 1) * dY * (nY - 1));
+        /*std::cout << "Phi0 = " << Phi0 << '\n';
+        log_file << "Phi0 = " << Phi0 << '\n';*/
         const double Phi = 3.1415926 * HoleAreaPi / (dX * (nX - 1) * dY * (nY - 1));
         /*std::cout << "Phi = " << Phi << '\n';
         log_file << "Phi = " << Phi << '\n';*/
         dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * nPores * nPores) / (dX * (nX - 1) * dY * (nY - 1));
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
+        //std::cout << "dPhi_new = " << GetdPhi() << "\n";
 
         const double KeffPhi = deltaP[step][it] / dPhi[step][it];
         //const double KeffPhi = deltaP_honest / dPhi;
@@ -531,9 +535,6 @@ void EffPlast2D::ReadParams(const std::string& filename) {
 }
 
 void EffPlast2D::SetMaterials() {
-    //constexpr double K0 = 10.0;
-    //constexpr double G0 = 0.01;
-
     for (int i = 0; i < nX; i++) {
         for (int j = 0; j < nY; j++) {
             K_cpu[j * nX + i] = K0;
@@ -548,10 +549,48 @@ void EffPlast2D::SetMaterials() {
                         (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l) * (y - 0.5 * Ly * (1.0 - 1.0 / nPores) + (Ly / nPores) * l)) < rad) {
                         K_cpu[j * nX + i] = 0.01 * K0;
                         G_cpu[j * nX + i] = 0.01 * G0;
+                        empty_spaces.emplace(i, j);
                     }
                 }
             }
         }
+    }
+    /*for (int i = 0; i < nX; i++) {
+        for (int j = 0; j < nY; j++) {
+            if (empty_spaces.find({i, j}) == empty_spaces.end()) {
+                if (empty_spaces.find({i + 1, j}) != empty_spaces.end() || empty_spaces.find({i - 1, j}) != empty_spaces.end()) {
+                    empty_spaces.emplace(i, j);
+                }
+            }
+        }
+    }*/
+    std::set<std::pair<int, int>> boundary_spaces;
+    for (const auto& p : empty_spaces) {
+        const int i = p.first;
+        const int j = p.second;
+        if (empty_spaces.find({i - 1, j}) == empty_spaces.end()) {
+            boundary_spaces.emplace(i - 1, j);
+        }
+        if (empty_spaces.find({i + 1, j}) == empty_spaces.end()) {
+            boundary_spaces.emplace(i + 1, j);
+        }
+    }
+    for (auto i : boundary_spaces) {
+        empty_spaces.insert(i);
+    }
+    boundary_spaces.clear();
+    for (const auto& p : empty_spaces) {
+        const int i = p.first;
+        const int j = p.second;
+        if (empty_spaces.find({i, j - 1}) == empty_spaces.end()) {
+            boundary_spaces.emplace(i, j - 1);
+        }
+        if (empty_spaces.find({i, j + 1}) == empty_spaces.end()) {
+            boundary_spaces.emplace(i, j + 1);
+        }
+    }
+    for (auto i : boundary_spaces) {
+        empty_spaces.insert(i);
     }
 
     gpuErrchk(cudaMemcpy(K_cuda, K_cpu, nX * nY * sizeof(double), cudaMemcpyHostToDevice));
@@ -738,6 +777,23 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
     tauInfty *= 0.125;
 
     return tauInfty;
+}
+
+double EffPlast2D::GetdPhi() {
+    const double phi0 = static_cast<double>(empty_spaces.size()) / ((nX - 1) * (nY - 1));
+    double phi = 0.0;
+    for (auto& p : empty_spaces) {
+        const int i = p.first;
+        const int j = p.second;
+        //std::cout << "j = " << j << " i = " << i << "\n";
+        //std::cout << "Ux = " << Ux_cpu[j * (nX + 1) + i + 1] << " and " << Ux_cpu[j * (nX + 1) + i] << "\n";
+        //std::cout << "Uy = " << Uy_cpu[(j + 1) * nX + i] << " and " << Uy_cpu[j * nX + i] << "\n";
+        phi += (1.0 + Ux_cpu[j * (nX + 1) + i + 1] - Ux_cpu[j * (nX + 1) + i]) * (1.0 + Uy_cpu[(j + 1) * nX + i] - Uy_cpu[j * nX + i]);
+    }
+    phi /= ((nX - 1) * (nY - 1));
+    //std::cout << "Phi0new = " << phi0 << "\n";
+    //std::cout << "Phi_new = " << phi << "\n";
+    return phi - phi0;
 }
 
 void EffPlast2D::getAnalytic(
