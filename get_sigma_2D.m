@@ -9,7 +9,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   coh  = 0.00001 * sqrt(2.0);
   P0 = 0.0; %1.0 * coh;
   porosity = 0.005;
-  rad = sqrt(porosity * Lx * Lx / (pi * N * N));
+  rad = sqrt(porosity * Lx * Ly / (pi * N * N));
 
   % NUMERICS
   %nGrid = 7;
