@@ -84,6 +84,8 @@ private:
 	// utilities
 	std::ofstream log_file;
 	size_t output_step;
+	double lX, lY;
+	double porosity;
 	std::set<std::pair<int, int>> empty_spaces;
 
 	// output parameters

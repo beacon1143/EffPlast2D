@@ -235,8 +235,12 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
-    std::cout << "\nLOAD STEP " << step + 1 << std::endl;
-    log_file << "\nLOAD STEP " << step + 1 << std::endl;
+    std::cout << "\nLOAD STEP " << step + 1 << "\n";
+    log_file << "\nLOAD STEP " << step + 1 << "\n";
+    std::cout << "Porosity is " << porosity * 100 << "%\n";
+    log_file << "Porosity is " << porosity * 100 << "%\n";
+    std::cout << "Mesh resolution is " << nX << "x" << nY << "\n\n";
+    log_file << "Mesh resolution is " << nX << "x" << nY << "\n\n";
 
     deltaP[step].resize(nTimeSteps);
     tauInfty[step].resize(nTimeSteps);
@@ -259,8 +263,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
     /* ACTION LOOP */
     for (int it = 0; it < nTimeSteps; it++) {
-        std::cout << "\nTime step " << (it + 1) << " from " << nTimeSteps << std::endl;
-        log_file << "\nTime step " << (it + 1) << " from " << nTimeSteps << std::endl;
+        std::cout << "Time step " << (it + 1) << " from " << nTimeSteps << std::endl;
+        log_file << "Time step " << (it + 1) << " from " << nTimeSteps << std::endl;
 
         dUxdx = loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
         dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
@@ -271,8 +275,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         curEffStrain[2] += dUxdy;
         epsilon[step][it] = curEffStrain;
 
-        std::cout << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
-        log_file << "Current effective strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
+        std::cout << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
+        log_file << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
 
         if (it > 0) {    // non-first time step
             gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
@@ -1212,6 +1216,9 @@ EffPlast2D::EffPlast2D() {
     /* UTILITIES */
     log_file.open("EffPlast2D.log", std::ios_base::app);
     output_step = 10'000;
+    lX = (nX - 1) * dX;
+    lY = (nY - 1) * dY;
+    porosity = 3.1415926 * rad * rad * nPores * nPores / (lX * lY);
 }
 
 EffPlast2D::~EffPlast2D() {
