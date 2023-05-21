@@ -92,6 +92,7 @@ private:
 	std::array<std::vector<double>, NL> deltaP;
 	std::array<std::vector<double>, NL> tauInfty;
 	std::array<std::vector<double>, NL> dPhi;
+	std::array<std::vector<double>, NL> dPhiPer;
 	std::array<double, 3> curEffStrain;
 	std::array<std::vector<std::array<double, 3>>, NL> epsilon;
 	std::array<std::vector<std::array<double, 4>>, NL> sigma;    // sigma_zz is non-zero due to plane strain

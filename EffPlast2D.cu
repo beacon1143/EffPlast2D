@@ -245,6 +245,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     deltaP[step].resize(nTimeSteps);
     tauInfty[step].resize(nTimeSteps);
     dPhi[step].resize(nTimeSteps);
+    dPhiPer[step].resize(nTimeSteps);
     epsilon[step].resize(nTimeSteps);
     sigma[step].resize(nTimeSteps);
 
@@ -438,6 +439,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
         
         double HoleAreaPi = 0.0; // HoleArea / Pi
+        double InternalHoleAreaPi = 0.0;
+
         for (int k = 0; k < nPores; k++) {
             for (int l = 0; l < nPores; l++) {
                 const double cxdX = 0.5 * (nX - 1) * (1.0 - 1.0 / nPores) - (static_cast<double>(nX - 1) / nPores) * k; // cx / dX
@@ -489,6 +492,9 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
                 //std::cout << (rad + dRx) * (rad + dRy) << "\n";
                 HoleAreaPi += (rad + dRx) * (rad + dRy);
+                if (k > 0 && l > 0 && k < nPores - 1 && l < nPores - 1) {
+                    InternalHoleAreaPi += (rad + dRx) * (rad + dRy);
+                }
             }
         }
 
@@ -497,11 +503,19 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         /*std::cout << "Phi0 = " << Phi0 << '\n';
         log_file << "Phi0 = " << Phi0 << '\n';*/
         const double Phi = 3.1415926 * HoleAreaPi / (dX * (nX - 1) * dY * (nY - 1));
+        const double PhiPer = nPores > 2 ? 
+            3.1415926 * InternalHoleAreaPi / (dX * (nX - 1) * dY * (nY - 1) * (nPores - 2) * (nPores - 2) / nPores / nPores) :
+            0.0;
         /*std::cout << "Phi = " << Phi << '\n';
         log_file << "Phi = " << Phi << '\n';*/
         dPhi[step][it] = 3.1415926 * std::abs(HoleAreaPi - rad * rad * nPores * nPores) / (dX * (nX - 1) * dY * (nY - 1));
+        dPhiPer[step][it] = std::abs(PhiPer - Phi0);
         std::cout << "dPhi = " << dPhi[step][it] << '\n';
         log_file << "dPhi = " << dPhi[step][it] << '\n';
+        if (nPores > 2) {
+            std::cout << "dPhiPer = " << dPhiPer[step][it] << '\n';
+            log_file << "dPhiPer = " << dPhiPer[step][it] << '\n';
+        }
         //std::cout << "dPhi_new = " << GetdPhi() << "\n";
 
         const double KeffPhi = deltaP[step][it] / dPhi[step][it];
