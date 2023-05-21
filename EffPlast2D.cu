@@ -197,23 +197,29 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
         exit(1);
     }
 
-    double KeffPhi, KeffD;
+    double Kphi, KphiPer, Kd;
 
     if (NL > 1) {
-        double deltaPInc = deltaP[NL - 1][0] - deltaP[NL - 2][nTimeSteps - 1];
+        double Pinc = deltaP[NL - 1][0] - deltaP[NL - 2][nTimeSteps - 1];
         double phiInc = dPhi[NL - 1][0] - dPhi[NL - 2][nTimeSteps - 1];
-        KeffPhi = deltaPInc / phiInc;
-        std::cout << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
-        log_file << "==============\n" << "KeffPhi = " << KeffPhi << std::endl;
+        Kphi = Pinc / phiInc;
+        std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
+        log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
+
+        double PperInc = deltaPper[NL - 1][0] - deltaPper[NL - 2][nTimeSteps - 1];
+        double phiPerInc = dPhiPer[NL - 1][0] - dPhiPer[NL - 2][nTimeSteps - 1];
+        KphiPer = PperInc / phiPerInc;
+        std::cout << "KphiPer = " << KphiPer << std::endl;
+        log_file << "KphiPer = " << KphiPer << std::endl;
 
         //std::cout << "P = " << -0.5 * (sigma[NL - 2][nTimeSteps - 1][0] + sigma[NL - 2][nTimeSteps - 1][1]) << "\n";
         //std::cout << "divU = " << epsilon[NL - 2][nTimeSteps - 1][0] + epsilon[NL - 2][nTimeSteps - 1][1] << "\n";
         double pInc = -0.33333333 * (sigma[NL - 1][0][0] + sigma[NL - 1][0][1] + sigma[NL - 1][0][2] - 
             sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1] - sigma[NL - 2][nTimeSteps - 1][2]);
         double epsInc = epsilon[NL - 1][0][0] + epsilon[NL - 1][0][1] - epsilon[NL - 2][nTimeSteps - 1][0] - epsilon[NL - 2][nTimeSteps - 1][1];
-        KeffD = -pInc / epsInc;
-        std::cout << "KeffD = " << KeffD << std::endl;
-        log_file << "KeffD = " << KeffD << std::endl;
+        Kd = -pInc / epsInc;
+        std::cout << "Kd = " << Kd << std::endl;
+        log_file << "Kd = " << Kd << std::endl;
     }
 
     if (NL && nTimeSteps) {
@@ -231,7 +237,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
 
     //gpuErrchk(cudaDeviceReset());
-    return KeffPhi;
+    return Kphi;
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
@@ -243,6 +249,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     log_file << "Mesh resolution is " << nX << "x" << nY << "\n\n";
 
     deltaP[step].resize(nTimeSteps);
+    deltaPper[step].resize(nTimeSteps);
     tauInfty[step].resize(nTimeSteps);
     dPhi[step].resize(nTimeSteps);
     dPhiPer[step].resize(nTimeSteps);
@@ -397,11 +404,13 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         sigma[step][it][3] /= (nX - 1) * (nY - 1);
 
         /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-        deltaP[step][it] = /*GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetDeltaP_honest();
-        //std::cout << "deltaP = " << deltaP[step][it] << '\n';
-        log_file << "deltaP = " << deltaP[step][it] << '\n';
-        //const double deltaP = GetDeltaP_approx(loadValue * loadType[0], loadValue * loadType[1]);
-        tauInfty[step][it] = /*GetTauInfty_approx(loadValue * loadType[0], loadValue * loadType[1]);*/ GetTauInfty_honest();
+        deltaP[step][it] = GetDeltaP_honest();
+        /*std::cout << "deltaP = " << deltaP[step][it] << '\n';
+        log_file << "deltaP = " << deltaP[step][it] << '\n';*/
+        deltaPper[step][it] = GetDeltaP_periodic();
+        /*std::cout << "deltaPper = " << deltaPper[step][it] << '\n';
+        log_file << "deltaPper = " << deltaPper[step][it] << '\n';*/
+        tauInfty[step][it] = GetTauInfty_honest();
 
         double Lx = dX * (nX - 1);
         double Ly = dY * (nY - 1);
@@ -518,17 +527,19 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
         //std::cout << "dPhi_new = " << GetdPhi() << "\n";
 
-        const double KeffPhi = deltaP[step][it] / dPhi[step][it];
-        //const double KeffPhi = deltaP_honest / dPhi;
+        /*const double Kphi = deltaP[step][it] / dPhi[step][it];
+        const double KphiPer = deltaPper[step][it] / dPhiPer[step][it];*/
 
         //std::cout << "deltaP_honest = " << deltaP_honest << '\n';
         //log_file << "deltaP_honest = " << deltaP_honest << '\n';
-        std::cout << "deltaP / Y = " << deltaP[step][it] / Y << '\n';
-        log_file << "deltaP / Y = " << deltaP[step][it] / Y << '\n';
-        std::cout << "tauInfty / Y = " << tauInfty[step][it] / Y << '\n';
-        log_file << "tauInfty / Y = " << tauInfty[step][it] / Y << '\n';
-        //std::cout << "KeffPhi = " << KeffPhi << '\n';
-        log_file << "KeffPhi = " << KeffPhi << '\n';
+        std::cout << "P / Y = " << deltaP[step][it] / Y << '\n';
+        log_file << "P / Y = " << deltaP[step][it] / Y << '\n';
+        std::cout << "Pper / Y = " << deltaPper[step][it] / Y << '\n';
+        log_file << "Pper / Y = " << deltaPper[step][it] / Y << '\n';
+        std::cout << "tau / Y = " << tauInfty[step][it] / Y << '\n';
+        log_file << "tau / Y = " << tauInfty[step][it] / Y << '\n';
+        /*std::cout << "KeffPhi = " << KeffPhi << '\n';
+        log_file << "KeffPhi = " << KeffPhi << '\n';*/
 
         //const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
         const double KexactElast = G0 / Phi0;
@@ -697,6 +708,36 @@ double EffPlast2D::GetDeltaP_honest() {
         deltaPy += tauYY_cpu[j * nX + nY - 1] - P_cpu[j * nX + nY - 1];
     }
     deltaPy /= (nY - 2);
+
+    deltaP = -0.125 * (deltaPx + deltaPy);
+    return deltaP;
+}
+
+double EffPlast2D::GetDeltaP_periodic() {
+    if (nPores <= 2) {
+        return 0.0;
+    }
+    double deltaP = 0.0, deltaPx = 0.0, deltaPy = 0.0;
+    const int nP = static_cast<int>(nPores);
+
+    for (int i = nX / nP; i < nX * (nP - 1) / nP; i++) {
+        deltaPx += tauXX_cpu[nY / nP * nX + i] - P_cpu[nY / nP * nX + i];
+        deltaPx += tauYY_cpu[nY / nP * nX + i] - P_cpu[nY / nP * nX + i];
+        deltaPx += tauXX_cpu[nY * (nP - 1) / nP * nX + i] - P_cpu[nY * (nP - 1) / nP * nX + i];
+        deltaPx += tauYY_cpu[nY * (nP - 1) / nP * nX + i] - P_cpu[nY * (nP - 1) / nP * nX + i];
+        /*if ((i + 1) % 100 == 0) {
+            std::cout << "P = " << 0.5 * (tauXX_cpu[0 * nX + i] - P_cpu[0 * nX + i] + tauYY_cpu[0 * nX + i] - P_cpu[0 * nX + i]) << "\n";
+        }*/
+    }
+    deltaPx /= nX * (nP - 2) / nP;
+
+    for (int j = nY / nP; j < nY * (nP - 1) / nPores; j++) {
+        deltaPy += tauXX_cpu[j * nX + nX / nP] - P_cpu[j * nX + nX / nP];
+        deltaPy += tauYY_cpu[j * nX + nX / nP] - P_cpu[j * nX + nX / nP];
+        deltaPy += tauXX_cpu[j * nX + nX * (nP - 2) / nP] - P_cpu[j * nX + nX * (nP - 2) / nP];
+        deltaPy += tauYY_cpu[j * nX + nX * (nP - 2) / nP] - P_cpu[j * nX + nX * (nP - 2) / nP];
+    }
+    deltaPy /= nY * (nP - 2) / nP;
 
     deltaP = -0.125 * (deltaPx + deltaPy);
     return deltaP;

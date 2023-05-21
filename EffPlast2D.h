@@ -90,6 +90,7 @@ private:
 
 	// output parameters
 	std::array<std::vector<double>, NL> deltaP;
+	std::array<std::vector<double>, NL> deltaPper;
 	std::array<std::vector<double>, NL> tauInfty;
 	std::array<std::vector<double>, NL> dPhi;
 	std::array<std::vector<double>, NL> dPhiPer;
@@ -111,6 +112,7 @@ private:
 	static double FindMaxAbs(const std::vector<double>& vec);
 
 	double GetDeltaP_honest();
+	double GetDeltaP_periodic();
 	double GetDeltaP_approx(const double Exx, const double Eyy);
 	double GetTauInfty_honestest();
 	double GetTauInfty_honest();
