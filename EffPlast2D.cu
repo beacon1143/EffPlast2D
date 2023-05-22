@@ -545,11 +545,14 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         const double KexactElast = G0 / Phi0;
         const double KexactPlast = G0 / Phi / exp(std::abs(deltaP[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
             (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
-        //const double KexactPlast = G0 / phi / exp(std::abs(deltaP_honest) / pa_cpu[8] - 1.0);
+        const double KexactPlastPer = G0 / Phi0 / exp(std::abs(deltaPper[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
+            (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
         //std::cout << "KexactElast = " << KexactElast << '\n';
         log_file << "KexactElast = " << KexactElast << '\n';
         std::cout << "KexactPlast = " << KexactPlast << '\n';
         log_file << "KexactPlast = " << KexactPlast << '\n';
+        std::cout << "KexactPlastPer = " << KexactPlastPer << '\n';
+        log_file << "KexactPlastPer = " << KexactPlastPer << '\n';
     } // for(it), action loop
 }
 
