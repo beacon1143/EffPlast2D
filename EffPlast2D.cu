@@ -178,6 +178,8 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
 double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const double loadValue, 
     const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
+    const auto start = std::chrono::system_clock::now();
+
     const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
     std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
     std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
@@ -209,8 +211,8 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
         double PperInc = deltaPper[NL - 1][0] - deltaPper[NL - 2][nTimeSteps - 1];
         double phiPerInc = dPhiPer[NL - 1][0] - dPhiPer[NL - 2][nTimeSteps - 1];
         KphiPer = PperInc / phiPerInc;
-        std::cout << "KphiPer = " << KphiPer << std::endl;
-        log_file << "KphiPer = " << KphiPer << std::endl;
+        std::cout << "KphiPer = " << KphiPer << "\n";
+        log_file << "KphiPer = " << KphiPer << "\n";
 
         //std::cout << "P = " << -0.5 * (sigma[NL - 2][nTimeSteps - 1][0] + sigma[NL - 2][nTimeSteps - 1][1]) << "\n";
         //std::cout << "divU = " << epsilon[NL - 2][nTimeSteps - 1][0] + epsilon[NL - 2][nTimeSteps - 1][1] << "\n";
@@ -218,8 +220,8 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
             sigma[NL - 2][nTimeSteps - 1][0] - sigma[NL - 2][nTimeSteps - 1][1] - sigma[NL - 2][nTimeSteps - 1][2]);
         double epsInc = epsilon[NL - 1][0][0] + epsilon[NL - 1][0][1] - epsilon[NL - 2][nTimeSteps - 1][0] - epsilon[NL - 2][nTimeSteps - 1][1];
         Kd = -pInc / epsInc;
-        std::cout << "Kd = " << Kd << std::endl;
-        log_file << "Kd = " << Kd << std::endl;
+        std::cout << "Kd = " << Kd << "\n";
+        log_file << "Kd = " << Kd << "\n";
     }
 
     if (NL && nTimeSteps) {
@@ -237,6 +239,42 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
 
     //gpuErrchk(cudaDeviceReset());
+    const auto end = std::chrono::system_clock::now();
+
+    int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+    if (elapsed_sec < 60) {
+        std::cout << "Calculation time is " << elapsed_sec << " sec\n";
+        log_file << "Calculation time is " << elapsed_sec << " sec\n\n\n";
+    }
+    else {
+        int elapsed_min = elapsed_sec / 60;
+        elapsed_sec = elapsed_sec % 60;
+        if (elapsed_min < 60) {
+            std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
+            log_file << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+        }
+        else {
+            int elapsed_hour = elapsed_min / 60;
+            elapsed_min = elapsed_min % 60;
+            if (elapsed_hour < 24) {
+                std::cout << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+                log_file << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+            }
+            else {
+                const int elapsed_day = elapsed_hour / 24;
+                elapsed_hour = elapsed_hour % 24;
+                if (elapsed_day < 7) {
+                    std::cout << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+                    log_file << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+                }
+                else {
+                    std::cout << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+                    log_file << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+                }
+            }
+        }
+    }
+
     return Kphi;
 }
 
