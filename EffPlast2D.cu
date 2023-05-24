@@ -1311,7 +1311,7 @@ EffPlast2D::EffPlast2D() {
 
     /* UTILITIES */
     log_file.open("EffPlast2D.log", std::ios_base::app);
-    output_step = sqrt(nX * nY) <= 1024 ? 10'000 : 100'000;
+    output_step = 10'000;
     lX = (nX - 1) * dX;
     lY = (nY - 1) * dY;
     porosity = 3.1415926 * rad * rad * nPores * nPores / (lX * lY);
