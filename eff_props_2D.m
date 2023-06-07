@@ -47,18 +47,6 @@ fclose(fil);
 tauYYc = reshape(tauYYc, Nx, Ny);
 tauYYc = transpose(tauYYc);
 
-fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
-tauXYc = fread(fil, 'double');
-fclose(fil);
-tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
-tauXYc = transpose(tauXYc);
-
-fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
-tauXYavc = fread(fil, 'double');
-fclose(fil);
-tauXYavc = reshape(tauXYavc, Nx, Ny);
-tauXYavc = transpose(tauXYavc);
-
 fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
 J2c = fread(fil, 'double');
 fclose(fil);
@@ -78,6 +66,8 @@ Uyc = reshape(Uyc, Nx, Ny + 1);
 Uyc = transpose(Uyc);
 
 %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
+
+cd ..
 
 if needCPUcalculation
   fil = fopen('Pm.dat', 'rb');
@@ -171,6 +161,18 @@ else
     plast_nu = fread(fil, 'double');
     fclose(fil);
     plast_nu = reshape(plast_nu, Nx - 1, Ny - 1);
+    
+    fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
+    tauXYc = fread(fil, 'double');
+    fclose(fil);
+    tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
+    tauXYc = transpose(tauXYc);
+
+    fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
+    tauXYavc = fread(fil, 'double');
+    fclose(fil);
+    tauXYavc = reshape(tauXYavc, Nx, Ny);
+    tauXYavc = transpose(tauXYavc);
     
     subplot(3, 4, 1)
     imagesc(J1nu)
@@ -337,4 +339,3 @@ else
   end %if (needCompareStatic)
 end %if (needCPUcalculation)
 
-cd ..
