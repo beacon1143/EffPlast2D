@@ -13,9 +13,13 @@ nIter = 500000;
 eIter = 1.0e-10;
 N = 2;
 needCPUcalculation = false;
-needCompareStatic = true;
+needCompareStatic = false;
 if N > 1
   needCompareStatic = false;
+end %if
+needPeriodicBCs = true;
+if N < 3
+  needPeriodisBCs = false;
 end %if
 
 Nx  = 32 * nGrid;     % number of space steps
@@ -300,37 +304,61 @@ else
     drawnow
   else  
     subplot(2, 3, 1)
-    imagesc(Pc(2:end-1, 2:end-1))
+    if needPeriodicBCs
+      imagesc(Pc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(Pc(2:end-1, 2:end-1))
+    end
     colorbar
     title('P')
     axis image
 
     subplot(2, 3, 5)
-    imagesc(tauXXc(2:end-1, 2:end-1))
+    if needPeriodicBCs
+      imagesc(tauXXc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(tauXXc(2:end-1, 2:end-1))
+    end
     colorbar
     title('tauXX')
     axis image
 
     subplot(2, 3, 2)
-    imagesc(J2c(2:end-1, 2:end-1))
+    if needPeriodicBCs
+      imagesc(J2c(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(J2c(2:end-1, 2:end-1))
+    end
     colorbar
     title('J2')
     axis image
 
     subplot(2, 3, 4)
-    imagesc(tauYYc(2:end-1, 2:end-1))
+    if needPeriodicBCs
+      imagesc(tauYYc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(tauYYc(2:end-1, 2:end-1))
+    end
     colorbar
     title('tauYY')
     axis image
     
     subplot(2, 3, 3)
-    imagesc(Uxc)
+    if needPeriodicBCs
+      imagesc(Uxc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(Uxc)
+    end
     colorbar
     title('Ux')
     axis image
     
     subplot(2, 3, 6)
-    imagesc(Uyc)
+    if needPeriodicBCs
+      imagesc(Uyc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+    else
+      imagesc(Uyc)
+    end
     colorbar
     title('Uy')
     axis image

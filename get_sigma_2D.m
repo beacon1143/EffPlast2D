@@ -80,7 +80,7 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   % parameters
   if not(isfolder('data'))
     mkdir 'data';
-  end
+  end %if
   cd 'data';
   fil = fopen('pa.dat', 'wb');
   fwrite(fil, pa(:), 'double');
