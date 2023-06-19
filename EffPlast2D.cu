@@ -1257,7 +1257,7 @@ EffPlast2D::EffPlast2D() {
     nX = block.x * grid.x;
     nY = block.y * grid.y;
 
-    gpuErrchk(cudaSetDevice(0));
+    gpuErrchk(cudaSetDevice(DEVICE_IDX));
     //gpuErrchk(cudaDeviceReset());
     //gpuErrchk(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 

@@ -33,6 +33,10 @@
 #define EITER 1.0e-10
 #endif
 
+#if !defined(DEVICE_IDX)
+#define DEVICE_IDX 0
+#endif
+
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char* file, int line)
 {
