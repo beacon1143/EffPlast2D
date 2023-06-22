@@ -22,7 +22,7 @@
 #endif
 
 #if !defined(NL)
-#define NL 2
+#define NL 3
 #endif
 
 #if !defined(NITER)
@@ -101,7 +101,9 @@ private:
 	std::array<std::vector<double>, NL> dPhiPer;
 	std::array<double, 3> curEffStrain;
 	std::array<std::vector<std::array<double, 3>>, NL> epsilon;
+	std::array<std::vector<std::array<double, 3>>, NL> epsilonPer;
 	std::array<std::vector<std::array<double, 4>>, NL> sigma;    // sigma_zz is non-zero due to plane strain
+	std::array<std::vector<std::array<double, 4>>, NL> sigmaPer;
 
 	void ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps);
 

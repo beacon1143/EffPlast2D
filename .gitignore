@@ -6,11 +6,10 @@ C_ijkl.png
 .vscode
 *.dat
 
-a.exe
+*.exe
+*.exp
+*.lib
 
-a.exp
-
-a.lib
 *.png
 
 *.tiff

@@ -6,13 +6,13 @@ colormap jet
 initLoadValue = -0.000015;
 addLoadValueStep = -0.000025;
 loadType = [4.0, -2.0, 0.0];
-nGrid = 16;
+nGrid = 64;
 nTimeSteps = 1;
-nTasks = 2;
+nTasks = 3;
 nIter = 500000;
 eIter = 1.0e-10;
-device = 2;
-N = 2;
+device = 1;
+N = 3;
 needCPUcalculation = false;
 needCompareStatic = false;
 if N > 1
@@ -29,8 +29,8 @@ Ny  = 32 * nGrid;
 Sxx = get_sigma_2D(addLoadValueStep, loadType, nGrid, nTimeSteps, nIter, eIter, N, needCPUcalculation);
 
 % GPU CALCULATION
-outname = ['effprops_', int2str(device)];
-% system(['nvcc -O 3 -o ', outname, ' -DDEVICE_IDX=', int2str(device), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
+outname = ['a', int2str(device)];
+system(['nvcc -O 3 -o ', outname, ' -DDEVICE_IDX=', int2str(device), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu']);
 system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps), ' ' num2str(addLoadValueStep)]);
 
 cd data
