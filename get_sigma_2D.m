@@ -35,48 +35,11 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   dampX   = 4.0 / dt / Nx;
   dampY   = 4.0 / dt / Ny;
   
-  % MATERIALS
-  K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
-  G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
-  [K, G] = set_mats_2D(N, Nx, Ny, Lx, Ly, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
-
-  % INITIAL CONDITIONS
-  Pinit   = zeros(Nx, Ny);            % initial hydrostatic stress
-  P       = zeros(Nx, Ny);
-  tauxyAv = zeros(Nx, Ny);
-  Pinit(sqrt(x.*x + y.*y) < rad) = P0;    % hydrostatic stress (ball part of tensor)
-  Ux    = zeros(Nx + 1, Ny);        % displacement
-  Uy    = zeros(Nx, Ny + 1);
-  Vx    = zeros(Nx + 1, Ny);        % velocity
-  Vy    = zeros(Nx, Ny + 1);
-  tauxx = zeros(Nx, Ny);            % deviatoric stress
-  tauyy = zeros(Nx, Ny);
-  tauxy = zeros(Nx - 1, Ny - 1);
-  J2 = zeros(Nx, Ny);
-  J2xy = zeros(Nx - 1, Ny - 1);
-  Plast = zeros(Nx, Ny);
-  PlastXY = zeros(Nx - 1, Ny - 1);
-  
-  % ANALYTIC SOLUTION
-  Sanrr = zeros(Nx, Ny);
-  Sanff = zeros(Nx, Ny);
-  Snurr = zeros(Nx, Ny);
-  Snuff = zeros(Nx, Ny);
-  sinsin = y ./ (sqrt(x.*x + y.*y));
-  coscos = x ./ (sqrt(x.*x + y.*y));
-
-  % BOUNDARY CONDITIONS
-  dUxdx = loadValue * loadType(1);
-  dUydy = loadValue * loadType(2);
-  dUxdy = loadValue * loadType(3);
-  
-  S = zeros(nTimeSteps, 3);
-
   % INPUT FILES
   pa = [dX, dY, dt, K0, G0, rho0, dampX, dampY, coh, rad, N];
   
   Keff = zeros(nTimeSteps);
-
+  
   % parameters
   if not(isfolder('data'))
     mkdir 'data';
@@ -88,6 +51,43 @@ function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIt
   cd ..
 
   if needCPUcalc
+    % MATERIALS
+    K = zeros(Nx, Ny); %E ./ (3.0 * (1 - 2 * nu));             % bulk modulus
+    G = zeros(Nx, Ny); %E ./ (2.0 + 2.0 * nu);                 % shear modulus
+    [K, G] = set_mats_2D(N, Nx, Ny, Lx, Ly, x, y, rad, K0, G0);     % Young's modulus and Poisson's ratio
+
+    % INITIAL CONDITIONS
+    Pinit   = zeros(Nx, Ny);            % initial hydrostatic stress
+    P       = zeros(Nx, Ny);
+    tauxyAv = zeros(Nx, Ny);
+    Pinit(sqrt(x.*x + y.*y) < rad) = P0;    % hydrostatic stress (ball part of tensor)
+    Ux    = zeros(Nx + 1, Ny);        % displacement
+    Uy    = zeros(Nx, Ny + 1);
+    Vx    = zeros(Nx + 1, Ny);        % velocity
+    Vy    = zeros(Nx, Ny + 1);
+    tauxx = zeros(Nx, Ny);            % deviatoric stress
+    tauyy = zeros(Nx, Ny);
+    tauxy = zeros(Nx - 1, Ny - 1);
+    J2 = zeros(Nx, Ny);
+    J2xy = zeros(Nx - 1, Ny - 1);
+    Plast = zeros(Nx, Ny);
+    PlastXY = zeros(Nx - 1, Ny - 1);
+    
+    % ANALYTIC SOLUTION
+    Sanrr = zeros(Nx, Ny);
+    Sanff = zeros(Nx, Ny);
+    Snurr = zeros(Nx, Ny);
+    Snuff = zeros(Nx, Ny);
+    sinsin = y ./ (sqrt(x.*x + y.*y));
+    coscos = x ./ (sqrt(x.*x + y.*y));
+
+    % BOUNDARY CONDITIONS
+    dUxdx = loadValue * loadType(1);
+    dUydy = loadValue * loadType(2);
+    dUxdy = loadValue * loadType(3);
+    
+    S = zeros(nTimeSteps, 3);
+    
     % CPU CALCULATION
     for it = 1 : nTimeSteps
       Ux = Ux + (dUxdx * xUx + dUxdy * yUx) / nTimeSteps;
