@@ -148,6 +148,8 @@ else
   % POSTPROCESSING
   if needCompareStatic
     % ANALYTIC SOLUTION FOR STATICS
+    cd data
+    
     fil = fopen(strcat('UnuAbs_', int2str(Nx), '_.dat'), 'rb');
     UnuAbs = fread(fil, 'double');
     fclose(fil);
@@ -301,7 +303,9 @@ else
       title('abs(U) error')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-    end
+    end %if
+    
+    cd ..
     
     drawnow
   else  
