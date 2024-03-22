@@ -182,28 +182,28 @@ else
     tauXYavc = reshape(tauXYavc, Nx, Ny);
     tauXYavc = transpose(tauXYavc);
     
-    subplot(3, 4, 1)
+    subplot(3, 3, 1)
     imagesc(J1nu)
     colorbar
     title('J1 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 4, 2)
+    subplot(3, 3, 2)
     imagesc(J2nu)
     colorbar
     title('J2 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    subplot(3, 4, 3)
-    imagesc(plast_nu)
-    colorbar
-    title('plast zone numerical')
-    axis image
-    set(gca, 'FontSize', 10)
+    %subplot(3, 4, 3)
+    %imagesc(plast_nu)
+    %colorbar
+    %title('plast zone numerical')
+    %axis image
+    %set(gca, 'FontSize', 10)
 
-    subplot(3, 4, 4)
+    subplot(3, 3, 3)
     imagesc(UnuAbs)
     colorbar
     title('abs(U) numerical')
@@ -248,62 +248,62 @@ else
       
       plastDiff =  abs(plast_an - plast_nu);
 
-      subplot(3, 4, 5)
+      subplot(3, 3, 4)
       imagesc(J1an)
       colorbar
-      title('J1 analytics')
+      title('J1 analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
-      subplot(3, 4, 6)
+      subplot(3, 3, 5)
       imagesc(J2an)
       colorbar
-      title('J2 analytics')
+      title('J2 analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
-      subplot(3, 4, 7)
-      imagesc(plast_an)
-      colorbar
-      title('plast zone analytics')
-      axis image
-      set(gca, 'FontSize', 10)
+      %subplot(3, 4, 7)
+      %imagesc(plast_an)
+      %colorbar
+      %title('plast zone analytics')
+      %axis image
+      %set(gca, 'FontSize', 10)
       
-      subplot(3, 4, 8)
+      subplot(3, 3, 6)
       imagesc(UanAbs)
       colorbar
-      title('abs(U) analytics')
+      title('abs(U) analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
-      subplot(3, 4, 9)
+      subplot(3, 3, 7)
       imagesc(errorJ1)
       colorbar
       title('J1 error')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
-      subplot(3, 4, 10)
+      subplot(3, 3, 8)
       imagesc(errorJ2)
       colorbar
       title('J2 error')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
-      subplot(3, 4, 11)
-      imagesc(plastDiff)
-      colorbar
-      title('plast zone diff')
-      axis image
-      set(gca, 'FontSize', 10)
+      %subplot(3, 4, 11)
+      %imagesc(plastDiff)
+      %colorbar
+      %title('plast zone diff')
+      %axis image
+      %set(gca, 'FontSize', 10)
       
-      subplot(3, 4, 12)
+      subplot(3, 3, 9)
       imagesc(errorUabs)
       colorbar
       title('abs(U) error')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-    end %if
+    end %if (N == 1)
     
     cd ..
     
