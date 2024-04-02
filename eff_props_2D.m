@@ -220,6 +220,7 @@ else
       errorUabs = fread(fil, 'double');
       fclose(fil);
       errorUabs = reshape(errorUabs, Nx, Ny);
+      errorUabs = 100 * errorUabs;
       
       fil = fopen(strcat('J1an_', int2str(Nx), '_.dat'), 'rb');
       J1an = fread(fil, 'double');
@@ -235,18 +236,20 @@ else
       errorJ1 = fread(fil, 'double');
       fclose(fil);
       errorJ1 = reshape(errorJ1, Nx - 1, Ny - 1);
+      errorJ1 = 100 * errorJ1;
       
       fil = fopen(strcat('errorJ2_', int2str(Nx), '_.dat'), 'rb');
       errorJ2 = fread(fil, 'double');
       fclose(fil);
       errorJ2 = reshape(errorJ2, Nx - 1, Ny - 1);
+      errorJ2 = 100 * errorJ2;
       
       fil = fopen(strcat('plast_an_', int2str(Nx), '_.dat'), 'rb');
       plast_an = fread(fil, 'double');
       fclose(fil);
       plast_an = reshape(plast_an, Nx - 1, Ny - 1);
       
-      plastDiff =  abs(plast_an - plast_nu);
+      plastDiff = abs(plast_an - plast_nu);
 
       subplot(3, 3, 4)
       imagesc(J1an)
@@ -279,14 +282,14 @@ else
       subplot(3, 3, 7)
       imagesc(errorJ1)
       colorbar
-      title('J1 error')
+      title('J1 error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
       subplot(3, 3, 8)
       imagesc(errorJ2)
       colorbar
-      title('J2 error')
+      title('J2 error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
@@ -300,7 +303,7 @@ else
       subplot(3, 3, 9)
       imagesc(errorUabs)
       colorbar
-      title('abs(U) error')
+      title('abs(U) error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     end %if (N == 1)
