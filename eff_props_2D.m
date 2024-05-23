@@ -164,7 +164,7 @@ else
     J2nu = fread(fil, 'double');
     fclose(fil);
     J2nu = reshape(J2nu, Nx - 1, Ny - 1);
-    J2nu = J2nu ./ (0.00001 * sqrt(2.0));
+    J2nu = J2nu ./ 0.0000000002;
 
     fil = fopen(strcat('plast_nu_', int2str(Nx), '_.dat'), 'rb');
     plast_nu = fread(fil, 'double');
@@ -186,14 +186,14 @@ else
     subplot(3, 3, 1)
     imagesc(J1nu)
     colorbar
-    title('J1/K numerical')
+    title('J_1/K numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     subplot(3, 3, 2)
     imagesc(J2nu)
     colorbar
-    title('J2/Y numerical')
+    title('J_2/Y^2 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
@@ -232,7 +232,7 @@ else
       J2an = fread(fil, 'double');
       fclose(fil);
       J2an = reshape(J2an, Nx - 1, Ny - 1);
-      J2an = J2an ./ (0.00001 * sqrt(2.0));
+      J2an = J2an ./ 0.0000000002;
       
       fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
       errorJ1 = fread(fil, 'double');
@@ -256,14 +256,14 @@ else
       subplot(3, 3, 4)
       imagesc(J1an)
       colorbar
-      title('J1/K analytic')
+      title('J_1/K analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
       subplot(3, 3, 5)
       imagesc(J2an)
       colorbar
-      title('J2/Y analytic')
+      title('J_2/Y^2 analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
@@ -284,14 +284,14 @@ else
       subplot(3, 3, 7)
       imagesc(errorJ1)
       colorbar
-      title('J1 error, %')
+      title('J_1 error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
       subplot(3, 3, 8)
       imagesc(errorJ2)
       colorbar
-      title('J2 error, %')
+      title('J_2 error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
