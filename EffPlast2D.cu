@@ -1026,7 +1026,7 @@ double getJ1(double S11, double S22)
 }
 
 double getJ2(double S11, double S22, double S12) {
-    return sqrt(0.5 * ((S11 - S22) * (S11 - S22) + 4.0 * S12 * S12));
+    return 0.5 * ((S11 - S22) * (S11 - S22) + 4.0 * S12 * S12);
 }
 
 void cutError(double& e)
