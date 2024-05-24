@@ -218,7 +218,7 @@ else
     subplot(3, 3, 3)
     imagesc(UnuAbs)
     colorbar
-    title('|u|/r numerical')
+    title('|u|/R numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
@@ -290,7 +290,7 @@ else
       subplot(3, 3, 6)
       imagesc(UanAbs)
       colorbar
-      title('|u|/r analytic')
+      title('|u|/R analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
