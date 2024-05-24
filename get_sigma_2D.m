@@ -1,23 +1,17 @@
-function [Keff, Geff] = get_sigma_2D(loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, N, needCPUcalc)
+function [Keff, Geff] = get_sigma_2D(Lx, Ly, loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, N, Y, porosity, needCPUcalc)
     
   % PHYSICS
-  Lx  = 20.0;                         % physical length
-  Ly  = 20.0;                         % physical width
   rho0 = 1.0;                         % density
   K0   = 1.0;                         % bulk modulus
   G0   = 0.01;                         % shear modulus
-  coh  = 0.00001 * sqrt(2.0);
+  coh  = Y * sqrt(2.0);
   P0 = 0.0; %1.0 * coh;
-  porosity = 0.005;
+  %porosity = 0.005;
   rad = sqrt(porosity * Lx * Ly / (pi * N * N));
 
   % NUMERICS
-  %nGrid = 7;
   Nx  = 32 * nGrid;     % number of space steps
   Ny  = 32 * nGrid;
-  %Nt  = 10;     % number of time steps
-  %nIter = 500;
-  %eIter = 1.0e-11;
   CFL = 0.5;     % Courant-Friedrichs-Lewy
 
   % PREPROCESSING

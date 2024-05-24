@@ -3,30 +3,39 @@ figure(1)
 clf
 colormap jet
 
+% PHYSICS
+Lx  = 20.0;                         % physical length
+Ly  = 20.0;                         % physical width
 initLoadValue = -0.000015;
 addLoadValueStep = -0.000025;
 loadType = [4.0, -2.0, 0.0];
-nGrid = 32;
-nTimeSteps = 1;
+Y = 0.00001;
+nPores = 1;
+porosity = 0.005;
+rad = sqrt(porosity * Lx * Ly / (pi * nPores * nPores));
 nTasks = 3;
-nIter = 500000;
-eIter = 1.0e-10;
+
+% NUMERICS
+nGrid = 64;
+nTimeSteps = 1;
+nIter = 5000000;
+eIter = 1.0e-9;
 device = 0;
-N = 3;
+
 needCPUcalculation = false;
-needCompareStatic = false;
-if N > 1
+needCompareStatic = true;
+if nPores > 1
   needCompareStatic = false;
 end %if
 needPeriodicBCs = true;
-if N < 3
+if nPores < 3
   needPeriodisBCs = false;
 end %if
 
 Nx  = 32 * nGrid;     % number of space steps
 Ny  = 32 * nGrid;
 
-Sxx = get_sigma_2D(addLoadValueStep, loadType, nGrid, nTimeSteps, nIter, eIter, N, needCPUcalculation);
+Sxx = get_sigma_2D(Lx, Ly, initLoadValue, loadType, nGrid, nTimeSteps, nIter, eIter, nPores, Y, porosity, needCPUcalculation);
 
 % GPU CALCULATION
 outname = ['a', int2str(device)];
@@ -154,17 +163,19 @@ else
     UnuAbs = fread(fil, 'double');
     fclose(fil);
     UnuAbs = reshape(UnuAbs, Nx, Ny);
+    UnuAbs = UnuAbs ./ rad;
 
     fil = fopen(strcat('J1nu_', int2str(Nx), '_.dat'), 'rb');
     J1nu = fread(fil, 'double');
     fclose(fil);
     J1nu = reshape(J1nu, Nx - 1, Ny - 1);
+    J1nu = J1nu ./ Y;
     
     fil = fopen(strcat('J2nu_', int2str(Nx), '_.dat'), 'rb');
     J2nu = fread(fil, 'double');
     fclose(fil);
     J2nu = reshape(J2nu, Nx - 1, Ny - 1);
-    J2nu = J2nu ./ 0.0000000002;
+    J2nu = J2nu ./ (2.0 * Y * Y);
 
     fil = fopen(strcat('plast_nu_', int2str(Nx), '_.dat'), 'rb');
     plast_nu = fread(fil, 'double');
@@ -186,7 +197,7 @@ else
     subplot(3, 3, 1)
     imagesc(J1nu)
     colorbar
-    title('J_1/K numerical')
+    title('J_1/Y numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
@@ -207,15 +218,16 @@ else
     subplot(3, 3, 3)
     imagesc(UnuAbs)
     colorbar
-    title('abs(U) numerical')
+    title('|u|/r numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
-    if N==1
+    if nPores == 1
       fil = fopen(strcat('UanAbs_', int2str(Nx), '_.dat'), 'rb');
       UanAbs = fread(fil, 'double');
       fclose(fil);
       UanAbs = reshape(UanAbs, Nx, Ny);
+      UanAbs = UanAbs ./ rad;
       
       fil = fopen(strcat('errorUabs_', int2str(Nx), '_.dat'), 'rb');
       errorUabs = fread(fil, 'double');
@@ -227,12 +239,13 @@ else
       J1an = fread(fil, 'double');
       fclose(fil);
       J1an = reshape(J1an, Nx - 1, Ny - 1);
+      J1an = J1an ./ Y;
       
       fil = fopen(strcat('J2an_', int2str(Nx), '_.dat'), 'rb');
       J2an = fread(fil, 'double');
       fclose(fil);
       J2an = reshape(J2an, Nx - 1, Ny - 1);
-      J2an = J2an ./ 0.0000000002;
+      J2an = J2an ./ (2.0 * Y * Y);
       
       fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
       errorJ1 = fread(fil, 'double');
@@ -256,7 +269,7 @@ else
       subplot(3, 3, 4)
       imagesc(J1an)
       colorbar
-      title('J_1/K analytic')
+      title('J_1/Y analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
       
@@ -277,7 +290,7 @@ else
       subplot(3, 3, 6)
       imagesc(UanAbs)
       colorbar
-      title('abs(U) analytic')
+      title('|u|/r analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
   
@@ -305,7 +318,7 @@ else
       subplot(3, 3, 9)
       imagesc(errorUabs)
       colorbar
-      title('abs(U) error, %')
+      title('|u| error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     end %if (N == 1)
