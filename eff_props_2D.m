@@ -106,7 +106,7 @@ else
     J2nu = read_data_2D('data\J2nu', Nx, Nx - 1, Ny - 1);
     J2nu = J2nu ./ (2.0 * Y * Y);
 
-    plast_nu = read_data_2D('data\plast_nu', Nx, Nx - 1, Ny - 1);    
+    %plast_nu = read_data_2D('data\plast_nu', Nx, Nx - 1, Ny - 1);    
     tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
     tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
     
@@ -150,9 +150,8 @@ else
       errorJ2 = read_data_2D('data\errorJ2', Nx, Nx - 1, Ny - 1);
       errorJ2 = 100 * errorJ2;
       
-      plast_an = read_data_2D('data\plast_an', Nx, Nx - 1, Ny - 1);
-      
-      plastDiff = abs(plast_an - plast_nu);
+      %plast_an = read_data_2D('data\plast_an', Nx, Nx - 1, Ny - 1);      
+      %plastDiff = abs(plast_an - plast_nu);
 
       subplot(3, 3, 4)
       imagesc(J1an)
@@ -167,13 +166,6 @@ else
       title('J_2/Y^2 analytic')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-  
-      %subplot(3, 4, 7)
-      %imagesc(plast_an)
-      %colorbar
-      %title('plast zone analytics')
-      %axis image
-      %set(gca, 'FontSize', 10)
       
       subplot(3, 3, 6)
       imagesc(UanAbs)
@@ -195,13 +187,6 @@ else
       title('J_2 error, %')
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-  
-      %subplot(3, 4, 11)
-      %imagesc(plastDiff)
-      %colorbar
-      %title('plast zone diff')
-      %axis image
-      %set(gca, 'FontSize', 10)
       
       subplot(3, 3, 9)
       imagesc(errorUabs)

@@ -1083,7 +1083,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     const double Rx = c0 * (1.0 - kappa);
     const double Ry = c0 * (1.0 + kappa);
 
-    double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2, * plastZoneAn;
+    double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2; // , * plastZoneAn;
     if (nPores == 1)
     {
         UanAbs = new double[nX * nY];
@@ -1092,7 +1092,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         J2an = new double[(nX - 1) * (nY - 1)];
         errorJ1 = new double[(nX - 1) * (nY - 1)];
         errorJ2 = new double[(nX - 1) * (nY - 1)];
-        plastZoneAn = new double[(nX - 1) * (nY - 1)];
+        //plastZoneAn = new double[(nX - 1) * (nY - 1)];
     }
 
     double errorUabsMax = 0.0, errorUabsAvg = 0.0;
@@ -1105,7 +1105,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     double* UnuAbs = new double[nX * nY];
     double* J1nu = new double[(nX - 1) * (nY - 1)];
     double* J2nu = new double[(nX - 1) * (nY - 1)];
-    double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
+    //double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
 
     for (int i = 0; i < nX; i++)
     {
@@ -1196,20 +1196,20 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
                     // numerical plast zone
                     const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
 
-                    if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
+                    /*if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
                     {
                         plastZoneNu[j * (nX - 1) + i] = 1.0;
                     }
                     else
                     {
                         plastZoneNu[j * (nX - 1) + i] = 0.0;
-                    }
+                    }*/
 
                     // analytical solution for sigma
                     if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
                     {
                         // elast
-                        plastZoneAn[j * (nX - 1) + i] = 0.0;
+                        //plastZoneAn[j * (nX - 1) + i] = 0.0;
                         if (ishydro)
                         {
                             const double relR = rad / r;
@@ -1225,13 +1225,13 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
                     else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
                     {
                         // plast
-                        plastZoneAn[j * (nX - 1) + i] = 1.0;
+                        //plastZoneAn[j * (nX - 1) + i] = 1.0;
                         getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
                     }
                     else
                     {
                         // hole
-                        plastZoneAn[j * (nX - 1) + i] = 0.0;
+                        //plastZoneAn[j * (nX - 1) + i] = 0.0;
                         J1an[j * (nX - 1) + i] = 0.0;
                         J2an[j * (nX - 1) + i] = 0.0;
                     }
@@ -1303,8 +1303,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         SaveVector(errorJ2, (nX - 1)* (nY - 1), "data/errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
         delete[] errorJ2;
 
-        SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] plastZoneAn;
+        //SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
+        //delete[] plastZoneAn;
     }
     
     SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
@@ -1316,8 +1316,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     SaveVector(J2nu, (nX - 1) * (nY - 1), "data/J2nu_" + std::to_string(32 * NGRID) + "_.dat");
     delete[] J2nu;
 
-    SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] plastZoneNu;
+    //SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
+    //delete[] plastZoneNu;
 }
 
 EffPlast2D::EffPlast2D() {
