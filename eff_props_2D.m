@@ -51,46 +51,18 @@ Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
 %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
 
 if needCPUcalculation
-  fil = fopen('Pm.dat', 'rb');
-  Pm = fread(fil, 'double');
-  fclose(fil);
-  Pm = reshape(Pm, Nx, Ny);
-
+  Pm = read_data_2D('data\Pm', Nx, Nx, Ny);
+  tauXXm = read_data_2D('data\tauXXm', Nx, Nx, Ny);
+  tauYYm = read_data_2D('data\tauYYm', Nx, Nx, Ny);
+  tauXYm = read_data_2D('data\tauXYm', Nx, Nx - 1, Ny - 1);
+  tauXYavm = read_data_2D('data\tauXYavm', Nx, Nx, Ny);
+  J2m = read_data_2D('data\J2m', Nx, Nx, Ny);
+  
   diffP = Pm - Pc;
-  
-  fil = fopen('tauXXm.dat', 'rb');
-  tauXXm = fread(fil, 'double');
-  fclose(fil);
-  tauXXm = reshape(tauXXm, Nx, Ny);
-
   diffTauXX = tauXXm - tauXXc;
-  
-  fil = fopen('tauYYm.dat', 'rb');
-  tauYYm = fread(fil, 'double');
-  fclose(fil);
-  tauYYm = reshape(tauYYm, Nx, Ny);
-
   diffTauYY = tauYYm - tauYYc;
-
-  fil = fopen('tauXYm.dat', 'rb');
-  tauXYm = fread(fil, 'double');
-  fclose(fil);
-  tauXYm = reshape(tauXYm, Nx - 1, Ny - 1);
-
   diffTauXY = tauXYm - tauXYc;
-
-  fil = fopen('tauXYavm.dat', 'rb');
-  tauXYavm = fread(fil, 'double');
-  fclose(fil);
-  tauXYavm = reshape(tauXYavm, Nx, Ny);
-
   diffTauXYav = tauXYavm - tauXYavc;
-
-  fil = fopen('J2m.dat', 'rb');
-  J2m = fread(fil, 'double');
-  fclose(fil);
-  J2m = reshape(J2m, Nx, Ny);
-
   diffJ2 = J2c - J2m;
 
   % POSTPROCESSING
@@ -123,42 +95,20 @@ else
   % POSTPROCESSING
   if needCompareStatic
     % ANALYTIC SOLUTION FOR STATICS
-    cd data
+    %cd data
     
-    fil = fopen(strcat('UnuAbs_', int2str(Nx), '_.dat'), 'rb');
-    UnuAbs = fread(fil, 'double');
-    fclose(fil);
-    UnuAbs = reshape(UnuAbs, Nx, Ny);
+    UnuAbs = read_data_2D('data\UnuAbs', Nx, Nx, Ny);
     UnuAbs = UnuAbs ./ rad;
 
-    fil = fopen(strcat('J1nu_', int2str(Nx), '_.dat'), 'rb');
-    J1nu = fread(fil, 'double');
-    fclose(fil);
-    J1nu = reshape(J1nu, Nx - 1, Ny - 1);
+    J1nu = read_data_2D('data\J1nu', Nx, Nx - 1, Ny - 1);
     J1nu = J1nu ./ Y;
     
-    fil = fopen(strcat('J2nu_', int2str(Nx), '_.dat'), 'rb');
-    J2nu = fread(fil, 'double');
-    fclose(fil);
-    J2nu = reshape(J2nu, Nx - 1, Ny - 1);
+    J2nu = read_data_2D('data\J2nu', Nx, Nx - 1, Ny - 1);
     J2nu = J2nu ./ (2.0 * Y * Y);
 
-    fil = fopen(strcat('plast_nu_', int2str(Nx), '_.dat'), 'rb');
-    plast_nu = fread(fil, 'double');
-    fclose(fil);
-    plast_nu = reshape(plast_nu, Nx - 1, Ny - 1);
-    
-    fil = fopen(strcat('tauXYc_', int2str(Nx), '_.dat'), 'rb');
-    tauXYc = fread(fil, 'double');
-    fclose(fil);
-    tauXYc = reshape(tauXYc, Nx - 1, Ny - 1);
-    tauXYc = transpose(tauXYc);
-
-    fil = fopen(strcat('tauXYavc_', int2str(Nx), '_.dat'), 'rb');
-    tauXYavc = fread(fil, 'double');
-    fclose(fil);
-    tauXYavc = reshape(tauXYavc, Nx, Ny);
-    tauXYavc = transpose(tauXYavc);
+    plast_nu = read_data_2D('data\plast_nu', Nx, Nx - 1, Ny - 1);    
+    tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
+    tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
     
     subplot(3, 3, 1)
     imagesc(J1nu)
@@ -173,13 +123,6 @@ else
     title('J_2/Y^2 numerical')
     axis image
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
-    
-    %subplot(3, 4, 3)
-    %imagesc(plast_nu)
-    %colorbar
-    %title('plast zone numerical')
-    %axis image
-    %set(gca, 'FontSize', 10)
 
     subplot(3, 3, 3)
     imagesc(UnuAbs)
@@ -189,46 +132,25 @@ else
     set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     
     if nPores == 1
-      fil = fopen(strcat('UanAbs_', int2str(Nx), '_.dat'), 'rb');
-      UanAbs = fread(fil, 'double');
-      fclose(fil);
-      UanAbs = reshape(UanAbs, Nx, Ny);
+      UanAbs = read_data_2D('data\UanAbs', Nx, Nx, Ny);
       UanAbs = UanAbs ./ rad;
       
-      fil = fopen(strcat('errorUabs_', int2str(Nx), '_.dat'), 'rb');
-      errorUabs = fread(fil, 'double');
-      fclose(fil);
-      errorUabs = reshape(errorUabs, Nx, Ny);
+      errorUabs = read_data_2D('data\errorUabs', Nx, Nx, Ny);
       errorUabs = 100 * errorUabs;
       
-      fil = fopen(strcat('J1an_', int2str(Nx), '_.dat'), 'rb');
-      J1an = fread(fil, 'double');
-      fclose(fil);
-      J1an = reshape(J1an, Nx - 1, Ny - 1);
+      J1an = read_data_2D('data\J1an', Nx, Nx - 1, Ny - 1);
       J1an = J1an ./ Y;
       
-      fil = fopen(strcat('J2an_', int2str(Nx), '_.dat'), 'rb');
-      J2an = fread(fil, 'double');
-      fclose(fil);
-      J2an = reshape(J2an, Nx - 1, Ny - 1);
+      J2an = read_data_2D('data\J2an', Nx, Nx - 1, Ny - 1);
       J2an = J2an ./ (2.0 * Y * Y);
       
-      fil = fopen(strcat('errorJ1_', int2str(Nx), '_.dat'), 'rb');
-      errorJ1 = fread(fil, 'double');
-      fclose(fil);
-      errorJ1 = reshape(errorJ1, Nx - 1, Ny - 1);
+      errorJ1 = read_data_2D('data\errorJ1', Nx, Nx - 1, Ny - 1);
       errorJ1 = 100 * errorJ1;
       
-      fil = fopen(strcat('errorJ2_', int2str(Nx), '_.dat'), 'rb');
-      errorJ2 = fread(fil, 'double');
-      fclose(fil);
-      errorJ2 = reshape(errorJ2, Nx - 1, Ny - 1);
+      errorJ2 = read_data_2D('data\errorJ2', Nx, Nx - 1, Ny - 1);
       errorJ2 = 100 * errorJ2;
       
-      fil = fopen(strcat('plast_an_', int2str(Nx), '_.dat'), 'rb');
-      plast_an = fread(fil, 'double');
-      fclose(fil);
-      plast_an = reshape(plast_an, Nx - 1, Ny - 1);
+      plast_an = read_data_2D('data\plast_an', Nx, Nx - 1, Ny - 1);
       
       plastDiff = abs(plast_an - plast_nu);
 
@@ -288,8 +210,6 @@ else
       axis image
       set(gca, 'FontSize', 10, 'fontWeight', 'bold')
     end %if (N == 1)
-    
-    cd ..
     
     drawnow
   else  

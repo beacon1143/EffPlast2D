@@ -38,11 +38,10 @@ function [Keff, Geff] = get_sigma_2D(Lx, Ly, loadValue, loadType, nGrid, nTimeSt
   if not(isfolder('data'))
     mkdir 'data';
   end %if
-  cd 'data';
-  fil = fopen('pa.dat', 'wb');
+  
+  fil = fopen('data\pa.dat', 'wb');
   fwrite(fil, pa(:), 'double');
   fclose(fil);
-  cd ..
 
   if needCPUcalc
     % MATERIALS
@@ -298,27 +297,27 @@ function [Keff, Geff] = get_sigma_2D(Lx, Ly, loadValue, loadType, nGrid, nTimeSt
       KexactPlast = G0 / Phi / exp(abs(deltaP_approx) / coh - 1.0) / (1.0 + 5.0 * tauInfty_approx * tauInfty_approx / coh / coh)
     end %for
     
-    fil = fopen('Pm.dat', 'wb');
+    fil = fopen(strcat('data\Pm_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, P(:), 'double');
     fclose(fil);
     
-    fil = fopen('tauXXm.dat', 'wb');
+    fil = fopen(strcat('data\tauXXm_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, tauxx(:), 'double');
     fclose(fil);
     
-    fil = fopen('tauYYm.dat', 'wb');
+    fil = fopen(strcat('data\tauYYm_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, tauyy(:), 'double');
     fclose(fil);
     
-    fil = fopen('tauXYm.dat', 'wb');
+    fil = fopen(strcat('data\tauXYm_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, tauxy(:), 'double');
     fclose(fil);
 
-    fil = fopen('tauXYavm.dat', 'wb');
+    fil = fopen(strcat('data\tauXYavm_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, tauxyAv(:), 'double');
     fclose(fil);
     
-    fil = fopen('J2m.dat', 'wb');
+    fil = fopen(strcat('data\J2m_', int2str(Nx), '_.dat'), 'wb');
     fwrite(fil, J2(:), 'double');
     fclose(fil);
 
