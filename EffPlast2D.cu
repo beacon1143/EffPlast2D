@@ -259,12 +259,12 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     /* OUTPUT DATA WRITING */
     SaveMatrix(P_cpu, P_cuda, nX, nY, "data/Pc_" + std::to_string(32 * NGRID) + "_.dat");
     SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "data/tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "data/tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "data/tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "data/tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(J2_cpu, J2_cuda, nX, nY, "data/J2c_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "data/Uxc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "data/tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "data/tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "data/tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(J2_cpu, J2_cuda, nX, nY, "data/J2c_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "data/Uxc_" + std::to_string(32 * NGRID) + "_.dat");
+    //SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
 
     //gpuErrchk(cudaDeviceReset());
     const auto end = std::chrono::system_clock::now();
@@ -1065,7 +1065,7 @@ void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2)
 
 void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType) {
     /* ANALYTIC 2D SOLUTION FOR STATICS */
-    bool ishydro = 
+    bool isHydro = 
         (abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::min()) && 
         abs(loadType[2]) < std::numeric_limits<double>::min();
 
@@ -1107,18 +1107,15 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
     double* J2nu = new double[(nX - 1) * (nY - 1)];
     //double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
 
-    for (int i = 0; i < nX; i++)
-    {
-        for (int j = 0; j < nY; j++)
-        {
+    for (int i = 0; i < nX; i++) {
+        for (int j = 0; j < nY; j++) {
             // numerical solution for Ur
             const double ux = 0.5 * (Ux_cpu[(nX + 1) * j + i] + Ux_cpu[(nX + 1) * j + (i + 1)]);
             const double uy = 0.5 * (Uy_cpu[nX * j + i] + Uy_cpu[nX * (j + 1) + i]);
             UnuAbs[j * nX + i] = sqrt(ux * ux + uy * uy);
 
             // numerical solution for sigma
-            if (i < nX - 1 && j < nY - 1)
-            {
+            if (i < nX - 1 && j < nY - 1) {
                 const double Sxx = 0.25 * (
                     -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] +
                     -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] +
@@ -1138,10 +1135,8 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
             }
 
             // analytics
-            if (nPores == 1)
-            {
-                // displacement
-                // analytical solution for Ur
+            if (nPores == 1) {
+                // displacement, analytical solution for Ur
                 const double x = -0.5 * dX * (nX - 1) + dX * i;
                 const double y = -0.5 * dY * (nY - 1) + dY * j;
 
@@ -1152,7 +1147,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
                 if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
                 {
                     // elast
-                    if (ishydro)
+                    if (isHydro)
                         UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
                     else
                         UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
@@ -1194,9 +1189,9 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
                     const double sinf = y / r;
 
                     // numerical plast zone
-                    const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
+                    /*const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
 
-                    /*if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
+                    if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
                     {
                         plastZoneNu[j * (nX - 1) + i] = 1.0;
                     }
@@ -1210,7 +1205,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
                     {
                         // elast
                         //plastZoneAn[j * (nX - 1) + i] = 0.0;
-                        if (ishydro)
+                        if (isHydro)
                         {
                             const double relR = rad / r;
                             const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
@@ -1269,8 +1264,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         }
     }
 
-    if (nPores == 1)
-    {
+    if (nPores == 1) {
         errorUabsAvg /= errorUabsN;
         errorJ1Avg /= errorJN;
         errorJ2Avg /= errorJN;

@@ -44,29 +44,29 @@ system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)
 
 Pc = read_data_2D('data\Pc', Nx, Nx, Ny);
 tauXXc = read_data_2D('data\tauXXc', Nx, Nx, Ny);
-tauYYc = read_data_2D('data\tauYYc', Nx, Nx, Ny);
-tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
-tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
-J2c = read_data_2D('data\J2c', Nx, Nx, Ny);
-Uxc = read_data_2D('data\Uxc', Nx, Nx + 1, Ny);
-Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
+%tauYYc = read_data_2D('data\tauYYc', Nx, Nx, Ny);
+%tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
+%tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
+%J2c = read_data_2D('data\J2c', Nx, Nx, Ny);
+%Uxc = read_data_2D('data\Uxc', Nx, Nx + 1, Ny);
+%Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
 %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
 
 % POSTPROCESSING
 if needCPUcalculation
   Pm = read_data_2D('data\Pm', Nx, Nx, Ny);
   tauXXm = read_data_2D('data\tauXXm', Nx, Nx, Ny);
-  tauYYm = read_data_2D('data\tauYYm', Nx, Nx, Ny);
-  tauXYm = read_data_2D('data\tauXYm', Nx, Nx - 1, Ny - 1);
-  tauXYavm = read_data_2D('data\tauXYavm', Nx, Nx, Ny);
-  J2m = read_data_2D('data\J2m', Nx, Nx, Ny);
+  %tauYYm = read_data_2D('data\tauYYm', Nx, Nx, Ny);
+  %tauXYm = read_data_2D('data\tauXYm', Nx, Nx - 1, Ny - 1);
+  %tauXYavm = read_data_2D('data\tauXYavm', Nx, Nx, Ny);
+  %J2m = read_data_2D('data\J2m', Nx, Nx, Ny);
   
   diffP = Pm - Pc;
   diffTauXX = tauXXm - tauXXc;
-  diffTauYY = tauYYm - tauYYc;
-  diffTauXY = tauXYm - tauXYc;
-  diffTauXYav = tauXYavm - tauXYavc;
-  diffJ2 = J2c - J2m;
+  %diffTauYY = tauYYm - tauYYc;
+  %diffTauXY = tauXYm - tauXYc;
+  %diffTauXYav = tauXYavm - tauXYavc;
+  %diffJ2 = J2c - J2m;
 
   % POSTPROCESSING
   subplot(2, 2, 1)
@@ -88,9 +88,9 @@ if needCPUcalculation
   axis image
 
   subplot(2, 2, 4)
-  imagesc(diffTauYY)
+  imagesc(diffTauXX)
   colorbar
-  title('diffTauYY')
+  title('diffTauXX')
   axis image
 
   drawnow
