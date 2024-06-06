@@ -42,47 +42,13 @@ outname = ['a', int2str(device)];
 system(['nvcc -O 3 -allow-unsupported-compiler -o ', outname, ' -DDEVICE_IDX=', int2str(device), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu'])
 system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps), ' ' num2str(addLoadValueStep)])
 
-cd data
-
-fil = fopen(strcat('Pc_', int2str(Nx), '_.dat'), 'rb');
-Pc = fread(fil, 'double');
-fclose(fil);
-Pc = reshape(Pc, Nx, Ny);
-Pc = transpose(Pc);
-
-fil = fopen(strcat('tauXXc_', int2str(Nx), '_.dat'), 'rb');
-tauXXc = fread(fil, 'double');
-fclose(fil);
-tauXXc = reshape(tauXXc, Nx, Ny);
-tauXXc = transpose(tauXXc);
-
-fil = fopen(strcat('tauYYc_', int2str(Nx), '_.dat'), 'rb');
-tauYYc = fread(fil, 'double');
-fclose(fil);
-tauYYc = reshape(tauYYc, Nx, Ny);
-tauYYc = transpose(tauYYc);
-
-fil = fopen(strcat('J2c_', int2str(Nx), '_.dat'), 'rb');
-J2c = fread(fil, 'double');
-fclose(fil);
-J2c = reshape(J2c, Nx, Ny);
-J2c = transpose(J2c);
-
-fil = fopen(strcat('Uxc_', int2str(Nx), '_.dat'), 'rb');
-Uxc = fread(fil, 'double');
-fclose(fil);
-Uxc = reshape(Uxc, Nx + 1, Ny);
-Uxc = transpose(Uxc);
-
-fil = fopen(strcat('Uyc_', int2str(Nx), '_.dat'), 'rb');
-Uyc = fread(fil, 'double');
-fclose(fil);
-Uyc = reshape(Uyc, Nx, Ny + 1);
-Uyc = transpose(Uyc);
-
+Pc = read_data_2D('data\Pc', Nx, Nx, Ny);
+tauXXc = read_data_2D('data\tauXXc', Nx, Nx, Ny);
+tauYYc = read_data_2D('data\tauYYc', Nx, Nx, Ny);
+J2c = read_data_2D('data\J2c', Nx, Nx, Ny);
+Uxc = read_data_2D('data\Uxc', Nx, Nx + 1, Ny);
+Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
 %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
-
-cd ..
 
 if needCPUcalculation
   fil = fopen('Pm.dat', 'rb');
