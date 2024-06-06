@@ -295,7 +295,7 @@ else
   else  
     subplot(2, 3, 1)
     if needPeriodicBCs
-      imagesc(Pc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(Pc(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(Pc(2:end-1, 2:end-1))
     end
@@ -305,7 +305,7 @@ else
 
     subplot(2, 3, 5)
     if needPeriodicBCs
-      imagesc(tauXXc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(tauXXc(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(tauXXc(2:end-1, 2:end-1))
     end
@@ -315,7 +315,7 @@ else
 
     subplot(2, 3, 2)
     if needPeriodicBCs
-      imagesc(J2c(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(J2c(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(J2c(2:end-1, 2:end-1))
     end
@@ -325,7 +325,7 @@ else
 
     subplot(2, 3, 4)
     if needPeriodicBCs
-      imagesc(tauYYc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(tauYYc(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(tauYYc(2:end-1, 2:end-1))
     end
@@ -335,7 +335,7 @@ else
     
     subplot(2, 3, 3)
     if needPeriodicBCs
-      imagesc(Uxc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(Uxc(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(Uxc)
     end
@@ -345,7 +345,7 @@ else
     
     subplot(2, 3, 6)
     if needPeriodicBCs
-      imagesc(Uyc(int32(end / N) : int32(end * (N - 1)/ N), int32(end / N) : int32(end * (N - 1)/ N)))
+      imagesc(Uyc(int32(end / nPores) : int32(end * (nPores - 1)/ nPores), int32(end / nPores) : int32(end * (nPores - 1)/ nPores)))
     else
       imagesc(Uyc)
     end
