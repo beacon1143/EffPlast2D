@@ -270,38 +270,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     const auto end = std::chrono::system_clock::now();
 
     int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-    if (elapsed_sec < 60) {
-        std::cout << "Calculation time is " << elapsed_sec << " sec\n";
-        log_file << "Calculation time is " << elapsed_sec << " sec\n\n\n";
-    }
-    else {
-        int elapsed_min = elapsed_sec / 60;
-        elapsed_sec = elapsed_sec % 60;
-        if (elapsed_min < 60) {
-            std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
-            log_file << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
-        }
-        else {
-            int elapsed_hour = elapsed_min / 60;
-            elapsed_min = elapsed_min % 60;
-            if (elapsed_hour < 24) {
-                std::cout << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-                log_file << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
-            }
-            else {
-                const int elapsed_day = elapsed_hour / 24;
-                elapsed_hour = elapsed_hour % 24;
-                if (elapsed_day < 7) {
-                    std::cout << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-                    log_file << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
-                }
-                else {
-                    std::cout << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-                    log_file << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
-                }
-            }
-        }
-    }
+    outputDuration(elapsed_sec);
 
     return Kphi;
 }
@@ -1312,6 +1281,41 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
 
     //SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
     //delete[] plastZoneNu;
+}
+
+void EffPlast2D::outputDuration(int elapsed_sec) {
+  if (elapsed_sec < 60) {
+    std::cout << "Calculation time is " << elapsed_sec << " sec\n";
+    log_file << "Calculation time is " << elapsed_sec << " sec\n\n\n";
+  }
+  else {
+    int elapsed_min = elapsed_sec / 60;
+    elapsed_sec = elapsed_sec % 60;
+    if (elapsed_min < 60) {
+      std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
+      log_file << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+    }
+    else {
+      int elapsed_hour = elapsed_min / 60;
+      elapsed_min = elapsed_min % 60;
+      if (elapsed_hour < 24) {
+        std::cout << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+        log_file << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+      }
+      else {
+        const int elapsed_day = elapsed_hour / 24;
+        elapsed_hour = elapsed_hour % 24;
+        if (elapsed_day < 7) {
+          std::cout << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+          log_file << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+        }
+        else {
+          std::cout << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+          log_file << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+        }
+      }
+    }
+  }
 }
 
 EffPlast2D::EffPlast2D() {

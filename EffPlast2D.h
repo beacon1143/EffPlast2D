@@ -142,4 +142,6 @@ private:
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
 	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
+
+	void outputDuration(int elapsed_sec);
 };
