@@ -42,16 +42,6 @@ outname = ['a', int2str(device)];
 system(['nvcc -O 3 -allow-unsupported-compiler -o ', outname, ' -DDEVICE_IDX=', int2str(device), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu'])
 system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps), ' ' num2str(addLoadValueStep)])
 
-Pc = read_data_2D('data\Pc', Nx, Nx, Ny);
-tauXXc = read_data_2D('data\tauXXc', Nx, Nx, Ny);
-%tauYYc = read_data_2D('data\tauYYc', Nx, Nx, Ny);
-%tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
-%tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
-%J2c = read_data_2D('data\J2c', Nx, Nx, Ny);
-%Uxc = read_data_2D('data\Uxc', Nx, Nx + 1, Ny);
-%Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
-%Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
-
 % POSTPROCESSING
 if needCPUcalculation
   Pm = read_data_2D('data\Pm', Nx, Nx, Ny);
@@ -60,6 +50,16 @@ if needCPUcalculation
   %tauXYm = read_data_2D('data\tauXYm', Nx, Nx - 1, Ny - 1);
   %tauXYavm = read_data_2D('data\tauXYavm', Nx, Nx, Ny);
   %J2m = read_data_2D('data\J2m', Nx, Nx, Ny);
+  
+  Pc = read_data_2D('data\Pc', Nx, Nx, Ny);
+  tauXXc = read_data_2D('data\tauXXc', Nx, Nx, Ny);
+  %tauYYc = read_data_2D('data\tauYYc', Nx, Nx, Ny);
+  %tauXYc = read_data_2D('data\tauXYc', Nx, Nx - 1, Ny - 1);
+  %tauXYavc = read_data_2D('data\tauXYavc', Nx, Nx, Ny);
+  %J2c = read_data_2D('data\J2c', Nx, Nx, Ny);
+  %Uxc = read_data_2D('data\Uxc', Nx, Nx + 1, Ny);
+  %Uyc = read_data_2D('data\Uyc', Nx, Nx, Ny + 1);
+  %Ur = sqrt(Ux(1:end-1,:) .* Ux(1:end-1,:) + Uy(:,1:end-1) .* Uy(:,1:end-1))
   
   diffP = Pm - Pc;
   diffTauXX = tauXXm - tauXXc;
