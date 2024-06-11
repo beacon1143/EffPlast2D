@@ -184,8 +184,7 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
     std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 
-    if (NL != 3)
-    {
+    if (NL != 2 && NL != 3) {
         std::cerr << "Error! Wrong number of loads!\n";
         exit(1);
     }
@@ -196,60 +195,62 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
 
     ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
-    ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
     double Kphi, KphiPer, Kd, KdPer, G, Gper;
+    double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
+    double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
+    Kphi = Pinc / phiInc;
+    std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
+    log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
+
+    double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
+    double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
+    KphiPer = PperInc / phiPerInc;
+    std::cout << "KphiPer = " << KphiPer << "\n";
+    log_file << "KphiPer = " << KphiPer << "\n";
+
+    std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+    std::array<double, 4> sigmaVolInc = sigma[1][0];
+    std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+    std::array<double, 3> epsilonVolInc = epsilon[1][0];
+    std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+    std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
+    std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+    std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
+
+    //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps - 1][0] + sigma[0][nTimeSteps - 1][1]) << "\n";
+    //std::cout << "divU = " << epsilon[0][nTimeSteps - 1][0] + epsilon[0][nTimeSteps - 1][1] << "\n";
+    double pInc = -0.33333333 * (sigmaVolInc[0] + sigmaVolInc[1] + sigmaVolInc[2] - sigmaInitLoad[0] - sigmaInitLoad[1] - sigmaInitLoad[2]);
+    double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
+    Kd = -pInc / epsInc;
+    std::cout << "Kd = " << Kd << "\n";
+    log_file << "Kd = " << Kd << "\n";
+
+    double pIncPer = -0.33333333 * (sigmaVolIncPer[0] + sigmaVolIncPer[1] + sigmaVolIncPer[2] - sigmaInitLoadPer[0] - sigmaInitLoadPer[1] - sigmaInitLoadPer[2]);
+    double epsIncPer = epsilonVolIncPer[0] + epsilonVolIncPer[1] - epsilonInitLoadPer[0] - epsilonInitLoadPer[1];
+    KdPer = -pIncPer / epsIncPer;
+    std::cout << "KdPer = " << KdPer << "\n";
+    log_file << "KdPer = " << KdPer << "\n";
 
     if (NL == 3) {
-        double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
-        double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
-        Kphi = Pinc / phiInc;
-        std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
-        log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
+      ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
-        double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
-        double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
-        KphiPer = PperInc / phiPerInc;
-        std::cout << "KphiPer = " << KphiPer << "\n";
-        log_file << "KphiPer = " << KphiPer << "\n";
+      std::array<double, 4> sigmaDevInc = sigma[2][0];
+      std::array<double, 3> epsilonDevInc = epsilon[2][0];
+      std::array<double, 4> sigmaDevIncPer = sigmaPer[2][0];
+      std::array<double, 3> epsilonDevIncPer = epsilonPer[2][0];
 
-        std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
-        std::array<double, 4> sigmaVolInc = sigma[1][0];
-        std::array<double, 4> sigmaDevInc = sigma[2][0];
-        std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
-        std::array<double, 3> epsilonVolInc = epsilon[1][0];
-        std::array<double, 3> epsilonDevInc = epsilon[2][0];
 
-        std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
-        std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
-        std::array<double, 4> sigmaDevIncPer = sigmaPer[2][0];
-        std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
-        std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
-        std::array<double, 3> epsilonDevIncPer = epsilonPer[2][0];
-
-        //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps - 1][0] + sigma[0][nTimeSteps - 1][1]) << "\n";
-        //std::cout << "divU = " << epsilon[0][nTimeSteps - 1][0] + epsilon[0][nTimeSteps - 1][1] << "\n";
-        double pInc = -0.33333333 * (sigmaVolInc[0] + sigmaVolInc[1] + sigmaVolInc[2] - sigmaInitLoad[0] - sigmaInitLoad[1] - sigmaInitLoad[2]);
-        double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
-        Kd = -pInc / epsInc;
-        std::cout << "Kd = " << Kd << "\n";
-        log_file << "Kd = " << Kd << "\n";
-
-        double pIncPer = -0.33333333 * (sigmaVolIncPer[0] + sigmaVolIncPer[1] + sigmaVolIncPer[2] - sigmaInitLoadPer[0] - sigmaInitLoadPer[1] - sigmaInitLoadPer[2]);
-        double epsIncPer = epsilonVolIncPer[0] + epsilonVolIncPer[1] - epsilonInitLoadPer[0] - epsilonInitLoadPer[1];
-        KdPer = -pIncPer / epsIncPer;
-        std::cout << "KdPer = " << KdPer << "\n";
-        log_file << "KdPer = " << KdPer << "\n";
  
-        G = 0.5 * (sigmaDevInc[0] - sigmaVolInc[0] - sigmaDevInc[1] + sigmaVolInc[1]) / 
-            (epsilonDevInc[0] - epsilonVolInc[0] - epsilonDevInc[1] + epsilonVolInc[1]);
-        std::cout << "G = " << G << "\n";
-        log_file << "G = " << G << "\n";
+      G = 0.5 * (sigmaDevInc[0] - sigmaVolInc[0] - sigmaDevInc[1] + sigmaVolInc[1]) / 
+          (epsilonDevInc[0] - epsilonVolInc[0] - epsilonDevInc[1] + epsilonVolInc[1]);
+      std::cout << "==============\n" << "G = " << G << "\n";
+      log_file << "==============\n" << "G = " << G << "\n";
 
-        Gper = 0.5 * (sigmaDevIncPer[0] - sigmaVolIncPer[0] - sigmaDevIncPer[1] + sigmaVolIncPer[1]) / 
-            (epsilonDevIncPer[0] - epsilonVolIncPer[0] - epsilonDevIncPer[1] + epsilonVolIncPer[1]);
-        std::cout << "Gper = " << Gper << "\n";
-        log_file << "Gper = " << Gper << "\n";
+      Gper = 0.5 * (sigmaDevIncPer[0] - sigmaVolIncPer[0] - sigmaDevIncPer[1] + sigmaVolIncPer[1]) / 
+          (epsilonDevIncPer[0] - epsilonVolIncPer[0] - epsilonDevIncPer[1] + epsilonVolIncPer[1]);
+      std::cout << "Gper = " << Gper << "\n";
+      log_file << "Gper = " << Gper << "\n";
     }
 
     if (NL && nTimeSteps) {
@@ -276,8 +277,8 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
-    std::cout << "\nLOAD STEP " << step + 1 << "\n";
-    log_file << "\nLOAD STEP " << step + 1 << "\n";
+    std::cout << "\nLOAD STEP " << step + 1 << " FROM " << NL << "\n";
+    log_file << "\nLOAD STEP " << step + 1 << " FROM " << NL << "\n";
     std::cout << "Porosity is " << porosity * 100 << "%\n";
     log_file << "Porosity is " << porosity * 100 << "%\n";
     std::cout << "Mesh resolution is " << nX << "x" << nY << "\n\n";
@@ -626,15 +627,17 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         std::cout << "KexactPlastPer = " << KexactPlastPer << '\n';
         log_file << "KexactPlastPer = " << KexactPlastPer << '\n';
 
-        const double GexactElast = G0 / (1.0 + Phi0);
-        const double GexactPlast = G0 / (1.0 + Phi * exp(std::abs(deltaP[step][it]) / Y - 1.0));
-        const double GexactPlastPer = G0 / (1.0 + Phi0 * exp(std::abs(deltaPper[step][it]) / Y - 1.0));
-        //std::cout << "GexactElast = " << GexactElast << '\n';
-        log_file << "GexactElast = " << GexactElast << '\n';
-        std::cout << "GexactPlast = " << GexactPlast << '\n';
-        log_file << "GexactPlast = " << GexactPlast << '\n';
-        std::cout << "GexactPlastPer = " << GexactPlastPer << '\n';
-        log_file << "GexactPlastPer = " << GexactPlastPer << '\n';
+        if (NL == 3) {
+          const double GexactElast = G0 / (1.0 + Phi0);
+          const double GexactPlast = G0 / (1.0 + Phi * exp(std::abs(deltaP[step][it]) / Y - 1.0));
+          const double GexactPlastPer = G0 / (1.0 + Phi0 * exp(std::abs(deltaPper[step][it]) / Y - 1.0));
+          //std::cout << "GexactElast = " << GexactElast << '\n';
+          log_file << "GexactElast = " << GexactElast << '\n';
+          std::cout << "GexactPlast = " << GexactPlast << '\n';
+          log_file << "GexactPlast = " << GexactPlast << '\n';
+          std::cout << "GexactPlastPer = " << GexactPlastPer << '\n';
+          log_file << "GexactPlastPer = " << GexactPlastPer << '\n';
+        }
     } // for(it), action loop
 }
 
@@ -1285,33 +1288,33 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
 
 void EffPlast2D::outputDuration(int elapsed_sec) {
   if (elapsed_sec < 60) {
-    std::cout << "Calculation time is " << elapsed_sec << " sec\n";
-    log_file << "Calculation time is " << elapsed_sec << " sec\n\n\n";
+    std::cout << "\nCalculation time is " << elapsed_sec << " sec\n";
+    log_file << "\nCalculation time is " << elapsed_sec << " sec\n\n\n";
   }
   else {
     int elapsed_min = elapsed_sec / 60;
     elapsed_sec = elapsed_sec % 60;
     if (elapsed_min < 60) {
-      std::cout << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
-      log_file << "Calculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+      std::cout << "\nCalculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n";
+      log_file << "\nCalculation time is " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
     }
     else {
       int elapsed_hour = elapsed_min / 60;
       elapsed_min = elapsed_min % 60;
       if (elapsed_hour < 24) {
-        std::cout << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-        log_file << "Calculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+        std::cout << "\nCalculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+        log_file << "\nCalculation time is " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
       }
       else {
         const int elapsed_day = elapsed_hour / 24;
         elapsed_hour = elapsed_hour % 24;
         if (elapsed_day < 7) {
-          std::cout << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-          log_file << "Calculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+          std::cout << "\nCalculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+          log_file << "\nCalculation time is " << elapsed_day << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
         }
         else {
-          std::cout << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
-          log_file << "Calculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
+          std::cout << "\nCalculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n";
+          log_file << "\nCalculation time is " << elapsed_day / 7 << " weeks " << elapsed_day % 7 << " days " << elapsed_hour << " hours " << elapsed_min << " min " << elapsed_sec << " sec\n\n\n";
         }
       }
     }

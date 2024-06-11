@@ -14,6 +14,9 @@ nPores = 1;
 porosity = 0.005;
 rad = sqrt(porosity * Lx * Ly / (pi * nPores * nPores));
 nTasks = 3;
+if loadType(1) == loadType(2) && loadType(3) == 0.0
+  nTasks = 2;
+end %if
 
 % NUMERICS
 nGrid = 64;
