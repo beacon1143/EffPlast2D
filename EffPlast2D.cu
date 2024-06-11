@@ -196,59 +196,30 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
 
-    double Kphi, KphiPer, Kd, KdPer, G, Gper;
-    double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
-    double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
-    Kphi = Pinc / phiInc;
+    const double Kphi = getKphi(nTimeSteps);
     std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
     log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
 
-    double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
-    double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
-    KphiPer = PperInc / phiPerInc;
+    const double KphiPer = getKphiPer(nTimeSteps);
     std::cout << "KphiPer = " << KphiPer << "\n";
     log_file << "KphiPer = " << KphiPer << "\n";
 
-    std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
-    std::array<double, 4> sigmaVolInc = sigma[1][0];
-    std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
-    std::array<double, 3> epsilonVolInc = epsilon[1][0];
-    std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
-    std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
-    std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
-    std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
-
-    //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps - 1][0] + sigma[0][nTimeSteps - 1][1]) << "\n";
-    //std::cout << "divU = " << epsilon[0][nTimeSteps - 1][0] + epsilon[0][nTimeSteps - 1][1] << "\n";
-    double pInc = -0.33333333 * (sigmaVolInc[0] + sigmaVolInc[1] + sigmaVolInc[2] - sigmaInitLoad[0] - sigmaInitLoad[1] - sigmaInitLoad[2]);
-    double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
-    Kd = -pInc / epsInc;
+    const double Kd = getKd(nTimeSteps);
     std::cout << "Kd = " << Kd << "\n";
     log_file << "Kd = " << Kd << "\n";
 
-    double pIncPer = -0.33333333 * (sigmaVolIncPer[0] + sigmaVolIncPer[1] + sigmaVolIncPer[2] - sigmaInitLoadPer[0] - sigmaInitLoadPer[1] - sigmaInitLoadPer[2]);
-    double epsIncPer = epsilonVolIncPer[0] + epsilonVolIncPer[1] - epsilonInitLoadPer[0] - epsilonInitLoadPer[1];
-    KdPer = -pIncPer / epsIncPer;
+    const double KdPer = getKdPer(nTimeSteps);
     std::cout << "KdPer = " << KdPer << "\n";
     log_file << "KdPer = " << KdPer << "\n";
 
     if (NL == 3) {
       ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
-      std::array<double, 4> sigmaDevInc = sigma[2][0];
-      std::array<double, 3> epsilonDevInc = epsilon[2][0];
-      std::array<double, 4> sigmaDevIncPer = sigmaPer[2][0];
-      std::array<double, 3> epsilonDevIncPer = epsilonPer[2][0];
-
-
- 
-      G = 0.5 * (sigmaDevInc[0] - sigmaVolInc[0] - sigmaDevInc[1] + sigmaVolInc[1]) / 
-          (epsilonDevInc[0] - epsilonVolInc[0] - epsilonDevInc[1] + epsilonVolInc[1]);
+      const double G = getG(nTimeSteps);
       std::cout << "==============\n" << "G = " << G << "\n";
       log_file << "==============\n" << "G = " << G << "\n";
 
-      Gper = 0.5 * (sigmaDevIncPer[0] - sigmaVolIncPer[0] - sigmaDevIncPer[1] + sigmaVolIncPer[1]) / 
-          (epsilonDevIncPer[0] - epsilonVolIncPer[0] - epsilonDevIncPer[1] + epsilonVolIncPer[1]);
+      const double Gper = getGper(nTimeSteps);
       std::cout << "Gper = " << Gper << "\n";
       log_file << "Gper = " << Gper << "\n";
     }
@@ -1319,6 +1290,64 @@ void EffPlast2D::outputDuration(int elapsed_sec) {
       }
     }
   }
+}
+
+/* FINAL EFFECTIVE MODULI CALCULATION */
+double EffPlast2D::getKphi(const unsigned int nTimeSteps) {
+  const double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
+  const double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
+  return Pinc / phiInc;
+}
+double EffPlast2D::getKphiPer(const unsigned int nTimeSteps) {
+  const double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
+  const double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
+  return PperInc / phiPerInc;
+}
+double EffPlast2D::getKd(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+  const std::array<double, 4> sigmaVolInc = sigma[1][0];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonVolInc = epsilon[1][0];
+
+  //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps - 1][0] + sigma[0][nTimeSteps - 1][1]) << "\n";
+  //std::cout << "divU = " << epsilon[0][nTimeSteps - 1][0] + epsilon[0][nTimeSteps - 1][1] << "\n";
+  const double pInc = -0.33333333 * (sigmaVolInc[0] + sigmaVolInc[1] + sigmaVolInc[2] - sigmaInitLoad[0] - sigmaInitLoad[1] - sigmaInitLoad[2]);
+  const double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
+  return -pInc / epsInc;
+}
+double EffPlast2D::getKdPer(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+  const std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
+
+  const double pIncPer = -0.33333333 * (sigmaVolIncPer[0] + sigmaVolIncPer[1] + sigmaVolIncPer[2] - sigmaInitLoadPer[0] - sigmaInitLoadPer[1] - sigmaInitLoadPer[2]);
+  const double epsIncPer = epsilonVolIncPer[0] + epsilonVolIncPer[1] - epsilonInitLoadPer[0] - epsilonInitLoadPer[1];
+  return -pIncPer / epsIncPer;
+}
+double EffPlast2D::getG(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+  const std::array<double, 4> sigmaVolInc = sigma[1][0];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonVolInc = epsilon[1][0];
+
+  const std::array<double, 4> sigmaDevInc = sigma[2][0];
+  const std::array<double, 3> epsilonDevInc = epsilon[2][0];
+
+  return 0.5 * (sigmaDevInc[0] - sigmaVolInc[0] - sigmaDevInc[1] + sigmaVolInc[1]) / 
+    (epsilonDevInc[0] - epsilonVolInc[0] - epsilonDevInc[1] + epsilonVolInc[1]);
+}
+double EffPlast2D::getGper(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+  const std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
+
+  const std::array<double, 4> sigmaDevIncPer = sigmaPer[2][0];
+  const std::array<double, 3> epsilonDevIncPer = epsilonPer[2][0];
+
+  return 0.5 * (sigmaDevIncPer[0] - sigmaVolIncPer[0] - sigmaDevIncPer[1] + sigmaVolIncPer[1]) / 
+    (epsilonDevIncPer[0] - epsilonVolIncPer[0] - epsilonDevIncPer[1] + epsilonVolIncPer[1]);
 }
 
 EffPlast2D::EffPlast2D() {

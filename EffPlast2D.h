@@ -144,4 +144,12 @@ private:
 	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 
 	void outputDuration(int elapsed_sec);
+
+	// final effective moduli calculation
+	double getKphi(const unsigned int nTimeSteps);
+	double getKphiPer(const unsigned int nTimeSteps);
+	double getKd(const unsigned int nTimeSteps);
+	double getKdPer(const unsigned int nTimeSteps);
+	double getG(const unsigned int nTimeSteps);
+	double getGper(const unsigned int nTimeSteps);
 };
