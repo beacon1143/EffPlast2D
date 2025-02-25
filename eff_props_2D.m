@@ -23,7 +23,7 @@ nGrid = 64;
 nTimeSteps = 1;
 nIter = 5000000;
 eIter = 1.0e-9;
-device = 0;
+iDevice = 0;
 
 needCPUcalculation = false;
 needCompareStatic = true;
@@ -41,8 +41,8 @@ Ny  = 32 * nGrid;
 Sxx = get_sigma_2D(Lx, Ly, initLoadValue, loadType, nGrid, nTimeSteps, nIter, eIter, nPores, Y, porosity, needCPUcalculation);
 
 % GPU CALCULATION
-outname = ['a', int2str(device)];
-system(['nvcc -O 3 -allow-unsupported-compiler -o ', outname, ' -DDEVICE_IDX=', int2str(device), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu'])
+outname = ['a', int2str(iDevice)];
+system(['nvcc -O 3 -allow-unsupported-compiler -o ', outname, ' -DDEVICE_IDX=', int2str(iDevice), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(11), ' EffPlast2D.cu main.cu'])
 system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps)]) %, ' ' num2str(addLoadValueStep)])
 
 % POSTPROCESSING
