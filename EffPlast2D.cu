@@ -176,75 +176,100 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
 }
 
 double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const double loadValue, 
-    const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
+  const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
-    const auto start = std::chrono::system_clock::now();
+  const auto start = std::chrono::system_clock::now();
 
-    const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
-    std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
-    std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
+  const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
+  std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
+  std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 
-    if (NL != 2 && NL != 3) {
-        std::cerr << "Error! Wrong number of loads!\n";
-        exit(1);
-    }
+  switch (NL) {
+  case 1:
+    std::cout << "\nCALCULATION OF THE EFFECTIVE BULK MODULI FOR THE PURE ELASTIC CASE\n";
+    break;
+  case 2:
+    std::cout << "\nCALCULATION OF THE EFFECTIVE BULK MODULI FOR THE ELASTOPLASTIC CASE\n";
+    break;
+  case 3:
+    std::cout << "\nCALCULATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS FOR THE ELASTOPLASTIC CASE\n";
+    break;
+  default:
+    std::cerr << "\nError! Wrong number of loads!\n";
+    exit(1);
+  }
 
-    // ComputeEffParams(0, initLoadValue, sphericalLoadType, nTimeSteps);
-    // ComputeEffParams(1, initLoadValue, deviatoricLoadType, nTimeSteps);
-    // ComputeEffParams(2, initLoadValue * incPercent, loadType, 1);
-
-    ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
-    ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
-
-    const double Kphi = getKphi(nTimeSteps);
+  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
+  if (NL == 1) {
+    const double Kphi = getKphi_PureElast(nTimeSteps);
     std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
     log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
 
-    const double KphiPer = getKphiPer(nTimeSteps);
+    const double KphiPer = getKphiPer_PureElast(nTimeSteps);
     std::cout << "KphiPer = " << KphiPer << "\n";
     log_file << "KphiPer = " << KphiPer << "\n";
 
-    const double Kd = getKd(nTimeSteps);
+    const double Kd = getKd_PureElast(nTimeSteps);
     std::cout << "Kd = " << Kd << "\n";
     log_file << "Kd = " << Kd << "\n";
 
-    const double KdPer = getKdPer(nTimeSteps);
+    const double KdPer = getKdPer_PureElast(nTimeSteps);
     std::cout << "KdPer = " << KdPer << "\n";
     log_file << "KdPer = " << KdPer << "\n";
+  }
+  else {
+    ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
 
-    if (NL == 3) {
-      ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
+    const double Kphi = getKphi_ElastPlast(nTimeSteps);
+    std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
+    log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
 
-      const double G = getG(nTimeSteps);
-      std::cout << "==============\n" << "G = " << G << "\n";
-      log_file << "==============\n" << "G = " << G << "\n";
+    const double KphiPer = getKphiPer_ElastPlast(nTimeSteps);
+    std::cout << "KphiPer = " << KphiPer << "\n";
+    log_file << "KphiPer = " << KphiPer << "\n";
 
-      const double Gper = getGper(nTimeSteps);
-      std::cout << "Gper = " << Gper << "\n";
-      log_file << "Gper = " << Gper << "\n";
-    }
+    const double Kd = getKd_ElastPlast(nTimeSteps);
+    std::cout << "Kd = " << Kd << "\n";
+    log_file << "Kd = " << Kd << "\n";
 
-    if (NL && nTimeSteps) {
-        SaveAnStatic2D(deltaP[NL - 2][nTimeSteps - 1], tauInfty[NL - 2][nTimeSteps - 1], loadType);
-    }
+    const double KdPer = getKdPer_ElastPlast(nTimeSteps);
+    std::cout << "KdPer = " << KdPer << "\n";
+    log_file << "KdPer = " << KdPer << "\n";
+  }
 
-    /* OUTPUT DATA WRITING */
-    SaveMatrix(P_cpu, P_cuda, nX, nY, "data/Pc_" + std::to_string(32 * NGRID) + "_.dat");
-    SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "data/tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "data/tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "data/tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "data/tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(J2_cpu, J2_cuda, nX, nY, "data/J2c_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "data/Uxc_" + std::to_string(32 * NGRID) + "_.dat");
-    //SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
+  if (NL == 3) {
+    ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
-    //gpuErrchk(cudaDeviceReset());
-    const auto end = std::chrono::system_clock::now();
+    const double G = getG(nTimeSteps);
+    std::cout << "==============\n" << "G = " << G << "\n";
+    log_file << "==============\n" << "G = " << G << "\n";
 
-    int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-    outputDuration(elapsed_sec);
+    const double Gper = getGper(nTimeSteps);
+    std::cout << "Gper = " << Gper << "\n";
+    log_file << "Gper = " << Gper << "\n";
+  }
 
-    return Kphi;
+  if (NL > 1 && nTimeSteps) {
+    SaveAnStatic2D(deltaP[NL - 2][nTimeSteps - 1], tauInfty[NL - 2][nTimeSteps - 1], loadType);
+  }
+
+  /* OUTPUT DATA WRITING */
+  SaveMatrix(P_cpu, P_cuda, nX, nY, "data/Pc_" + std::to_string(32 * NGRID) + "_.dat");
+  SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "data/tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(tauYY_cpu, tauYY_cuda, nX, nY, "data/tauYYc_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(tauXY_cpu, tauXY_cuda, nX - 1, nY - 1, "data/tauXYc_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(tauXYav_cpu, tauXYav_cuda, nX, nY, "data/tauXYavc_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(J2_cpu, J2_cuda, nX, nY, "data/J2c_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(Ux_cpu, Ux_cuda, nX + 1, nY, "data/Uxc_" + std::to_string(32 * NGRID) + "_.dat");
+  //SaveMatrix(Uy_cpu, Uy_cuda, nX, nY + 1, "data/Uyc_" + std::to_string(32 * NGRID) + "_.dat");
+
+  //gpuErrchk(cudaDeviceReset());
+  const auto end = std::chrono::system_clock::now();
+
+  int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+  outputDuration(elapsed_sec);
+
+  return 0.0;
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
@@ -332,10 +357,12 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         for (int iter = 0; iter < NITER; iter++) {
             ComputeStress<<<grid, block>>>(Ux_cuda, Uy_cuda, K_cuda, G_cuda, P0_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, /*tauXYav_cuda, J2_cuda, J2XY_cuda,*/ pa_cuda, nX, nY);
             gpuErrchk(cudaDeviceSynchronize());
-            ComputeJ2<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, nX, nY);
-            gpuErrchk(cudaDeviceSynchronize());
-            ComputePlasticity<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
-            gpuErrchk(cudaDeviceSynchronize());
+            if (NL > 1) {
+              ComputeJ2<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, nX, nY);
+              gpuErrchk(cudaDeviceSynchronize());
+              ComputePlasticity<<<grid, block>>>(tauXX_cuda, tauYY_cuda, tauXY_cuda, tauXYav_cuda, J2_cuda, J2XY_cuda, pa_cuda, nX, nY);
+              gpuErrchk(cudaDeviceSynchronize());
+            }
             ComputeDisp<<<grid, block>>>(Ux_cuda, Uy_cuda, Vx_cuda, Vy_cuda, P_cuda, tauXX_cuda, tauYY_cuda, tauXY_cuda, pa_cuda, nX, nY);
             gpuErrchk(cudaDeviceSynchronize());
 
@@ -591,12 +618,16 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
             (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
         const double KexactPlastPer = G0 / Phi0 / exp(std::abs(deltaPper[step][it]) / Y - 1.0) / // phi or phi - dPhi ?
             (1.0 + tauInfty[step][it] * tauInfty[step][it] / Y / Y);
-        //std::cout << "KexactElast = " << KexactElast << '\n';
-        log_file << "KexactElast = " << KexactElast << '\n';
-        std::cout << "KexactPlast = " << KexactPlast << '\n';
-        log_file << "KexactPlast = " << KexactPlast << '\n';
-        std::cout << "KexactPlastPer = " << KexactPlastPer << '\n';
-        log_file << "KexactPlastPer = " << KexactPlastPer << '\n';
+        if (NL <= 1) {
+          std::cout << "KphiExactElast = " << KexactElast << '\n';
+          log_file << "KphiExactElast = " << KexactElast << '\n';
+        }
+        else {
+          std::cout << "KphiExactPlast = " << KexactPlast << '\n';
+          log_file << "KphiExactPlast = " << KexactPlast << '\n';
+          std::cout << "KphiExactPlastPer = " << KexactPlastPer << '\n';
+          log_file << "KphiExactPlastPer = " << KexactPlastPer << '\n';
+        }
 
         if (NL == 3) {
           const double GexactElast = G0 / (1.0 + Phi0);
@@ -1293,17 +1324,45 @@ void EffPlast2D::outputDuration(int elapsed_sec) {
 }
 
 /* FINAL EFFECTIVE MODULI CALCULATION */
-double EffPlast2D::getKphi(const unsigned int nTimeSteps) {
+// bulk moduli in the pure elastic case
+double EffPlast2D::getKphi_PureElast(const unsigned int nTimeSteps) {
+  const double Pinc = deltaP[0][nTimeSteps - 1];
+  const double phiInc = dPhi[0][nTimeSteps - 1];
+  return Pinc / phiInc;
+}
+double EffPlast2D::getKphiPer_PureElast(const unsigned int nTimeSteps) {
+  const double PperInc = deltaPper[0][nTimeSteps - 1];
+  const double phiPerInc = dPhiPer[0][nTimeSteps - 1];
+  return PperInc / phiPerInc;
+}
+double EffPlast2D::getKd_PureElast(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+
+  const double pInc = -0.33333333 * (sigmaInitLoad[0] + sigmaInitLoad[1] + sigmaInitLoad[2]);
+  const double epsInc = epsilonInitLoad[0] + epsilonInitLoad[1];
+  return -pInc / epsInc;
+}
+double EffPlast2D::getKdPer_PureElast(const unsigned int nTimeSteps) {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+
+  const double pIncPer = -0.33333333 * (sigmaInitLoadPer[0] + sigmaInitLoadPer[1] + sigmaInitLoadPer[2]);
+  const double epsIncPer = epsilonInitLoadPer[0] + epsilonInitLoadPer[1];
+  return -pIncPer / epsIncPer;
+}
+// bulk moduli in the elastoplastic case
+double EffPlast2D::getKphi_ElastPlast(const unsigned int nTimeSteps) {
   const double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
   const double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
   return Pinc / phiInc;
 }
-double EffPlast2D::getKphiPer(const unsigned int nTimeSteps) {
+double EffPlast2D::getKphiPer_ElastPlast(const unsigned int nTimeSteps) {
   const double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
   const double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
   return PperInc / phiPerInc;
 }
-double EffPlast2D::getKd(const unsigned int nTimeSteps) {
+double EffPlast2D::getKd_ElastPlast(const unsigned int nTimeSteps) {
   const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
   const std::array<double, 4> sigmaVolInc = sigma[1][0];
   const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
@@ -1315,7 +1374,7 @@ double EffPlast2D::getKd(const unsigned int nTimeSteps) {
   const double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
   return -pInc / epsInc;
 }
-double EffPlast2D::getKdPer(const unsigned int nTimeSteps) {
+double EffPlast2D::getKdPer_ElastPlast(const unsigned int nTimeSteps) {
   const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
   const std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
   const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
@@ -1325,6 +1384,7 @@ double EffPlast2D::getKdPer(const unsigned int nTimeSteps) {
   const double epsIncPer = epsilonVolIncPer[0] + epsilonVolIncPer[1] - epsilonInitLoadPer[0] - epsilonInitLoadPer[1];
   return -pIncPer / epsIncPer;
 }
+// shear modulus in the elastoplastic case
 double EffPlast2D::getG(const unsigned int nTimeSteps) {
   const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
   const std::array<double, 4> sigmaVolInc = sigma[1][0];

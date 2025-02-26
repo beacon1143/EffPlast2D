@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   }
 
   EffPlast2D eff_plast;
-  auto S = eff_plast.ComputeKphi(init_load_value, load_value, time_steps, load_type);
+  /*auto S = */eff_plast.ComputeKphi(init_load_value, load_value, time_steps, load_type);
 
   return 0;
 }

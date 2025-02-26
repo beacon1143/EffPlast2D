@@ -6,31 +6,31 @@ colormap jet
 % PHYSICS
 Lx  = 20.0;                         % physical length
 Ly  = 20.0;                         % physical width
-initLoadValue = -0.000015;
+initLoadValue = -0.00004;
 %addLoadValueStep = -0.000025;
-loadType = [4.0, -2.0, 0.0];
+loadType = [2.0, 1.0, 0.0];
 Y = 0.00001;
-nPores = 1;
+nPores = 4;
 porosity = 0.005;
 rad = sqrt(porosity * Lx * Ly / (pi * nPores * nPores));
 nTasks = 3;
-if loadType(1) == loadType(2) && loadType(3) == 0.0
+if loadType(1) == loadType(2) && loadType(3) == 0.0 && nTasks > 2
   nTasks = 2;
 end %if
 
 % NUMERICS
-nGrid = 64;
+nGrid = 16;
 nTimeSteps = 1;
 nIter = 5000000;
 eIter = 1.0e-9;
 iDevice = 0;
 
 needCPUcalculation = false;
-needCompareStatic = true;
-if nPores > 1
+needCompareStatic = false;
+if nPores > 1 || nTasks < 2
   needCompareStatic = false;
 end %if
-needPeriodicBCs = true;
+needPeriodicBCs = false;
 if nPores < 3
   needPeriodisBCs = false;
 end %if
