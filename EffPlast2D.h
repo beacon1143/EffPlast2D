@@ -105,6 +105,27 @@ private:
 	std::array<std::vector<std::array<double, 4>>, NL> sigma;    // sigma_zz is non-zero due to plane strain
 	std::array<std::vector<std::array<double, 4>>, NL> sigmaPer;
 
+	// effective moduli
+	struct EffModuli {
+		double Kphi;
+		double Kd;
+		double G;
+		void output(std::ofstream& log_file) {
+			std::cout << "        Kphi = " << Kphi << "\n";
+			log_file << "        Kphi = " << Kphi << "\n";
+			std::cout << "        Kd = " << Kd << "\n";
+			log_file << "        Kd = " << Kd << "\n";
+			if (NL > 2) {
+				std::cout << "        G = " << G << "\n";
+				log_file << "        G = " << G << "\n";
+			}
+		}
+	};
+	EffModuli eff_moduli_an,
+						eff_moduli_an_per,
+						eff_moduli_num,
+						eff_moduli_num_per;
+
 	void ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps);
 
 	void ReadParams(const std::string& filename);
@@ -141,8 +162,9 @@ private:
 	double getAnalyticUrHydro(double r, double deltaP);
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
-	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 
+	void outputEffectiveModuli();
+	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 	void outputDuration(int elapsed_sec);
 
 	// final effective moduli calculation
