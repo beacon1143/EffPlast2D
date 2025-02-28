@@ -4,175 +4,176 @@ __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy,
     const double* const P,
     const double* const tauXX, const double* const tauYY, const double* const tauXY,
     const double* const pa,
-    const long int nX, const long int nY) {
+    const long int nX, const long int nY)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+  const double dX = pa[0], dY = pa[1];
+  const double dT = pa[2];
+  const double rho = pa[5];
+  const double dampX = pa[6], dampY = pa[7];
 
-    const double dX = pa[0], dY = pa[1];
-    const double dT = pa[2];
-    const double rho = pa[5];
-    const double dampX = pa[6], dampY = pa[7];
+  // motion equation
+  if (i > 0 && i < nX && j > 0 && j < nY - 1) {
+    Vx[j * (nX + 1) + i] = Vx[j * (nX + 1) + i] * (1.0 - dT * dampX) + (dT / rho) * ((
+      -P[j * nX + i] + P[j * nX + i - 1] + tauXX[j * nX + i] - tauXX[j * nX + i - 1]
+      ) / dX + (
+        tauXY[j * (nX - 1) + i - 1] - tauXY[(j - 1) * (nX - 1) + i - 1]
+        ) / dY);
+  }
+  if (i > 0 && i < nX - 1 && j > 0 && j < nY) {
+    Vy[j * nX + i] = Vy[j * nX + i] * (1.0 - dT * dampY) + (dT / rho) * ((
+      -P[j * nX + i] + P[(j - 1) * nX + i] + tauYY[j * nX + i] - tauYY[(j - 1) * nX + i]
+      ) / dY + (
+        tauXY[(j - 1) * (nX - 1) + i] - tauXY[(j - 1) * (nX - 1) + i - 1]
+        ) / dX);
+  }
 
-    // motion equation
-    if (i > 0 && i < nX && j > 0 && j < nY - 1) {
-        Vx[j * (nX + 1) + i] = Vx[j * (nX + 1) + i] * (1.0 - dT * dampX) + (dT / rho) * ((
-            -P[j * nX + i] + P[j * nX + i - 1] + tauXX[j * nX + i] - tauXX[j * nX + i - 1]
-            ) / dX + (
-                tauXY[j * (nX - 1) + i - 1] - tauXY[(j - 1) * (nX - 1) + i - 1]
-                ) / dY);
-    }
-    if (i > 0 && i < nX - 1 && j > 0 && j < nY) {
-        Vy[j * nX + i] = Vy[j * nX + i] * (1.0 - dT * dampY) + (dT / rho) * ((
-            -P[j * nX + i] + P[(j - 1) * nX + i] + tauYY[j * nX + i] - tauYY[(j - 1) * nX + i]
-            ) / dY + (
-                tauXY[(j - 1) * (nX - 1) + i] - tauXY[(j - 1) * (nX - 1) + i - 1]
-                ) / dX);
-    }
-
-    Ux[j * (nX + 1) + i] = Ux[j * (nX + 1) + i] + Vx[j * (nX + 1) + i] * dT;
-    Uy[j * nX + i] = Uy[j * nX + i] + Vy[j * nX + i] * dT;
+  Ux[j * (nX + 1) + i] = Ux[j * (nX + 1) + i] + Vx[j * (nX + 1) + i] * dT;
+  Uy[j * nX + i] = Uy[j * nX + i] + Vy[j * nX + i] * dT;
 }
 
 __global__ void ComputeStress(const double* const Ux, const double* const Uy,
-    const double* const K, const double* const G,
-    const double* const P0, double* P,
-    double* tauXX, double* tauYY, double* tauXY,
-    const double* const pa,
-    const long int nX, const long int nY) {
+  const double* const K, const double* const G,
+  const double* const P0, double* P,
+  double* tauXX, double* tauYY, double* tauXY,
+  const double* const pa,
+  const long int nX, const long int nY)
+{
 
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    const double dX = pa[0], dY = pa[1];
-    // const double dT = pa[2];
-    const double rad = pa[9];
-    const double N = pa[10];
+  const double dX = pa[0], dY = pa[1];
+  // const double dT = pa[2];
+  const double rad = pa[9];
+  const double N = pa[10];
 
-    // constitutive equation - Hooke's law
-    P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * (
-        (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
-        );
+  // constitutive equation - Hooke's law
+  P[j * nX + i] = P0[j * nX + i] - K[j * nX + i] * (
+    (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
+    );
 
-    /*P[j * nX + i] = P[j * nX + i] - G[j * nX + i] * ( // incompressibility
-                    (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
-                    ) * dT / nX;*/
+  /*P[j * nX + i] = P[j * nX + i] - G[j * nX + i] * ( // incompressibility
+                  (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY    // divU
+                  ) * dT / nX;*/
 
-    tauXX[j * nX + i] = 2.0 * G[j * nX + i] * (
-        (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX -    // dUx/dx
-        ((Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY) / 3.0    // divU / 3.0
-        );
-    tauYY[j * nX + i] = 2.0 * G[j * nX + i] * (
-        (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY -    // dUy/dy
-        ((Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY) / 3.0    // divU / 3.0
-        );
+  tauXX[j * nX + i] = 2.0 * G[j * nX + i] * (
+    (Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX -    // dUx/dx
+    ((Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY) / 3.0    // divU / 3.0
+    );
+  tauYY[j * nX + i] = 2.0 * G[j * nX + i] * (
+    (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY -    // dUy/dy
+    ((Ux[j * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i]) / dX + (Uy[(j + 1) * nX + i] - Uy[j * nX + i]) / dY) / 3.0    // divU / 3.0
+    );
 
-    if (i < nX - 1 && j < nY - 1) {
-        tauXY[j * (nX - 1) + i] = 0.25 * (G[j * nX + i] + G[j * nX + i + 1] + G[(j + 1) * nX + i] + G[(j + 1) * nX + i + 1]) * (
-            (Ux[(j + 1) * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i + 1]) / dY + (Uy[(j + 1) * nX + i + 1] - Uy[(j + 1) * nX + i]) / dX    // dUx/dy + dUy/dx
-            );
-    }
+  if (i < nX - 1 && j < nY - 1) {
+    tauXY[j * (nX - 1) + i] = 0.25 * (G[j * nX + i] + G[j * nX + i + 1] + G[(j + 1) * nX + i] + G[(j + 1) * nX + i + 1]) * (
+      (Ux[(j + 1) * (nX + 1) + i + 1] - Ux[j * (nX + 1) + i + 1]) / dY + (Uy[(j + 1) * nX + i + 1] - Uy[(j + 1) * nX + i]) / dX    // dUx/dy + dUy/dx
+      );
+  }
 
-    for (int k = 0; k < N; k++) {
-        for (int l = 0; l < N; l++) {
-            if (sqrt((-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) *
-                (-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) +
-                (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) *
-                (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad) {
-                P[j * nX + i] = 0.0;
-                tauXX[j * nX + i] = 0.0;
-                tauYY[j * nX + i] = 0.0;
-            }
+  for (int k = 0; k < N; k++) {
+    for (int l = 0; l < N; l++) {
+      if (sqrt((-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) *
+        (-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) +
+        (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) *
+        (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad) {
+        P[j * nX + i] = 0.0;
+        tauXX[j * nX + i] = 0.0;
+        tauYY[j * nX + i] = 0.0;
+      }
 
-            if (i < nX - 1 && j < nY - 1) {
-                if (sqrt((-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) *
-                    (-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) +
-                    (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) *
-                    (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad) {
-                    tauXY[j * (nX - 1) + i] = 0.0;
-                }
-            }
+      if (i < nX - 1 && j < nY - 1) {
+        if (sqrt((-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) *
+          (-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * k) +
+          (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l) *
+          (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * l)) < rad) {
+          tauXY[j * (nX - 1) + i] = 0.0;
         }
+      }
     }
+  }
 }
 
 __global__ void ComputeJ2(double* tauXX, double* tauYY, double* tauXY, 
-    double* const tauXYav, 
-    double* const J2, double* const J2XY,
-    const long int nX, const long int nY) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+  double* const tauXYav, 
+  double* const J2, double* const J2XY,
+  const long int nX, const long int nY)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    // tauXY for plasticity
-    if (i > 0 && i < nX - 1 &&
-        j > 0 && j < nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i] + tauXY[j * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i]);
-    }
-    else if (i == 0 && j > 0 && j < nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i + 1] + tauXY[j * (nX - 1) + i] + tauXY[j * (nX - 1) + i + 1]);
-    }
-    else if (i == nX - 1 && j > 0 && j < nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i - 2] + tauXY[j * (nX - 1) + i - 1]);
-    }
-    else if (i > 0 && i < nX - 1 && j == 0) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i] + tauXY[(j + 1) * (nX - 1) + i - 1] + tauXY[(j + 1) * (nX - 1) + i]);
-    }
-    else if (i > 0 && i < nX - 1 && j == nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 2) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i]);
-    }
-    else if (i == 0 && j == 0) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i] + tauXY[j * (nX - 1) + i + 1] + tauXY[(j + 1) * (nX - 1) + i] + tauXY[(j + 1) * (nX - 1) + i + 1]);
-    }
-    else if (i == 0 && j == nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i] + tauXY[(j - 2) * (nX - 1) + i + 1] + tauXY[(j - 1) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i + 1]);
-    }
-    else if (i == nX - 1 && j == 0) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i - 2] + tauXY[j * (nX - 1) + i - 1] + tauXY[(j + 1) * (nX - 1) + i - 2] + tauXY[(j + 1) * (nX - 1) + i - 1]);
-    }
-    else if (i == nX - 1 && j == nY - 1) {
-        tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 2] + tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1]);
-    }
+  // tauXY for plasticity
+  if (i > 0 && i < nX - 1 && j > 0 && j < nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i] + tauXY[j * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i]);
+  }
+  else if (i == 0 && j > 0 && j < nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i + 1] + tauXY[j * (nX - 1) + i] + tauXY[j * (nX - 1) + i + 1]);
+  }
+  else if (i == nX - 1 && j > 0 && j < nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i - 2] + tauXY[j * (nX - 1) + i - 1]);
+  }
+  else if (i > 0 && i < nX - 1 && j == 0) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i - 1] + tauXY[j * (nX - 1) + i] + tauXY[(j + 1) * (nX - 1) + i - 1] + tauXY[(j + 1) * (nX - 1) + i]);
+  }
+  else if (i > 0 && i < nX - 1 && j == nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 2) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i]);
+  }
+  else if (i == 0 && j == 0) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i] + tauXY[j * (nX - 1) + i + 1] + tauXY[(j + 1) * (nX - 1) + i] + tauXY[(j + 1) * (nX - 1) + i + 1]);
+  }
+  else if (i == 0 && j == nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i] + tauXY[(j - 2) * (nX - 1) + i + 1] + tauXY[(j - 1) * (nX - 1) + i] + tauXY[(j - 1) * (nX - 1) + i + 1]);
+  }
+  else if (i == nX - 1 && j == 0) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[j * (nX - 1) + i - 2] + tauXY[j * (nX - 1) + i - 1] + tauXY[(j + 1) * (nX - 1) + i - 2] + tauXY[(j + 1) * (nX - 1) + i - 1]);
+  }
+  else if (i == nX - 1 && j == nY - 1) {
+    tauXYav[j * nX + i] = 0.25 * (tauXY[(j - 2) * (nX - 1) + i - 2] + tauXY[(j - 2) * (nX - 1) + i - 1] + tauXY[(j - 1) * (nX - 1) + i - 2] + tauXY[(j - 1) * (nX - 1) + i - 1]);
+  }
 
-    J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
-    if (i < nX - 1 && j < nY - 1) {
-        J2XY[j * (nX - 1) + i] = sqrt(
-            0.0625 * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) +
-            0.0625 * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) +
-            2.0 * tauXY[j * (nX - 1) + i] * tauXY[j * (nX - 1) + i]
-        );
-    }
-
+  J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
+  if (i < nX - 1 && j < nY - 1) {
+    J2XY[j * (nX - 1) + i] = sqrt(
+      0.0625 * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) * (tauXX[j * nX + i] + tauXX[j * nX + i + 1] + tauXX[(j + 1) * nX + i] + tauXX[(j + 1) * nX + i + 1]) +
+      0.0625 * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) * (tauYY[j * nX + i] + tauYY[j * nX + i + 1] + tauYY[(j + 1) * nX + i] + tauYY[(j + 1) * nX + i + 1]) +
+      2.0 * tauXY[j * (nX - 1) + i] * tauXY[j * (nX - 1) + i]
+    );
+  }
 }
 
 __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
-    double* const tauXYav,
-    double* const J2, double* const J2XY,
-    const double* const pa,
-    const long int nX, const long int nY) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+  double* const tauXYav,
+  double* const J2, double* const J2XY,
+  const double* const pa,
+  const long int nX, const long int nY)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    //const double dX = pa[0], dY = pa[1];
-    const double coh = pa[8];
-    //const double rad = pa[9];
+  //const double dX = pa[0], dY = pa[1];
+  const double coh = pa[8];
+  //const double rad = pa[9];
 
-    /*if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
-      tauXYav[j * nX + i] = 0.0;
-    }*/
+  /*if (sqrt((-0.5 * dX * (nX - 1) + dX * i) * (-0.5 * dX * (nX - 1) + dX * i) + (-0.5 * dY * (nY - 1) + dY * j) * (-0.5 * dY * (nY - 1) + dY * j)) < rad ) {
+    tauXYav[j * nX + i] = 0.0;
+  }*/
 
-    // plasticity
-    if (J2[j * nX + i] > coh) {
-        tauXX[j * nX + i] *= coh / J2[j * nX + i];
-        tauYY[j * nX + i] *= coh / J2[j * nX + i];
-        tauXYav[j * nX + i] *= coh / J2[j * nX + i];
-        J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
+  // plasticity
+  if (J2[j * nX + i] > coh) {
+    tauXX[j * nX + i] *= coh / J2[j * nX + i];
+    tauYY[j * nX + i] *= coh / J2[j * nX + i];
+    tauXYav[j * nX + i] *= coh / J2[j * nX + i];
+    J2[j * nX + i] = sqrt(tauXX[j * nX + i] * tauXX[j * nX + i] + tauYY[j * nX + i] * tauYY[j * nX + i] + 2.0 * tauXYav[j * nX + i] * tauXYav[j * nX + i]);
+  }
+
+  if (i < nX - 1 && j < nY - 1) {
+    if (J2XY[j * (nX - 1) + i] > coh) {
+      tauXY[j * (nX - 1) + i] *= coh / J2XY[j * (nX - 1) + i];
     }
-
-    if (i < nX - 1 && j < nY - 1) {
-        if (J2XY[j * (nX - 1) + i] > coh) {
-            tauXY[j * (nX - 1) + i] *= coh / J2XY[j * (nX - 1) + i];
-        }
-    }
+  }
 }
 
 double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const double loadValue, 
@@ -379,9 +380,9 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
       gpuErrchk(cudaDeviceSynchronize());
 
       /*if (iter == 1000) {
-          gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
-          gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
-          std::cout << "Ux1 = " << Ux_cpu[(3 * nY / 4) * (nX + 1) + 3 * nX / 4] << "\nUy1 = " << Uy_cpu[(3 * nY / 4) * nX + 3 * nX / 4] << "\n";
+        gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
+        gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
+        std::cout << "Ux1 = " << Ux_cpu[(3 * nY / 4) * (nX + 1) + 3 * nX / 4] << "\nUy1 = " << Uy_cpu[(3 * nY / 4) * nX + 3 * nX / 4] << "\n";
       }*/
 
       if ((iter + 1) % output_step == 0) {
@@ -417,20 +418,18 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
     gpuErrchk(cudaMemcpy(Uy_cpu, Uy_cuda, nX * (nY + 1) * sizeof(double), cudaMemcpyDeviceToHost));
 
-    // auto inTheHole = [&](double X, double Y) -> bool {
-    //     for (int k = 0; k < nPores; k++)
-    //     {
-    //         for (int l = 0; l < nPores; l++)
-    //         {
-    //             const double cx = 0.5 * dX * (nX - 1) * (1.0 - 1.0 / nPores) - (dX * (nX - 1) / nPores) * k;
-    //             const double cy = 0.5 * dY * (nY - 1) * (1.0 - 1.0 / nPores) - (dY * (nY - 1) / nPores) * l;
+    /*auto inTheHole = [&](double X, double Y) -> bool {
+      for (int k = 0; k < nPores; k++) {
+        for (int l = 0; l < nPores; l++) {
+          const double cx = 0.5 * dX * (nX - 1) * (1.0 - 1.0 / nPores) - (dX * (nX - 1) / nPores) * k;
+          const double cy = 0.5 * dY * (nY - 1) * (1.0 - 1.0 / nPores) - (dY * (nY - 1) / nPores) * l;
 
-    //             if ((X - cx) * (X - cx) + (Y - cy) * (Y - cy) < rad * rad)
-    //                 return true;
-    //         }
-    //     }
-    //     return false;
-    // };
+          if ((X - cx) * (X - cx) + (Y - cy) * (Y - cy) < rad * rad)
+            return true;
+        }
+      }
+      return false;
+    };*/
 
     const int perOffsetX = nX / nPores;
     const int perOffsetY = nY / nPores;
@@ -485,13 +484,13 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     epsilonPer[step][it][2] /= (nX - 2 * perOffsetX) * (nY - 2 * perOffsetY);
 
     /* ANALYTIC SOLUTION FOR EFFECTIVE PROPERTIES */
-    deltaP[step][it] = GetDeltaP_honest();
+    deltaP[step][it] = getDeltaP_honest();
     /*std::cout << "deltaP = " << deltaP[step][it] << '\n';
     log_file << "deltaP = " << deltaP[step][it] << '\n';*/
-    deltaPper[step][it] = GetDeltaP_periodic();
+    deltaPper[step][it] = getDeltaP_periodic();
     /*std::cout << "deltaPper = " << deltaPper[step][it] << '\n';
     log_file << "deltaPper = " << deltaPper[step][it] << '\n';*/
-    tauInfty[step][it] = GetTauInfty_honest();
+    tauInfty[step][it] = getTauInfty_honest();
 
     double Lx = dX * (nX - 1);
     double Ly = dY * (nY - 1);
@@ -807,7 +806,8 @@ double EffPlast2D::FindMaxAbs(const std::vector<double>& vec) {
   return max_el;
 }
 
-double EffPlast2D::GetDeltaP_honest() {
+/* P AND TAU FROM STATIC NUMERIC SOLUTION FOR ANALYTICAL EFFECTIVE MODULI */
+double EffPlast2D::getDeltaP_honest() {
   double deltaP = 0.0, deltaPx = 0.0, deltaPy = 0.0;
 
   /*for (int i = 1; i < nX - 2; i++) {
@@ -836,7 +836,7 @@ double EffPlast2D::GetDeltaP_honest() {
   deltaP = -0.125 * (deltaPx + deltaPy);
   return deltaP;
 }
-double EffPlast2D::GetDeltaP_periodic() {
+double EffPlast2D::getDeltaP_periodic() {
   if (nPores <= 2) {
     return 0.0;
   }
@@ -865,7 +865,7 @@ double EffPlast2D::GetDeltaP_periodic() {
   deltaP = -0.125 * (deltaPx + deltaPy);
   return deltaP;
 }
-double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
+double EffPlast2D::getDeltaP_approx(const double Exx, const double Eyy) {
   double deltaP = 0.0;
   /*if (Exx < Eyy) {
     deltaP += tauXX_cpu[(nY / 2) * nX + 0] - P_cpu[(nY / 2) * nX + 0];
@@ -892,8 +892,7 @@ double EffPlast2D::GetDeltaP_approx(const double Exx, const double Eyy) {
   deltaP *= -0.125;
   return deltaP;
 }
-
-double EffPlast2D::GetTauInfty_honestest() {
+double EffPlast2D::getTauInfty_honestest() {
   double tauInfty = 0.0;
   for (int i = 1; i < nX - 1; i++) {
     for (int j = 1; j < nY - 1; j++) {
@@ -908,7 +907,7 @@ double EffPlast2D::GetTauInfty_honestest() {
   tauInfty /= (nX - 2) * (nY - 2);
   return tauInfty;
 }
-double EffPlast2D::GetTauInfty_honest() {
+double EffPlast2D::getTauInfty_honest() {
   double tauInfty = 0.0, tauInftyx = 0.0, tauInftyy = 0.0;
 
   for (int i = 1; i < nX - 1; i++) {
@@ -926,7 +925,7 @@ double EffPlast2D::GetTauInfty_honest() {
   tauInfty = -0.125 * (tauInftyx + tauInftyy);
   return tauInfty;
 }
-double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
+double EffPlast2D::getTauInfty_approx(const double Exx, const double Eyy) {
   double tauInfty = 0.0;
 
   /*if (Exx < Eyy) {
@@ -954,7 +953,7 @@ double EffPlast2D::GetTauInfty_approx(const double Exx, const double Eyy) {
   return tauInfty;
 }
 
-double EffPlast2D::GetdPhi() {
+double EffPlast2D::getdPhi() {  // works not properly
   const double phi0 = static_cast<double>(empty_spaces.size()) / ((nX - 1) * (nY - 1));
   double phi = 0.0;
   for (auto& p : empty_spaces) {
@@ -971,7 +970,8 @@ double EffPlast2D::GetdPhi() {
   return phi - phi0;
 }
 
-void EffPlast2D::getAnalytic(
+/* ANALYTICAL SOLUTION FOR STATIC PROBLEM */
+void EffPlast2D::getAnalytic(  // is used only for elastics
   double x, double y, double xi, double kappa, double c0,
   double& cosf, double& sinf,
   std::complex<double>& zeta, std::complex<double>& w,
@@ -1012,20 +1012,13 @@ std::complex<double> EffPlast2D::getAnalyticUelast(double x, double y, double ta
 double EffPlast2D::getAnalyticUrHydro(double r, double deltaP) {
   return -0.5 * Y * rad * rad * exp((deltaP - Y) / Y) / (G0 * r);
 }
-
-double getJ1(double S11, double S22) {
+double EffPlast2D::getJ1(double S11, double S22) {
   return  0.5 * (S11 + S22);
 }
-double getJ2(double S11, double S22, double S12) {
+double EffPlast2D::getJ2(double S11, double S22, double S12) {
   return 0.5 * ((S11 - S22) * (S11 - S22) + 4.0 * S12 * S12);
 }
-void cutError(double& e) {
-  if (std::abs(e) > 0.5)
-    e = -0.5;
-}
-
-void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2)
-{
+void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2) {
   double cosf, sinf;
   std::complex<double> zeta, w, dw, wv, Phi, Psi;
   getAnalytic(x, y, xi, kappa, c0, cosf, sinf, zeta, w, dw, wv, Phi, Psi);
@@ -1041,14 +1034,246 @@ void EffPlast2D::getAnalyticJelast(double x, double y, double xi, double kappa, 
   J1 = getJ1(Srr, Sff);
   J2 = getJ2(Srr, Sff, Srf);
 }
-void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2)
-{
+void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2) {
   const double Srr = -2.0 * xi * Y * log(r / rad);
   const double Sff = -2.0 * xi * Y * (1.0 + log(r / rad));
   const double Srf = 0.0;
 
   J1 = getJ1(Srr, Sff);
   J2 = getJ2(Srr, Sff, Srf);
+}
+void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType) {
+  /* ANALYTIC 2D SOLUTION FOR STATICS */
+  const bool isHydro = 
+    (std::abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::epsilon()) && 
+    std::abs(loadType[2]) < std::numeric_limits<double>::epsilon();
+
+  const double Rmin = rad/* + 20.0 * dX*/;
+  const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
+  const double eps = 1.0e-18;
+
+  const double xi = (deltaP > 0.0) ? 1.0 : -1.0;
+  const double kappa = tauInfty / Y * xi;
+  const double c0 = rad * exp(abs(deltaP) / 2.0 / Y - 0.5);
+
+  const double rx = rad + getAnalyticUrHydro(rad, deltaP);
+  const double ry = rx;
+
+  const double Rx = c0 * (1.0 - kappa);
+  const double Ry = c0 * (1.0 + kappa);
+
+  double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2; // , * plastZoneAn;
+  if (nPores == 1) {
+    UanAbs = new double[nX * nY];
+    errorUabs = new double[nX * nY];
+    J1an = new double[(nX - 1) * (nY - 1)];
+    J2an = new double[(nX - 1) * (nY - 1)];
+    errorJ1 = new double[(nX - 1) * (nY - 1)];
+    errorJ2 = new double[(nX - 1) * (nY - 1)];
+    //plastZoneAn = new double[(nX - 1) * (nY - 1)];
+  }
+
+  double errorUabsMax = 0.0, errorUabsAvg = 0.0;
+  size_t errorUabsN = 0;
+
+  double errorJ1Max = 0.0, errorJ1Avg = 0.0;
+  double errorJ2Max = 0.0, errorJ2Avg = 0.0;
+  size_t errorJN = 0;
+
+  double* UnuAbs = new double[nX * nY];
+  double* J1nu = new double[(nX - 1) * (nY - 1)];
+  double* J2nu = new double[(nX - 1) * (nY - 1)];
+  //double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
+
+  auto cutError = [](double& e) -> void {
+    if (std::abs(e) > 0.5) {
+      e = -0.5;
+    }
+  };
+
+  for (int i = 0; i < nX; i++) {
+    for (int j = 0; j < nY; j++) {
+      // numerical solution for Ur
+      const double ux = 0.5 * (Ux_cpu[(nX + 1) * j + i] + Ux_cpu[(nX + 1) * j + (i + 1)]);
+      const double uy = 0.5 * (Uy_cpu[nX * j + i] + Uy_cpu[nX * (j + 1) + i]);
+      UnuAbs[j * nX + i] = sqrt(ux * ux + uy * uy);
+
+      // numerical solution for sigma
+      if (i < nX - 1 && j < nY - 1) {
+        const double Sxx = 0.25 * (
+          -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] +
+          -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] +
+          -P_cpu[(j + 1) * nX + i] + tauXX_cpu[(j + 1) * nX + i] +
+          -P_cpu[(j + 1) * nX + (i + 1)] + tauXX_cpu[(j + 1) * nX + (i + 1)]
+          );
+        const double Syy = 0.25 * (
+          -P_cpu[j * nX + i] + tauYY_cpu[j * nX + i] +
+          -P_cpu[j * nX + (i + 1)] + tauYY_cpu[j * nX + (i + 1)] +
+          -P_cpu[(j + 1) * nX + i] + tauYY_cpu[(j + 1) * nX + i] +
+          -P_cpu[(j + 1) * nX + (i + 1)] + tauYY_cpu[(j + 1) * nX + (i + 1)]
+          );
+        const double Sxy = tauXY_cpu[j * (nX - 1) + i];
+
+        J1nu[j * (nX - 1) + i] = getJ1(Sxx, Syy);
+        J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy);
+      }
+
+      // analytics
+      if (nPores == 1) {
+        // displacement, analytical solution for Ur
+        const double x = -0.5 * dX * (nX - 1) + dX * i;
+        const double y = -0.5 * dY * (nY - 1) + dY * j;
+
+        const double r = sqrt(x * x + y * y);
+        const double cosf = x / r;
+        const double sinf = y / r;
+
+        if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) { // elastic zone
+          if (isHydro) {
+            UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
+          }
+          else {
+            UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
+          }
+        }
+        else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) { // plastic zone
+          UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
+        }
+        else { // pore
+          UanAbs[j * nX + i] = 0.0;
+        }
+
+        // relative error between analytical and numerical solution for Ur
+        errorUabs[j * nX + i] = 0.0;
+        if (
+          x * x + y * y > Rmin * Rmin &&
+          x * x + y * y < Rmax * Rmax &&
+          abs(UnuAbs[j * nX + i]) > eps
+          )
+        {
+          errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UanAbs[j * nX + i]);
+          errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
+          errorUabsAvg += errorUabs[j * nX + i];
+          errorUabsN++;
+
+          cutError(errorUabs[j * nX + i]);
+        }
+
+        // stress
+        if (i < nX - 1 && j < nY - 1) {
+          const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
+          const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
+          const double r = sqrt(x * x + y * y);
+          const double cosf = x / r;
+          const double sinf = y / r;
+
+          // numerical plast zone
+          /*const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
+
+          if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8]) {
+          plastZoneNu[j * (nX - 1) + i] = 1.0;
+          }
+          else {
+          plastZoneNu[j * (nX - 1) + i] = 0.0;
+          }*/
+
+          // analytical solution for sigma
+          if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) { // elastic zone
+                                                             //plastZoneAn[j * (nX - 1) + i] = 0.0;
+            if (isHydro) {
+              const double relR = rad / r;
+              const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
+              const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
+
+              J1an[j * (nX - 1) + i] = getJ1(Srr, Sff);
+              J2an[j * (nX - 1) + i] = getJ2(Srr, Sff, 0.0);
+            }
+            else
+              getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+          }
+          else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0) { // plastic zone
+                                                                  //plastZoneAn[j * (nX - 1) + i] = 1.0;
+            getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
+          }
+          else { // hole
+                 //plastZoneAn[j * (nX - 1) + i] = 0.0;
+            J1an[j * (nX - 1) + i] = 0.0;
+            J2an[j * (nX - 1) + i] = 0.0;
+          }
+
+          // relative error between analytical and numerical solution for sigma
+          errorJ1[j * (nX - 1) + i] = 0.0;
+          errorJ2[j * (nX - 1) + i] = 0.0;
+          if (x * x + y * y > Rmin * Rmin && x * x + y * y < Rmax * Rmax) {
+            if (abs(J1nu[j * (nX - 1) + i]) > eps) {
+              errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
+              errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
+              errorJ1Avg += errorJ1[j * (nX - 1) + i];
+
+              cutError(errorJ1[j * (nX - 1) + i]);
+            }
+            if (abs(J2nu[j * (nX - 1) + i]) > eps) {
+              errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
+              errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
+              errorJ2Avg += errorJ2[j * (nX - 1) + i];
+
+              cutError(errorJ2[j * (nX - 1) + i]);
+            }
+            errorJN++;
+          }
+        }
+      } // if(nPores)
+    } // for(j)
+  } // for(i)
+
+  if (nPores == 1) {
+    errorUabsAvg /= errorUabsN;
+    errorJ1Avg /= errorJN;
+    errorJ2Avg /= errorJN;
+
+    std::cout << "\n"
+      << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+      << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+      << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
+
+    log_file << "\n"
+      << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
+      << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
+      << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
+
+    SaveVector(UanAbs, nX* nY, "data/UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] UanAbs;
+
+    SaveVector(errorUabs, nX* nY, "data/errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorUabs;
+
+    SaveVector(J1an, (nX - 1)* (nY - 1), "data/J1an_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J1an;
+
+    SaveVector(J2an, (nX - 1)* (nY - 1), "data/J2an_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] J2an;
+
+    SaveVector(errorJ1, (nX - 1)* (nY - 1), "data/errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorJ1;
+
+    SaveVector(errorJ2, (nX - 1)* (nY - 1), "data/errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
+    delete[] errorJ2;
+
+    //SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
+    //delete[] plastZoneAn;
+  }
+
+  SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] UnuAbs;
+
+  SaveVector(J1nu, (nX - 1) * (nY - 1), "data/J1nu_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] J1nu;
+
+  SaveVector(J2nu, (nX - 1) * (nY - 1), "data/J2nu_" + std::to_string(32 * NGRID) + "_.dat");
+  delete[] J2nu;
+
+  //SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
+  //delete[] plastZoneNu;
 }
 
 void EffPlast2D::outputEffectiveModuli() {
@@ -1066,256 +1291,6 @@ void EffPlast2D::outputEffectiveModuli() {
     log_file << "    Numerical:\n";
     eff_moduli_num_per.output(log_file);
   }
-}
-void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType) {
-    /* ANALYTIC 2D SOLUTION FOR STATICS */
-    bool isHydro = 
-        (abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::min()) && 
-        abs(loadType[2]) < std::numeric_limits<double>::min();
-
-    const double Rmin = rad/* + 20.0 * dX*/;
-    const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
-    const double eps = 1.0e-18;
-
-    const double xi = (deltaP > 0.0) ? 1.0 : -1.0;
-    const double kappa = tauInfty / Y * xi;
-    const double c0 = rad * exp(abs(deltaP) / 2.0 / Y - 0.5);
-
-    const double rx = rad + getAnalyticUrHydro(rad, deltaP);
-    const double ry = rx;
-
-    const double Rx = c0 * (1.0 - kappa);
-    const double Ry = c0 * (1.0 + kappa);
-
-    double* UanAbs, * errorUabs, * J1an, * J2an, * errorJ1, * errorJ2; // , * plastZoneAn;
-    if (nPores == 1)
-    {
-        UanAbs = new double[nX * nY];
-        errorUabs = new double[nX * nY];
-        J1an = new double[(nX - 1) * (nY - 1)];
-        J2an = new double[(nX - 1) * (nY - 1)];
-        errorJ1 = new double[(nX - 1) * (nY - 1)];
-        errorJ2 = new double[(nX - 1) * (nY - 1)];
-        //plastZoneAn = new double[(nX - 1) * (nY - 1)];
-    }
-
-    double errorUabsMax = 0.0, errorUabsAvg = 0.0;
-    size_t errorUabsN = 0;
-
-    double errorJ1Max = 0.0, errorJ1Avg = 0.0;
-    double errorJ2Max = 0.0, errorJ2Avg = 0.0;
-    size_t errorJN = 0;
-    
-    double* UnuAbs = new double[nX * nY];
-    double* J1nu = new double[(nX - 1) * (nY - 1)];
-    double* J2nu = new double[(nX - 1) * (nY - 1)];
-    //double* plastZoneNu = new double[(nX - 1) * (nY - 1)];
-
-    for (int i = 0; i < nX; i++) {
-        for (int j = 0; j < nY; j++) {
-            // numerical solution for Ur
-            const double ux = 0.5 * (Ux_cpu[(nX + 1) * j + i] + Ux_cpu[(nX + 1) * j + (i + 1)]);
-            const double uy = 0.5 * (Uy_cpu[nX * j + i] + Uy_cpu[nX * (j + 1) + i]);
-            UnuAbs[j * nX + i] = sqrt(ux * ux + uy * uy);
-
-            // numerical solution for sigma
-            if (i < nX - 1 && j < nY - 1) {
-                const double Sxx = 0.25 * (
-                    -P_cpu[j * nX + i] + tauXX_cpu[j * nX + i] +
-                    -P_cpu[j * nX + (i + 1)] + tauXX_cpu[j * nX + (i + 1)] +
-                    -P_cpu[(j + 1) * nX + i] + tauXX_cpu[(j + 1) * nX + i] +
-                    -P_cpu[(j + 1) * nX + (i + 1)] + tauXX_cpu[(j + 1) * nX + (i + 1)]
-                );
-                const double Syy = 0.25 * (
-                    -P_cpu[j * nX + i] + tauYY_cpu[j * nX + i] +
-                    -P_cpu[j * nX + (i + 1)] + tauYY_cpu[j * nX + (i + 1)] +
-                    -P_cpu[(j + 1) * nX + i] + tauYY_cpu[(j + 1) * nX + i] +
-                    -P_cpu[(j + 1) * nX + (i + 1)] + tauYY_cpu[(j + 1) * nX + (i + 1)]
-                );
-                const double Sxy = tauXY_cpu[j * (nX - 1) + i];
-
-                J1nu[j * (nX - 1) + i] = getJ1(Sxx, Syy);
-                J2nu[j * (nX - 1) + i] = getJ2(Sxx, Syy, Sxy);
-            }
-
-            // analytics
-            if (nPores == 1) {
-                // displacement, analytical solution for Ur
-                const double x = -0.5 * dX * (nX - 1) + dX * i;
-                const double y = -0.5 * dY * (nY - 1) + dY * j;
-
-                const double r = sqrt(x * x + y * y);
-                const double cosf = x / r;
-                const double sinf = y / r;
-
-                if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
-                {
-                    // elast
-                    if (isHydro)
-                        UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
-                    else
-                        UanAbs[j * nX + i] = abs(getAnalyticUelast(x, y, tauInfty, xi, kappa, c0));
-                }
-                else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
-                {
-                    // plast
-                    UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
-                }
-                else
-                {
-                    // hole
-                    UanAbs[j * nX + i] = 0.0;
-                }
-
-                // relative error between analytical and numerical solution for Ur
-                errorUabs[j * nX + i] = 0.0;
-                if (
-                    x * x + y * y > Rmin * Rmin &&
-                    x * x + y * y < Rmax * Rmax &&
-                    abs(UnuAbs[j * nX + i]) > eps
-                    )
-                {
-                    errorUabs[j * nX + i] = abs((UanAbs[j * nX + i] - UnuAbs[j * nX + i]) / UanAbs[j * nX + i]);
-                    errorUabsMax = std::max(errorUabsMax, errorUabs[j * nX + i]);
-                    errorUabsAvg += errorUabs[j * nX + i];
-                    errorUabsN++;
-
-                    cutError(errorUabs[j * nX + i]);
-                }
-
-                // stress
-                if (i < nX - 1 && j < nY - 1)
-                {
-                    const double x = -0.5 * dX * (nX - 1) + dX * i + 0.5 * dX;
-                    const double y = -0.5 * dY * (nY - 1) + dY * j + 0.5 * dY;
-                    const double r = sqrt(x * x + y * y);
-                    const double cosf = x / r;
-                    const double sinf = y / r;
-
-                    // numerical plast zone
-                    /*const double J2 = 0.25 * (J2_cpu[j * nX + i] + J2_cpu[j * nX + (i + 1)] + J2_cpu[(j + 1) * nX + i] + J2_cpu[(j + 1) * nX + (i + 1)]);
-
-                    if (J2 > (1.0 - 2.0 * std::numeric_limits<double>::epsilon()) * pa_cpu[8])
-                    {
-                        plastZoneNu[j * (nX - 1) + i] = 1.0;
-                    }
-                    else
-                    {
-                        plastZoneNu[j * (nX - 1) + i] = 0.0;
-                    }*/
-
-                    // analytical solution for sigma
-                    if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0)
-                    {
-                        // elast
-                        //plastZoneAn[j * (nX - 1) + i] = 0.0;
-                        if (isHydro)
-                        {
-                            const double relR = rad / r;
-                            const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
-                            const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);
-
-                            J1an[j * (nX - 1) + i] = getJ1(Srr, Sff);
-                            J2an[j * (nX - 1) + i] = getJ2(Srr, Sff, 0.0);
-                        }
-                        else
-                            getAnalyticJelast(x, y, xi, kappa, c0, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
-                    }
-                    else if (x * x / (rx * rx) + y * y / (ry * ry) > 1.0)
-                    {
-                        // plast
-                        //plastZoneAn[j * (nX - 1) + i] = 1.0;
-                        getAnalyticJplast(r, xi, J1an[j * (nX - 1) + i], J2an[j * (nX - 1) + i]);
-                    }
-                    else
-                    {
-                        // hole
-                        //plastZoneAn[j * (nX - 1) + i] = 0.0;
-                        J1an[j * (nX - 1) + i] = 0.0;
-                        J2an[j * (nX - 1) + i] = 0.0;
-                    }
-
-                    // relative error between analytical and numerical solution for sigma
-                    errorJ1[j * (nX - 1) + i] = 0.0;
-                    errorJ2[j * (nX - 1) + i] = 0.0;
-                    if (
-                        x * x + y * y > Rmin * Rmin &&
-                        x * x + y * y < Rmax * Rmax
-                        )
-                    {
-                        if (abs(J1nu[j * (nX - 1) + i]) > eps)
-                        {
-                            errorJ1[j * (nX - 1) + i] = abs((J1an[j * (nX - 1) + i] - J1nu[j * (nX - 1) + i]) / J1an[j * (nX - 1) + i]);
-                            errorJ1Max = std::max(errorJ1Max, errorJ1[j * (nX - 1) + i]);
-                            errorJ1Avg += errorJ1[j * (nX - 1) + i];
-
-                            cutError(errorJ1[j * (nX - 1) + i]);
-                        }
-
-                        if (abs(J2nu[j * (nX - 1) + i]) > eps)
-                        {
-                            errorJ2[j * (nX - 1) + i] = abs((J2an[j * (nX - 1) + i] - J2nu[j * (nX - 1) + i]) / J2an[j * (nX - 1) + i]);
-                            errorJ2Max = std::max(errorJ2Max, errorJ2[j * (nX - 1) + i]);
-                            errorJ2Avg += errorJ2[j * (nX - 1) + i];
-
-                            cutError(errorJ2[j * (nX - 1) + i]);
-                        }
-
-                        errorJN++;
-                    }
-                }
-            }
-        }
-    }
-
-    if (nPores == 1) {
-        errorUabsAvg /= errorUabsN;
-        errorJ1Avg /= errorJN;
-        errorJ2Avg /= errorJN;
-
-        std::cout << "\n"
-            << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
-            << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
-            << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
-
-        log_file << "\n"
-            << "Uabs max error  = " << errorUabsMax << ", avg = " << errorUabsAvg << '\n'
-            << "J1 max error = " << errorJ1Max << ", avg = " << errorJ1Avg << '\n'
-            << "J2 max error = " << errorJ2Max << ", avg = " << errorJ2Avg << std::endl;
-
-        SaveVector(UanAbs, nX* nY, "data/UanAbs_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] UanAbs;
-
-        SaveVector(errorUabs, nX* nY, "data/errorUabs_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] errorUabs;
-
-        SaveVector(J1an, (nX - 1)* (nY - 1), "data/J1an_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] J1an;
-
-        SaveVector(J2an, (nX - 1)* (nY - 1), "data/J2an_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] J2an;
-
-        SaveVector(errorJ1, (nX - 1)* (nY - 1), "data/errorJ1_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] errorJ1;
-
-        SaveVector(errorJ2, (nX - 1)* (nY - 1), "data/errorJ2_" + std::to_string(32 * NGRID) + "_.dat");
-        delete[] errorJ2;
-
-        //SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
-        //delete[] plastZoneAn;
-    }
-    
-    SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] UnuAbs;
-
-    SaveVector(J1nu, (nX - 1) * (nY - 1), "data/J1nu_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] J1nu;
-
-    SaveVector(J2nu, (nX - 1) * (nY - 1), "data/J2nu_" + std::to_string(32 * NGRID) + "_.dat");
-    delete[] J2nu;
-
-    //SaveVector(plastZoneNu, (nX - 1) * (nY - 1), "data/plast_nu_" + std::to_string(32 * NGRID) + "_.dat");
-    //delete[] plastZoneNu;
 }
 void EffPlast2D::outputDuration(int elapsed_sec) {
   if (elapsed_sec < 60) {
@@ -1440,119 +1415,118 @@ double EffPlast2D::getGper(const unsigned int nTimeSteps) {
 }
 
 EffPlast2D::EffPlast2D() {
-    block.x = 32;
-    block.y = 32;
-    block.z = 1;
-    grid.x = NGRID;
-    grid.y = NGRID;
-    grid.z = 1;
+  block.x = 32;
+  block.y = 32;
+  block.z = 1;
+  grid.x = NGRID;
+  grid.y = NGRID;
+  grid.z = 1;
 
-    nX = block.x * grid.x;
-    nY = block.y * grid.y;
+  nX = block.x * grid.x;
+  nY = block.y * grid.y;
 
-    gpuErrchk(cudaSetDevice(DEVICE_IDX));
-    //gpuErrchk(cudaDeviceReset());
-    //gpuErrchk(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
+  gpuErrchk(cudaSetDevice(DEVICE_IDX));
+  //gpuErrchk(cudaDeviceReset());
+  //gpuErrchk(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
-    /* PARAMETERS */
-    pa_cpu = new double[NPARS];
-    gpuErrchk(cudaMalloc(&pa_cuda, NPARS * sizeof(double)));
-    ReadParams("data/pa.dat");
+  /* PARAMETERS */
+  pa_cpu = new double[NPARS];
+  gpuErrchk(cudaMalloc(&pa_cuda, NPARS * sizeof(double)));
+  ReadParams("data/pa.dat");
 
-    dX = pa_cpu[0];
-    dY = pa_cpu[1];
-    dT = pa_cpu[2];
-    K0 = pa_cpu[3];
-    G0 = pa_cpu[4];
-    E0 = 9.0 * K0 * G0 / (3.0 * K0 + G0);
-    nu0 = (1.5 * K0 - G0) / (3.0 * K0 + G0);
-    //std::cout << "E = " << E0 << ", nu = " << nu0 << "\n";
-    rad = pa_cpu[9];
-    Y = pa_cpu[8] / sqrt(2.0);
-    nPores = pa_cpu[10];
+  dX = pa_cpu[0];
+  dY = pa_cpu[1];
+  dT = pa_cpu[2];
+  K0 = pa_cpu[3];
+  G0 = pa_cpu[4];
+  E0 = 9.0 * K0 * G0 / (3.0 * K0 + G0);
+  nu0 = (1.5 * K0 - G0) / (3.0 * K0 + G0);
+  //std::cout << "E = " << E0 << ", nu = " << nu0 << "\n";
+  rad = pa_cpu[9];
+  Y = pa_cpu[8] / sqrt(2.0);
+  nPores = pa_cpu[10];
 
-    /* SPACE ARRAYS */
-    // materials
-    K_cpu = new double[nX * nY];
-    G_cpu = new double[nX * nY];
-    gpuErrchk(cudaMalloc(&K_cuda, nX * nY * sizeof(double)));
-    gpuErrchk(cudaMalloc(&G_cuda, nX * nY * sizeof(double)));
-    SetMaterials();
+  /* SPACE ARRAYS */
+  // materials
+  K_cpu = new double[nX * nY];
+  G_cpu = new double[nX * nY];
+  gpuErrchk(cudaMalloc(&K_cuda, nX * nY * sizeof(double)));
+  gpuErrchk(cudaMalloc(&G_cuda, nX * nY * sizeof(double)));
+  SetMaterials();
 
-    // stress
-    P0_cpu = new double[nX * nY];
-    gpuErrchk(cudaMalloc(&P0_cuda, nX * nY * sizeof(double)));
-    SetInitPressure(pa_cpu[8]);
+  // stress
+  P0_cpu = new double[nX * nY];
+  gpuErrchk(cudaMalloc(&P0_cuda, nX * nY * sizeof(double)));
+  SetInitPressure(pa_cpu[8]);
 
-    SetMatrixZero(&P_cpu, &P_cuda, nX, nY);
-    SetMatrixZero(&tauXX_cpu, &tauXX_cuda, nX, nY);
-    SetMatrixZero(&tauYY_cpu, &tauYY_cuda, nX, nY);
-    SetMatrixZero(&tauXY_cpu, &tauXY_cuda, nX - 1, nY - 1);
-    SetMatrixZero(&tauXYav_cpu, &tauXYav_cuda, nX, nY);
+  SetMatrixZero(&P_cpu, &P_cuda, nX, nY);
+  SetMatrixZero(&tauXX_cpu, &tauXX_cuda, nX, nY);
+  SetMatrixZero(&tauYY_cpu, &tauYY_cuda, nX, nY);
+  SetMatrixZero(&tauXY_cpu, &tauXY_cuda, nX - 1, nY - 1);
+  SetMatrixZero(&tauXYav_cpu, &tauXYav_cuda, nX, nY);
 
-    // plasticity
-    SetMatrixZero(&J2_cpu, &J2_cuda, nX, nY);
-    SetMatrixZero(&J2XY_cpu, &J2XY_cuda, nX - 1, nY - 1);
+  // plasticity
+  SetMatrixZero(&J2_cpu, &J2_cuda, nX, nY);
+  SetMatrixZero(&J2XY_cpu, &J2XY_cuda, nX - 1, nY - 1);
 
-    // displacement
-    SetMatrixZero(&Ux_cpu, &Ux_cuda, nX + 1, nY);
-    SetMatrixZero(&Uy_cpu, &Uy_cuda, nX, nY + 1);
+  // displacement
+  SetMatrixZero(&Ux_cpu, &Ux_cuda, nX + 1, nY);
+  SetMatrixZero(&Uy_cpu, &Uy_cuda, nX, nY + 1);
 
-    // velocity
-    SetMatrixZero(&Vx_cpu, &Vx_cuda, nX + 1, nY);
-    SetMatrixZero(&Vy_cpu, &Vy_cuda, nX, nY + 1);
+  // velocity
+  SetMatrixZero(&Vx_cpu, &Vx_cuda, nX + 1, nY);
+  SetMatrixZero(&Vy_cpu, &Vy_cuda, nX, nY + 1);
 
-    /* UTILITIES */
-    log_file.open("EffPlast2D.log", std::ios_base::app);
-    output_step = 10'000;
-    lX = (nX - 1) * dX;
-    lY = (nY - 1) * dY;
-    porosity = 3.1415926 * rad * rad * nPores * nPores / (lX * lY);
+  /* UTILITIES */
+  log_file.open("EffPlast2D.log", std::ios_base::app);
+  output_step = 10'000;
+  lX = (nX - 1) * dX;
+  lY = (nY - 1) * dY;
+  porosity = 3.1415926 * rad * rad * nPores * nPores / (lX * lY);
 }
-
 EffPlast2D::~EffPlast2D() {
-    // parameters
-    delete[] pa_cpu;
-    gpuErrchk(cudaFree(pa_cuda));
+  // parameters
+  delete[] pa_cpu;
+  gpuErrchk(cudaFree(pa_cuda));
 
-    // materials
-    delete[] K_cpu;
-    delete[] G_cpu;
-    gpuErrchk(cudaFree(K_cuda));
-    gpuErrchk(cudaFree(G_cuda));
+  // materials
+  delete[] K_cpu;
+  delete[] G_cpu;
+  gpuErrchk(cudaFree(K_cuda));
+  gpuErrchk(cudaFree(G_cuda));
 
-    // stress
-    delete[] P0_cpu;
-    delete[] P_cpu;
-    delete[] tauXX_cpu;
-    delete[] tauYY_cpu;
-    delete[] tauXY_cpu;
-    delete[] tauXYav_cpu;
-    gpuErrchk(cudaFree(P0_cuda));
-    gpuErrchk(cudaFree(P_cuda));
-    gpuErrchk(cudaFree(tauXX_cuda));
-    gpuErrchk(cudaFree(tauYY_cuda));
-    gpuErrchk(cudaFree(tauXY_cuda));
-    gpuErrchk(cudaFree(tauXYav_cuda));
+  // stress
+  delete[] P0_cpu;
+  delete[] P_cpu;
+  delete[] tauXX_cpu;
+  delete[] tauYY_cpu;
+  delete[] tauXY_cpu;
+  delete[] tauXYav_cpu;
+  gpuErrchk(cudaFree(P0_cuda));
+  gpuErrchk(cudaFree(P_cuda));
+  gpuErrchk(cudaFree(tauXX_cuda));
+  gpuErrchk(cudaFree(tauYY_cuda));
+  gpuErrchk(cudaFree(tauXY_cuda));
+  gpuErrchk(cudaFree(tauXYav_cuda));
 
-    // plasticity
-    delete[] J2_cpu;
-    delete[] J2XY_cpu;
-    gpuErrchk(cudaFree(J2_cuda));
-    gpuErrchk(cudaFree(J2XY_cuda));
+  // plasticity
+  delete[] J2_cpu;
+  delete[] J2XY_cpu;
+  gpuErrchk(cudaFree(J2_cuda));
+  gpuErrchk(cudaFree(J2XY_cuda));
 
-    // displacement
-    delete[] Ux_cpu;
-    delete[] Uy_cpu;
-    gpuErrchk(cudaFree(Ux_cuda));
-    gpuErrchk(cudaFree(Uy_cuda));
+  // displacement
+  delete[] Ux_cpu;
+  delete[] Uy_cpu;
+  gpuErrchk(cudaFree(Ux_cuda));
+  gpuErrchk(cudaFree(Uy_cuda));
 
-    // velocity
-    delete[] Vx_cpu;
-    delete[] Vy_cpu;
-    gpuErrchk(cudaFree(Vx_cuda));
-    gpuErrchk(cudaFree(Vy_cuda));
+  // velocity
+  delete[] Vx_cpu;
+  delete[] Vy_cpu;
+  gpuErrchk(cudaFree(Vx_cuda));
+  gpuErrchk(cudaFree(Vy_cuda));
 
-    // log
-    log_file.close();
+  // log
+  log_file.close();
 }

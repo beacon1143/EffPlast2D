@@ -139,32 +139,32 @@ private:
 	static double FindMaxAbs(const double* const arr, const int size);
 	static double FindMaxAbs(const std::vector<double>& vec);
 
-	double GetDeltaP_honest();
-	double GetDeltaP_periodic();
-	double GetDeltaP_approx(const double Exx, const double Eyy);
-	double GetTauInfty_honestest();
-	double GetTauInfty_honest();
-	double GetTauInfty_approx(const double Exx, const double Eyy);
-	[[deprecated]] double GetdPhi();
+	// p and tau from static numeric solution for analytical effective moduli 
+	double getDeltaP_honest();
+	double getDeltaP_periodic();
+	double getDeltaP_approx(const double Exx, const double Eyy);
+	double getTauInfty_honestest();
+	double getTauInfty_honest();
+	double getTauInfty_approx(const double Exx, const double Eyy);
+	[[deprecated]] double getdPhi();
 
+	// analytic solution for static problem
 	void getAnalytic(
 		double x, double y, double xi, double kappa, double c0,
-		double& cosf,
-		double& sinf,
-		std::complex<double>& zeta,
-		std::complex<double>& w,
-		std::complex<double>& dw,
-		std::complex<double>& wv,
-		std::complex<double>& Phi,
-		std::complex<double>& Psi
+		double& cosf, double& sinf,
+		std::complex<double>& zeta, std::complex<double>& w,
+		std::complex<double>& dw, std::complex<double>& wv,
+		std::complex<double>& Phi, std::complex<double>& Psi
 	);
 	std::complex<double> getAnalyticUelast(double x, double y, double tauInfty, double xi, double kappa, double c0);
 	double getAnalyticUrHydro(double r, double deltaP);
+	double getJ1(double S11, double S22);
+	double getJ2(double S11, double S22, double S12);
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
+	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 
 	void outputEffectiveModuli();
-	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 	void outputDuration(int elapsed_sec);
 
 	// final effective moduli calculation
