@@ -51,7 +51,7 @@ inline void gpuAssert(cudaError_t code, const char* file, int line)
 
 class EffPlast2D {
 public:
-	double EffPlast2D::ComputeKphi( double initLoadValue, double loadValue, 
+	double EffPlast2D::ComputeEffModuli( double initLoadValue, double loadValue, 
 		unsigned int nTimeSteps, const std::array<double, 3>& loadType
 	);
 
@@ -164,8 +164,11 @@ private:
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
 	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
 
-	void outputEffectiveModuli();
-	void outputDuration(int elapsed_sec);
+	// console and log file output
+	void printStepInfo(const size_t step);
+	void printCalculationType();
+	void printEffectiveModuli();
+	void printDuration(int elapsed_sec);
 
 	// final effective moduli calculation
 	double getKphi_PureElast(const unsigned int nTimeSteps);

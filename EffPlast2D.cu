@@ -176,7 +176,7 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
   }
 }
 
-double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const double loadValue, 
+double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] const double loadValue, 
   const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
   const auto start = std::chrono::system_clock::now();
@@ -185,64 +185,51 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
   std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
   std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 
-  switch (NL) {
-  case 1:
-    std::cout << "\nPURE ELASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
-    break;
-  case 2:
-    std::cout << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
-    break;
-  case 3:
-    std::cout << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
-    break;
-  default:
-    std::cerr << "\nError! Wrong number of loads!\n";
-    exit(1);
-  }
+  printCalculationType();
 
   ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
   if (NL == 1) {
     const double Kphi = getKphi_PureElast(nTimeSteps);
-    //std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
-    log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
+    //std::cout << "    ==============\n" << "    Kphi = " << Kphi << std::endl;
+    log_file << "    ==============\n" << "    Kphi = " << Kphi << std::endl;
     eff_moduli_num.Kphi = getKphi_PureElast(nTimeSteps);
 
     const double KphiPer = getKphiPer_PureElast(nTimeSteps);
-    //std::cout << "KphiPer = " << KphiPer << "\n";
-    log_file << "KphiPer = " << KphiPer << "\n";
+    //std::cout << "    KphiPer = " << KphiPer << "\n";
+    log_file << "    KphiPer = " << KphiPer << "\n";
     eff_moduli_num_per.Kphi = getKphiPer_PureElast(nTimeSteps);
 
     const double Kd = getKd_PureElast(nTimeSteps);
-    //std::cout << "Kd = " << Kd << "\n";
-    log_file << "Kd = " << Kd << "\n";
+    //std::cout << "    Kd = " << Kd << "\n";
+    log_file << "    Kd = " << Kd << "\n";
     eff_moduli_num.Kd = getKd_PureElast(nTimeSteps);
 
     const double KdPer = getKdPer_PureElast(nTimeSteps);
-    //std::cout << "KdPer = " << KdPer << "\n";
-    log_file << "KdPer = " << KdPer << "\n";
+    //std::cout << "    KdPer = " << KdPer << "\n";
+    log_file << "    KdPer = " << KdPer << "\n";
     eff_moduli_num_per.Kd = getKdPer_PureElast(nTimeSteps);
   }
   else {
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
 
     const double Kphi = getKphi_ElastPlast(nTimeSteps);
-    //std::cout << "==============\n" << "Kphi = " << Kphi << std::endl;
-    log_file << "==============\n" << "Kphi = " << Kphi << std::endl;
+    //std::cout << "==============\n" << "    Kphi = " << Kphi << std::endl;
+    log_file << "==============\n" << "    Kphi = " << Kphi << std::endl;
     eff_moduli_num.Kphi = getKphi_ElastPlast(nTimeSteps);
 
     const double KphiPer = getKphiPer_ElastPlast(nTimeSteps);
-    //std::cout << "KphiPer = " << KphiPer << "\n";
-    log_file << "KphiPer = " << KphiPer << "\n";
+    //std::cout << "    KphiPer = " << KphiPer << "\n";
+    log_file << "    KphiPer = " << KphiPer << "\n";
     eff_moduli_num_per.Kphi = getKphiPer_ElastPlast(nTimeSteps);
 
     const double Kd = getKd_ElastPlast(nTimeSteps);
-    //std::cout << "Kd = " << Kd << "\n";
-    log_file << "Kd = " << Kd << "\n";
+    //std::cout << "    Kd = " << Kd << "\n";
+    log_file << "    Kd = " << Kd << "\n";
     eff_moduli_num.Kd = getKd_ElastPlast(nTimeSteps);
 
     const double KdPer = getKdPer_ElastPlast(nTimeSteps);
-    //std::cout << "KdPer = " << KdPer << "\n";
-    log_file << "KdPer = " << KdPer << "\n";
+    //std::cout << "    KdPer = " << KdPer << "\n";
+    log_file << "    KdPer = " << KdPer << "\n";
     eff_moduli_num_per.Kd = getKdPer_ElastPlast(nTimeSteps);
   }
 
@@ -250,17 +237,17 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
     ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
     const double G = getG(nTimeSteps);
-    //std::cout << "==============\n" << "G = " << G << "\n";
-    log_file << "==============\n" << "G = " << G << "\n";
+    //std::cout << "==============\n" << "    G = " << G << "\n";
+    log_file << "==============\n" << "    G = " << G << "\n";
     eff_moduli_num.G = getG(nTimeSteps);
 
     const double Gper = getGper(nTimeSteps);
-    //std::cout << "Gper = " << Gper << "\n";
-    log_file << "Gper = " << Gper << "\n";
+    //std::cout << "    Gper = " << Gper << "\n";
+    log_file << "    Gper = " << Gper << "\n";
     eff_moduli_num_per.G = getGper(nTimeSteps);
   }
 
-  outputEffectiveModuli();
+  printEffectiveModuli();
 
   if (NL > 1 && nTimeSteps) {
     SaveAnStatic2D(deltaP[0][nTimeSteps - 1], tauInfty[0][nTimeSteps - 1], loadType);
@@ -280,18 +267,13 @@ double EffPlast2D::ComputeKphi(const double initLoadValue, [[deprecated]] const 
   const auto end = std::chrono::system_clock::now();
 
   int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
-  outputDuration(elapsed_sec);
+  printDuration(elapsed_sec);
 
   return 0.0;
 }
 
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
-  std::cout << "\nLOAD STEP " << step + 1 << " FROM " << NL << "\n";
-  log_file << "\nLOAD STEP " << step + 1 << " FROM " << NL << "\n";
-  std::cout << "Porosity is " << porosity * 100 << "%\n";
-  log_file << "Porosity is " << porosity * 100 << "%\n";
-  std::cout << "Grid resolution is " << nX << "x" << nY << "\n\n";
-  log_file << "Grid resolution is " << nX << "x" << nY << "\n\n";
+  printStepInfo(step);
 
   deltaP[step].resize(nTimeSteps);
   deltaPper[step].resize(nTimeSteps);
@@ -320,8 +302,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
   /* ACTION LOOP */
   for (int it = 0; it < nTimeSteps; it++) {
-    std::cout << "Time step " << (it + 1) << " from " << nTimeSteps << std::endl;
-    log_file << "Time step " << (it + 1) << " from " << nTimeSteps << std::endl;
+    std::cout << "Time step " << (it + 1) << " from " << nTimeSteps << "\n";
+    log_file << "Time step " << (it + 1) << " from " << nTimeSteps << "\n";
 
     epsilon[step][it] = { 0.0 };
     epsilonPer[step][it] = { 0.0 };
@@ -338,8 +320,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     curEffStrain[2] += dUxdy;
     epsilon[step][it] = curEffStrain;
 
-    std::cout << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
-    log_file << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n\n";
+    std::cout << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n";
+    log_file << "Macro strain: (" << curEffStrain[0] << ", " << curEffStrain[1] << ", " << curEffStrain[2] << ")\n";
 
     if (it > 0) {    // non-first time step
       gpuErrchk(cudaMemcpy(Ux_cpu, Ux_cuda, (nX + 1) * nY * sizeof(double), cudaMemcpyDeviceToHost));
@@ -393,8 +375,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
           (std::max(std::abs(curEffStrain[0]), std::max(curEffStrain[1], curEffStrain[2])));
           //(std::abs(loadStepValue) * std::max(std::max(std::abs(loadType[0]), std::abs(loadType[1])), std::abs(loadType[2])));
 
-        std::cout << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
-        log_file << "Iteration " << iter + 1 << ": Error is " << error << std::endl;
+        std::cout << "    Iteration " << iter + 1 << ": Error is " << error << std::endl;
+        log_file << "    Iteration " << iter + 1 << ": Error is " << error << std::endl;
 
         if (error < EITER) {
           std::cout << "Number of iterations is " << iter + 1 << "\n\n";
@@ -1276,7 +1258,52 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
   //delete[] plastZoneNu;
 }
 
-void EffPlast2D::outputEffectiveModuli() {
+/* CONSOLE AND LOG FILE OUTPUT */
+void EffPlast2D::printStepInfo(const size_t step) {
+  std::cout << "\nLOAD STEP " << step + 1 << " FROM " << NL << ": ";
+  log_file << "\nLOAD STEP " << step + 1 << " FROM " << NL << ": ";
+  switch (step) {
+  case 0:
+    std::cout << "PRELOADING\n";
+    log_file << "PRELOADING\n";
+    break;
+  case 1:
+    std::cout << "SMALL HYDROSTATIC INCREMENT\n";
+    log_file << "SMALL HYDROSTATIC INCREMENT\n";
+    break;
+  case 2:
+    std::cout << "SMALL DEVIATORIC INCREMENT\n";
+    log_file << "SMALL DEVIATORIC INCREMENT\n";
+    break;
+  default:
+    std::cerr << "\nError! Wrong step index!\n";
+    exit(1);
+  }
+  std::cout << "Porosity is " << porosity * 100 << "%\n";
+  log_file << "Porosity is " << porosity * 100 << "%\n";
+  std::cout << "Grid resolution is " << nX << "x" << nY << "\n\n";
+  log_file << "Grid resolution is " << nX << "x" << nY << "\n\n";
+}
+void EffPlast2D::printCalculationType() {
+  switch (NL) {
+  case 1:
+    std::cout << "\nPURE ELASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
+    log_file << "\nPURE ELASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
+    break;
+  case 2:
+    std::cout << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
+    log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI\n";
+    break;
+  case 3:
+    std::cout << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
+    log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
+    break;
+  default:
+    std::cerr << "\nError! Wrong number of loads!\n";
+    exit(1);
+  }
+}
+void EffPlast2D::printEffectiveModuli() {
   std::cout << "\nEFFECTIVE MODULI ESTIMATED\nNON-PERIODIC\n    Analytical:\n";
   log_file << "\nEFFECTIVE MODULI ESTIMATED\nNON-PERIODIC\n    Analytical:\n";
   eff_moduli_an.output(log_file);
@@ -1292,7 +1319,7 @@ void EffPlast2D::outputEffectiveModuli() {
     eff_moduli_num_per.output(log_file);
   }
 }
-void EffPlast2D::outputDuration(int elapsed_sec) {
+void EffPlast2D::printDuration(int elapsed_sec) {
   if (elapsed_sec < 60) {
     std::cout << "\nCalculation time is " << elapsed_sec << " sec\n";
     log_file << "\nCalculation time is " << elapsed_sec << " sec\n\n\n";
