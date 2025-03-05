@@ -665,9 +665,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 
 void EffPlast2D::ReadParams(const std::string& filename) {
   std::ifstream pa_fil(filename, std::ios_base::binary);
-  if (!pa_fil) {
-    std::cerr << "Error! Cannot open file " << filename << "!\n";
-    exit(1);
+  if (!pa_fil.is_open()) {
+    throw std::runtime_error("Error! Cannot open file " + filename + "!\n");
   }
   pa_fil.read((char*)pa_cpu, sizeof(double) * NPARS);
   gpuErrchk(cudaMemcpy(pa_cuda, pa_cpu, NPARS * sizeof(double), cudaMemcpyHostToDevice));
