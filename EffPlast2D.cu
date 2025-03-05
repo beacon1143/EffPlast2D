@@ -180,30 +180,31 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
   const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
 {
   const auto start = std::chrono::system_clock::now();
+  nTimeSteps_ = nTimeSteps;
 
   std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
   std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 
   printCalculationType();
 
-  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
+  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps_);
   if (NL == 1) {
-    calcBulkModuli_PureElast(nTimeSteps);
+    calcBulkModuli_PureElast();
   }
   else {
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
-    calcBulkModuli_ElastPlast(nTimeSteps);
+    calcBulkModuli_ElastPlast();
   }
 
   if (NL == 3) {
     ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
-    calcShearModulus(nTimeSteps);
+    calcShearModulus();
   }
 
   printEffectiveModuli();
 
-  if (NL > 1 && nTimeSteps) {
-    SaveAnStatic2D(deltaP[0][nTimeSteps - 1], tauInfty[0][nTimeSteps - 1], loadType);
+  if (NL > 1 && nTimeSteps_) {
+    SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1], loadType);
   }
 
   /* OUTPUT DATA WRITING */
@@ -1303,103 +1304,103 @@ void EffPlast2D::printDuration(int elapsed_sec) {
 }
 
 /* FINAL EFFECTIVE MODULI CALCULATION */
-void EffPlast2D::calcBulkModuli_PureElast(const unsigned int nTimeSteps) {
-  eff_moduli_num.Kphi = getKphi_PureElast(nTimeSteps);
+void EffPlast2D::calcBulkModuli_PureElast() {
+  eff_moduli_num.Kphi = getKphi_PureElast();
   //std::cout << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
   log_file << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
 
-  eff_moduli_num_per.Kphi = getKphiPer_PureElast(nTimeSteps);
+  eff_moduli_num_per.Kphi = getKphiPer_PureElast();
   //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
   log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
 
-  eff_moduli_num.Kd = getKd_PureElast(nTimeSteps);
+  eff_moduli_num.Kd = getKd_PureElast();
   //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
   log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
 
-  eff_moduli_num_per.Kd = getKdPer_PureElast(nTimeSteps);
+  eff_moduli_num_per.Kd = getKdPer_PureElast();
   //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
   log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
 }
-void EffPlast2D::calcBulkModuli_ElastPlast(const unsigned int nTimeSteps) {
-  eff_moduli_num.Kphi = getKphi_ElastPlast(nTimeSteps);
+void EffPlast2D::calcBulkModuli_ElastPlast() {
+  eff_moduli_num.Kphi = getKphi_ElastPlast();
   //std::cout << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
   log_file << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
 
-  eff_moduli_num_per.Kphi = getKphiPer_ElastPlast(nTimeSteps);
+  eff_moduli_num_per.Kphi = getKphiPer_ElastPlast();
   //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
   log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
 
-  eff_moduli_num.Kd = getKd_ElastPlast(nTimeSteps);
+  eff_moduli_num.Kd = getKd_ElastPlast();
   //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
   log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
 
-  eff_moduli_num_per.Kd = getKdPer_ElastPlast(nTimeSteps);
+  eff_moduli_num_per.Kd = getKdPer_ElastPlast();
   //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
   log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
 }
-void EffPlast2D::calcShearModulus(const unsigned int nTimeSteps) {
-  eff_moduli_num.G = getG(nTimeSteps);
+void EffPlast2D::calcShearModulus() {
+  eff_moduli_num.G = getG();
   //std::cout << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
   log_file << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
 
-  eff_moduli_num_per.G = getGper(nTimeSteps);
+  eff_moduli_num_per.G = getGper();
   //std::cout << "    Gper = " << eff_moduli_num_per.G << "\n";
   log_file << "    Gper = " << eff_moduli_num_per.G << "\n";
 }
 // bulk moduli in the pure elastic case
-double EffPlast2D::getKphi_PureElast(const unsigned int nTimeSteps) {
-  const double Pinc = deltaP[0][nTimeSteps - 1];
-  const double phiInc = dPhi[0][nTimeSteps - 1];
+double EffPlast2D::getKphi_PureElast() {
+  const double Pinc = deltaP[0][nTimeSteps_ - 1];
+  const double phiInc = dPhi[0][nTimeSteps_ - 1];
   return Pinc / phiInc;
 }
-double EffPlast2D::getKphiPer_PureElast(const unsigned int nTimeSteps) {
-  const double PperInc = deltaPper[0][nTimeSteps - 1];
-  const double phiPerInc = dPhiPer[0][nTimeSteps - 1];
+double EffPlast2D::getKphiPer_PureElast() {
+  const double PperInc = deltaPper[0][nTimeSteps_ - 1];
+  const double phiPerInc = dPhiPer[0][nTimeSteps_ - 1];
   return PperInc / phiPerInc;
 }
-double EffPlast2D::getKd_PureElast(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
-  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+double EffPlast2D::getKd_PureElast() {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps_ - 1];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps_ - 1];
 
   const double pInc = -0.33333333 * (sigmaInitLoad[0] + sigmaInitLoad[1] + sigmaInitLoad[2]);
   const double epsInc = epsilonInitLoad[0] + epsilonInitLoad[1];
   return -pInc / epsInc;
 }
-double EffPlast2D::getKdPer_PureElast(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
-  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+double EffPlast2D::getKdPer_PureElast() {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps_ - 1];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps_ - 1];
 
   const double pIncPer = -0.33333333 * (sigmaInitLoadPer[0] + sigmaInitLoadPer[1] + sigmaInitLoadPer[2]);
   const double epsIncPer = epsilonInitLoadPer[0] + epsilonInitLoadPer[1];
   return -pIncPer / epsIncPer;
 }
 // bulk moduli in the elastoplastic case
-double EffPlast2D::getKphi_ElastPlast(const unsigned int nTimeSteps) {
-  const double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps - 1];
-  const double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps - 1];
+double EffPlast2D::getKphi_ElastPlast() {
+  const double Pinc = deltaP[1][0] - deltaP[0][nTimeSteps_ - 1];
+  const double phiInc = dPhi[1][0] - dPhi[0][nTimeSteps_ - 1];
   return Pinc / phiInc;
 }
-double EffPlast2D::getKphiPer_ElastPlast(const unsigned int nTimeSteps) {
-  const double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps - 1];
-  const double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps - 1];
+double EffPlast2D::getKphiPer_ElastPlast() {
+  const double PperInc = deltaPper[1][0] - deltaPper[0][nTimeSteps_ - 1];
+  const double phiPerInc = dPhiPer[1][0] - dPhiPer[0][nTimeSteps_ - 1];
   return PperInc / phiPerInc;
 }
-double EffPlast2D::getKd_ElastPlast(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+double EffPlast2D::getKd_ElastPlast() {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps_ - 1];
   const std::array<double, 4> sigmaVolInc = sigma[1][0];
-  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps_ - 1];
   const std::array<double, 3> epsilonVolInc = epsilon[1][0];
 
-  //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps - 1][0] + sigma[0][nTimeSteps - 1][1]) << "\n";
-  //std::cout << "divU = " << epsilon[0][nTimeSteps - 1][0] + epsilon[0][nTimeSteps - 1][1] << "\n";
+  //std::cout << "P = " << -0.5 * (sigma[0][nTimeSteps_ - 1][0] + sigma[0][nTimeSteps_ - 1][1]) << "\n";
+  //std::cout << "divU = " << epsilon[0][nTimeSteps_ - 1][0] + epsilon[0][nTimeSteps_ - 1][1] << "\n";
   const double pInc = -0.33333333 * (sigmaVolInc[0] + sigmaVolInc[1] + sigmaVolInc[2] - sigmaInitLoad[0] - sigmaInitLoad[1] - sigmaInitLoad[2]);
   const double epsInc = epsilonVolInc[0] + epsilonVolInc[1] - epsilonInitLoad[0] - epsilonInitLoad[1];
   return -pInc / epsInc;
 }
-double EffPlast2D::getKdPer_ElastPlast(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+double EffPlast2D::getKdPer_ElastPlast() {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps_ - 1];
   const std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
-  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps_ - 1];
   const std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
 
   const double pIncPer = -0.33333333 * (sigmaVolIncPer[0] + sigmaVolIncPer[1] + sigmaVolIncPer[2] - sigmaInitLoadPer[0] - sigmaInitLoadPer[1] - sigmaInitLoadPer[2]);
@@ -1407,10 +1408,10 @@ double EffPlast2D::getKdPer_ElastPlast(const unsigned int nTimeSteps) {
   return -pIncPer / epsIncPer;
 }
 // shear modulus in the elastoplastic case
-double EffPlast2D::getG(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps - 1];
+double EffPlast2D::getG() {
+  const std::array<double, 4> sigmaInitLoad = sigma[0][nTimeSteps_ - 1];
   const std::array<double, 4> sigmaVolInc = sigma[1][0];
-  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoad = epsilon[0][nTimeSteps_ - 1];
   const std::array<double, 3> epsilonVolInc = epsilon[1][0];
 
   const std::array<double, 4> sigmaDevInc = sigma[2][0];
@@ -1419,10 +1420,10 @@ double EffPlast2D::getG(const unsigned int nTimeSteps) {
   return 0.5 * (sigmaDevInc[0] - sigmaVolInc[0] - sigmaDevInc[1] + sigmaVolInc[1]) / 
     (epsilonDevInc[0] - epsilonVolInc[0] - epsilonDevInc[1] + epsilonVolInc[1]);
 }
-double EffPlast2D::getGper(const unsigned int nTimeSteps) {
-  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps - 1];
+double EffPlast2D::getGper() {
+  const std::array<double, 4> sigmaInitLoadPer = sigmaPer[0][nTimeSteps_ - 1];
   const std::array<double, 4> sigmaVolIncPer = sigmaPer[1][0];
-  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps - 1];
+  const std::array<double, 3> epsilonInitLoadPer = epsilonPer[0][nTimeSteps_ - 1];
   const std::array<double, 3> epsilonVolIncPer = epsilonPer[1][0];
 
   const std::array<double, 4> sigmaDevIncPer = sigmaPer[2][0];

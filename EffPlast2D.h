@@ -70,6 +70,9 @@ private:
 	double Y;                                        // yield stress
 	double nPores;
 
+	// input variables
+	unsigned int nTimeSteps_;                        // number of time steps for preloading static calculation
+
 	// space arrays
 	double* K_cpu, * K_cuda, * G_cpu, * G_cuda;      // materials
 	double* P0_cpu, * P0_cuda, * P_cpu, * P_cuda;    // stress
@@ -172,17 +175,17 @@ private:
 	void printDuration(int elapsed_sec);
 
 	// final effective moduli calculation
-	void calcBulkModuli_PureElast(const unsigned int nTimeSteps);
-	void calcBulkModuli_ElastPlast(const unsigned int nTimeSteps);
-	void calcShearModulus(const unsigned int nTimeSteps);
-	double getKphi_PureElast(const unsigned int nTimeSteps);
-	double getKphiPer_PureElast(const unsigned int nTimeSteps);
-	double getKd_PureElast(const unsigned int nTimeSteps);
-	double getKdPer_PureElast(const unsigned int nTimeSteps);
-	double getKphi_ElastPlast(const unsigned int nTimeSteps);
-	double getKphiPer_ElastPlast(const unsigned int nTimeSteps);
-	double getKd_ElastPlast(const unsigned int nTimeSteps);
-	double getKdPer_ElastPlast(const unsigned int nTimeSteps);
-	double getG(const unsigned int nTimeSteps);
-	double getGper(const unsigned int nTimeSteps);
+	void calcBulkModuli_PureElast();
+	void calcBulkModuli_ElastPlast();
+	void calcShearModulus();
+	double getKphi_PureElast();
+	double getKphiPer_PureElast();
+	double getKd_PureElast();
+	double getKdPer_PureElast();
+	double getKphi_ElastPlast();
+	double getKphiPer_ElastPlast();
+	double getKd_ElastPlast();
+	double getKdPer_ElastPlast();
+	double getG();
+	double getGper();
 };
