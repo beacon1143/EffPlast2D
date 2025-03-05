@@ -189,62 +189,52 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
 
   ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
   if (NL == 1) {
-    const double Kphi = getKphi_PureElast(nTimeSteps);
-    //std::cout << "    ==============\n" << "    Kphi = " << Kphi << std::endl;
-    log_file << "    ==============\n" << "    Kphi = " << Kphi << std::endl;
     eff_moduli_num.Kphi = getKphi_PureElast(nTimeSteps);
+    //std::cout << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+    log_file << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
 
-    const double KphiPer = getKphiPer_PureElast(nTimeSteps);
-    //std::cout << "    KphiPer = " << KphiPer << "\n";
-    log_file << "    KphiPer = " << KphiPer << "\n";
     eff_moduli_num_per.Kphi = getKphiPer_PureElast(nTimeSteps);
+    //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+    log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
 
-    const double Kd = getKd_PureElast(nTimeSteps);
-    //std::cout << "    Kd = " << Kd << "\n";
-    log_file << "    Kd = " << Kd << "\n";
     eff_moduli_num.Kd = getKd_PureElast(nTimeSteps);
+    //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
+    log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
 
-    const double KdPer = getKdPer_PureElast(nTimeSteps);
-    //std::cout << "    KdPer = " << KdPer << "\n";
-    log_file << "    KdPer = " << KdPer << "\n";
     eff_moduli_num_per.Kd = getKdPer_PureElast(nTimeSteps);
+    //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+    log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
   }
   else {
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
 
-    const double Kphi = getKphi_ElastPlast(nTimeSteps);
-    //std::cout << "==============\n" << "    Kphi = " << Kphi << std::endl;
-    log_file << "==============\n" << "    Kphi = " << Kphi << std::endl;
     eff_moduli_num.Kphi = getKphi_ElastPlast(nTimeSteps);
+    //std::cout << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+    log_file << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
 
-    const double KphiPer = getKphiPer_ElastPlast(nTimeSteps);
-    //std::cout << "    KphiPer = " << KphiPer << "\n";
-    log_file << "    KphiPer = " << KphiPer << "\n";
     eff_moduli_num_per.Kphi = getKphiPer_ElastPlast(nTimeSteps);
+    //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+    log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
 
-    const double Kd = getKd_ElastPlast(nTimeSteps);
-    //std::cout << "    Kd = " << Kd << "\n";
-    log_file << "    Kd = " << Kd << "\n";
     eff_moduli_num.Kd = getKd_ElastPlast(nTimeSteps);
+    //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
+    log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
 
-    const double KdPer = getKdPer_ElastPlast(nTimeSteps);
-    //std::cout << "    KdPer = " << KdPer << "\n";
-    log_file << "    KdPer = " << KdPer << "\n";
     eff_moduli_num_per.Kd = getKdPer_ElastPlast(nTimeSteps);
+    //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+    log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
   }
 
   if (NL == 3) {
     ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
 
-    const double G = getG(nTimeSteps);
-    //std::cout << "==============\n" << "    G = " << G << "\n";
-    log_file << "==============\n" << "    G = " << G << "\n";
     eff_moduli_num.G = getG(nTimeSteps);
+    //std::cout << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
+    log_file << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
 
-    const double Gper = getGper(nTimeSteps);
-    //std::cout << "    Gper = " << Gper << "\n";
-    log_file << "    Gper = " << Gper << "\n";
     eff_moduli_num_per.G = getGper(nTimeSteps);
+    //std::cout << "    Gper = " << eff_moduli_num_per.G << "\n";
+    log_file << "    Gper = " << eff_moduli_num_per.G << "\n";
   }
 
   printEffectiveModuli();
@@ -265,7 +255,6 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
 
   //gpuErrchk(cudaDeviceReset());
   const auto end = std::chrono::system_clock::now();
-
   int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
   printDuration(elapsed_sec);
 
@@ -383,7 +372,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
           log_file << "Number of iterations is " << iter + 1 << "\n\n";
           break;
         }
-        else if (iter == NITER - 1) {
+        else if (iter >= NITER - 1) {
           std::cout << "WARNING: Maximum number of iterations reached!\nError is " << error << "\n\n";
           log_file << "WARNING: Maximum number of iterations reached!\nError is " << error << "\n\n";
         }
@@ -492,7 +481,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
       }
     }
-    // set zero Ux in the pores
+    // set zero Uy in the pores
     for (int i = 0; i < nX; i++) {
       for (int j = 0; j < nY + 1; j++) {
         double x = -0.5 * dX * (nX - 1) + dX * i;
@@ -508,7 +497,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         }
       }
     }
-        
+
     double HoleAreaPi = 0.0; // HoleArea / Pi
     double InternalHoleAreaPi = 0.0;
 
@@ -589,9 +578,6 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
       log_file << "    dPhiPer = " << dPhiPer[step][it] << '\n';
     }
     //std::cout << "    dPhi_new = " << GetdPhi() << "\n";
-
-    /*const double Kphi = deltaP[step][it] / dPhi[step][it];
-    const double KphiPer = deltaPper[step][it] / dPhiPer[step][it];*/
 
     //std::cout << "    deltaP_honest = " << deltaP_honest << '\n';
     //log_file << "    deltaP_honest = " << deltaP_honest << '\n';
