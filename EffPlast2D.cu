@@ -181,7 +181,6 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
 {
   const auto start = std::chrono::system_clock::now();
 
-  const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
   std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
   std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
 

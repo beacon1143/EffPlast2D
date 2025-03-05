@@ -92,6 +92,7 @@ private:
 	double lX, lY;
 	double porosity;
 	std::set<std::pair<int, int>> empty_spaces;
+	const double incPercent = 0.005;    // for calculation of effective moduli with plasticity
 
 	// output parameters
 	std::array<std::vector<double>, NL> deltaP;
