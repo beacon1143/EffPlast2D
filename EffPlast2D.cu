@@ -181,13 +181,14 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
 {
   const auto start = std::chrono::system_clock::now();
   nTimeSteps_ = nTimeSteps;
+  loadType_ = loadType;
 
-  std::array<double, 3> sphericalLoadType{0.5 * (loadType[0] + loadType[1]), 0.5 * (loadType[0] + loadType[1]), 0.0};
-  std::array<double, 3> deviatoricLoadType{loadType[0] - sphericalLoadType[0], loadType[1] - sphericalLoadType[1], loadType[2] - sphericalLoadType[2]};
+  std::array<double, 3> sphericalLoadType{0.5 * (loadType_[0] + loadType_[1]), 0.5 * (loadType_[0] + loadType_[1]), 0.0};
+  std::array<double, 3> deviatoricLoadType{loadType_[0] - sphericalLoadType[0], loadType_[1] - sphericalLoadType[1], loadType_[2]};
 
   printCalculationType();
 
-  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps_);
+  ComputeEffParams(0, initLoadValue, loadType_, nTimeSteps_);
   if (NL == 1) {
     calcBulkModuli_PureElast();
   }
@@ -204,7 +205,7 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
   printEffectiveModuli();
 
   if (NL > 1 && nTimeSteps_) {
-    SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1], loadType);
+    SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1]);
   }
 
   /* OUTPUT DATA WRITING */
@@ -973,11 +974,11 @@ void EffPlast2D::getAnalyticJplast(double r, double xi, double& J1, double& J2) 
   J1 = getJ1(Srr, Sff);
   J2 = getJ2(Srr, Sff, Srf);
 }
-void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType) {
+void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
   /* ANALYTIC 2D SOLUTION FOR STATICS */
-  const bool isHydro = 
-    (std::abs(loadType[0] - loadType[1]) < std::numeric_limits<double>::epsilon()) && 
-    std::abs(loadType[2]) < std::numeric_limits<double>::epsilon();
+  const bool isHydroStatic = 
+    (std::abs(loadType_[0] - loadType_[1]) < std::numeric_limits<double>::epsilon()) && 
+    std::abs(loadType_[2]) < std::numeric_limits<double>::epsilon();
 
   const double Rmin = rad/* + 20.0 * dX*/;
   const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
@@ -1060,7 +1061,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
         const double sinf = y / r;
 
         if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) { // elastic zone
-          if (isHydro) {
+          if (isHydroStatic) {
             UanAbs[j * nX + i] = abs(getAnalyticUrHydro(r, deltaP));
           }
           else {
@@ -1111,7 +1112,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty, cons
           // analytical solution for sigma
           if (x * x / (Rx * Rx) + y * y / (Ry * Ry) > 1.0) { // elastic zone
                                                              //plastZoneAn[j * (nX - 1) + i] = 0.0;
-            if (isHydro) {
+            if (isHydroStatic) {
               const double relR = rad / r;
               const double Srr = -deltaP + relR * relR * Y * exp(deltaP / Y - 1);
               const double Sff = -deltaP - relR * relR * Y * exp(deltaP / Y - 1);

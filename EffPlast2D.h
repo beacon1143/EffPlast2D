@@ -72,6 +72,7 @@ private:
 
 	// input variables
 	unsigned int nTimeSteps_;                        // number of time steps for preloading static calculation
+	std::array<double, 3> loadType_;                 // load type array: ratio between effective strains
 
 	// space arrays
 	double* K_cpu, * K_cuda, * G_cpu, * G_cuda;      // materials
@@ -166,7 +167,7 @@ private:
 	double getJ2(double S11, double S22, double S12);
 	void getAnalyticJelast(double x, double y, double xi, double kappa, double c0, double& J1, double& J2);
 	void getAnalyticJplast(double r, double xi, double& J1, double& J2);
-	void SaveAnStatic2D(const double deltaP, const double tauInfty, const std::array<double, 3>& loadType);
+	void SaveAnStatic2D(const double deltaP, const double tauInfty);
 
 	// console and log file output
 	void printStepInfo(const size_t step);
