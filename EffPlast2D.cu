@@ -189,52 +189,16 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
 
   ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
   if (NL == 1) {
-    eff_moduli_num.Kphi = getKphi_PureElast(nTimeSteps);
-    //std::cout << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
-    log_file << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
-
-    eff_moduli_num_per.Kphi = getKphiPer_PureElast(nTimeSteps);
-    //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
-    log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
-
-    eff_moduli_num.Kd = getKd_PureElast(nTimeSteps);
-    //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
-    log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
-
-    eff_moduli_num_per.Kd = getKdPer_PureElast(nTimeSteps);
-    //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
-    log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+    calcBulkModuli_PureElast(nTimeSteps);
   }
   else {
     ComputeEffParams(1, initLoadValue * incPercent, sphericalLoadType, 1);
-
-    eff_moduli_num.Kphi = getKphi_ElastPlast(nTimeSteps);
-    //std::cout << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
-    log_file << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
-
-    eff_moduli_num_per.Kphi = getKphiPer_ElastPlast(nTimeSteps);
-    //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
-    log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
-
-    eff_moduli_num.Kd = getKd_ElastPlast(nTimeSteps);
-    //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
-    log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
-
-    eff_moduli_num_per.Kd = getKdPer_ElastPlast(nTimeSteps);
-    //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
-    log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+    calcBulkModuli_ElastPlast(nTimeSteps);
   }
 
   if (NL == 3) {
     ComputeEffParams(2, initLoadValue * incPercent, deviatoricLoadType, 1);
-
-    eff_moduli_num.G = getG(nTimeSteps);
-    //std::cout << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
-    log_file << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
-
-    eff_moduli_num_per.G = getGper(nTimeSteps);
-    //std::cout << "    Gper = " << eff_moduli_num_per.G << "\n";
-    log_file << "    Gper = " << eff_moduli_num_per.G << "\n";
+    calcShearModulus(nTimeSteps);
   }
 
   printEffectiveModuli();
@@ -1340,6 +1304,49 @@ void EffPlast2D::printDuration(int elapsed_sec) {
 }
 
 /* FINAL EFFECTIVE MODULI CALCULATION */
+void EffPlast2D::calcBulkModuli_PureElast(const unsigned int nTimeSteps) {
+  eff_moduli_num.Kphi = getKphi_PureElast(nTimeSteps);
+  //std::cout << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+  log_file << "    ==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+
+  eff_moduli_num_per.Kphi = getKphiPer_PureElast(nTimeSteps);
+  //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+  log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+
+  eff_moduli_num.Kd = getKd_PureElast(nTimeSteps);
+  //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
+  log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
+
+  eff_moduli_num_per.Kd = getKdPer_PureElast(nTimeSteps);
+  //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+  log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+}
+void EffPlast2D::calcBulkModuli_ElastPlast(const unsigned int nTimeSteps) {
+  eff_moduli_num.Kphi = getKphi_ElastPlast(nTimeSteps);
+  //std::cout << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+  log_file << "==============\n" << "    Kphi = " << eff_moduli_num.Kphi << std::endl;
+
+  eff_moduli_num_per.Kphi = getKphiPer_ElastPlast(nTimeSteps);
+  //std::cout << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+  log_file << "    KphiPer = " << eff_moduli_num_per.Kphi << "\n";
+
+  eff_moduli_num.Kd = getKd_ElastPlast(nTimeSteps);
+  //std::cout << "    Kd = " << eff_moduli_num.Kd << "\n";
+  log_file << "    Kd = " << eff_moduli_num.Kd << "\n";
+
+  eff_moduli_num_per.Kd = getKdPer_ElastPlast(nTimeSteps);
+  //std::cout << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+  log_file << "    KdPer = " << eff_moduli_num_per.Kd << "\n";
+}
+void EffPlast2D::calcShearModulus(const unsigned int nTimeSteps) {
+  eff_moduli_num.G = getG(nTimeSteps);
+  //std::cout << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
+  log_file << "==============\n" << "    G = " << eff_moduli_num.G << "\n";
+
+  eff_moduli_num_per.G = getGper(nTimeSteps);
+  //std::cout << "    Gper = " << eff_moduli_num_per.G << "\n";
+  log_file << "    Gper = " << eff_moduli_num_per.G << "\n";
+}
 // bulk moduli in the pure elastic case
 double EffPlast2D::getKphi_PureElast(const unsigned int nTimeSteps) {
   const double Pinc = deltaP[0][nTimeSteps - 1];

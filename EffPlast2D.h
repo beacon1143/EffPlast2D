@@ -171,6 +171,9 @@ private:
 	void printDuration(int elapsed_sec);
 
 	// final effective moduli calculation
+	void calcBulkModuli_PureElast(const unsigned int nTimeSteps);
+	void calcBulkModuli_ElastPlast(const unsigned int nTimeSteps);
+	void calcShearModulus(const unsigned int nTimeSteps);
 	double getKphi_PureElast(const unsigned int nTimeSteps);
 	double getKphiPer_PureElast(const unsigned int nTimeSteps);
 	double getKd_PureElast(const unsigned int nTimeSteps);
