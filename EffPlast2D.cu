@@ -203,6 +203,7 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] c
   }
 
   printEffectiveModuli();
+  printWarnings();
 
   if (NL > 1 && nTimeSteps_) {
     SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1]);
@@ -617,7 +618,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
 void EffPlast2D::ReadParams(const std::string& filename) {
   std::ifstream pa_fil(filename, std::ios_base::binary);
   if (!pa_fil.is_open()) {
-    throw std::runtime_error("Error! Cannot open file " + filename + "!\n");
+    throw std::runtime_error("ERROR:  Cannot open file " + filename + "!\n");
   }
   pa_fil.read((char*)pa_cpu, sizeof(double) * NPARS);
   gpuErrchk(cudaMemcpy(pa_cuda, pa_cpu, NPARS * sizeof(double), cudaMemcpyHostToDevice));
@@ -1226,8 +1227,7 @@ void EffPlast2D::printStepInfo(const size_t step) {
     log_file << "SMALL DEVIATORIC INCREMENT\n";
     break;
   default:
-    std::cerr << "\nError! Wrong step index!\n";
-    exit(1);
+    throw std::invalid_argument("ERROR:  Wrong step index!\n");
   }
   std::cout << "Porosity is " << porosity * 100 << "%\n";
   log_file << "Porosity is " << porosity * 100 << "%\n";
@@ -1249,8 +1249,7 @@ void EffPlast2D::printCalculationType() {
     log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
     break;
   default:
-    std::cerr << "\nError! Wrong number of loads!\n";
-    exit(1);
+    throw std::invalid argument("ERROR:  Wrong number of loads!\n");
   }
 }
 void EffPlast2D::printEffectiveModuli() {
@@ -1268,6 +1267,26 @@ void EffPlast2D::printEffectiveModuli() {
     log_file << "    Numerical:\n";
     eff_moduli_num_per.output(log_file);
   }
+}
+void EffPlast2D::printWarnings() {
+  if (NL > 1) { // elastoplastic case
+    //std::cout << std::abs(deltaP[0][nTimeSteps_ - 1]) / Y << " " << std::abs(tauInfty[0][nTimeSteps_ - 1]) / Y << "\n";
+    if (std::abs(deltaP[0][nTimeSteps_ - 1]) / Y < 1.0 ||
+      std::abs(deltaP[0][nTimeSteps_ - 1]) / Y > 5.0 ||
+      std::abs(tauInfty[0][nTimeSteps_ - 1]) / Y > 0.42)
+    {
+      std::cout << "\nWARNING:  Analytical solution is not applicable for this load!\n";
+      std::cout << "TODO: Set the load so that 1 < |P|/Y < 5 and 0 < |tau|/Y < 0.42\n";
+      log_file << "\nWARNING:  Analytical solution is not applicable for this load!\n";
+      log_file << "TODO: Set the load so that 1 < |P|/Y < 5 and 0 < |tau|/Y < 0.42\n";
+    }
+    if ( std::abs(loadType_[0] - loadType_[1]) > 0.05 * std::max(std::abs(loadType_[0]), std::abs(loadType_[1])) ||
+      std::abs(loadType_[2]) > 0.01 * std::max(std::abs(loadType_[0]), std::abs(loadType_[1])) )
+    {
+      std::cout << "\nWARNING:  The numerical effective Kphi is not calculated quite accurately for non-hydrostatic load!\n";
+      log_file << "\nWARNING:  The numerical effective Kphi is not calculated quite accurately for non-hydrostatic load!\n";
+    }
+  } // if(NL > 1)
 }
 void EffPlast2D::printDuration(int elapsed_sec) {
   if (elapsed_sec < 60) {

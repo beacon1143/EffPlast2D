@@ -173,6 +173,7 @@ private:
 	void printStepInfo(const size_t step);
 	void printCalculationType();
 	void printEffectiveModuli();
+	void printWarnings();
 	void printDuration(int elapsed_sec);
 
 	// final effective moduli calculation

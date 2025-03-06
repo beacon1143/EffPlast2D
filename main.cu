@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv) {
   try {
-    const std::string err_info = "Error: missing arguments\n Usage: " + std::string(argv[0]) +
+    const std::string err_info = "ERROR:  missing arguments\n USAGE: " + std::string(argv[0]) +
       " <init load value> <init load type>.x <init load type>.y <init load type>.xy <time steps> [<load value>]";
     if (argc < 6) {
       throw std::invalid_argument(err_info);
