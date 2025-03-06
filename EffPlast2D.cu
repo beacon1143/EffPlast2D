@@ -1,10 +1,10 @@
 #include "EffPlast2D.h"
 
 __global__ void ComputeDisp(double* Ux, double* Uy, double* Vx, double* Vy,
-    const double* const P,
-    const double* const tauXX, const double* const tauYY, const double* const tauXY,
-    const double* const pa,
-    const long int nX, const long int nY)
+  const double* const P,
+  const double* const tauXX, const double* const tauYY, const double* const tauXY,
+  const double* const pa,
+  const long int nX, const long int nY)
 {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -1249,7 +1249,7 @@ void EffPlast2D::printCalculationType() {
     log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
     break;
   default:
-    throw std::invalid argument("ERROR:  Wrong number of loads!\n");
+    throw std::invalid_argument("ERROR:  Wrong number of loads!\n");
   }
 }
 void EffPlast2D::printEffectiveModuli() {
