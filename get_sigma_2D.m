@@ -1,5 +1,4 @@
 function [Keff, Geff] = get_sigma_2D(Lx, Ly, loadValue, loadType, nGrid, nTimeSteps, nIter, eIter, N, Y, porosity, needCPUcalc)
-    
   % PHYSICS
   rho0 = 1.0;                         % density
   K0   = 1.0;                         % bulk modulus
