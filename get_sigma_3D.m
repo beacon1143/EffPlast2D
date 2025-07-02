@@ -160,5 +160,30 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
         end %if
       end %for(iter)
     end %for(it)
+    
+    fil = fopen(strcat('data\PmXY_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, P(:, :, end/2), 'double');
+    fclose(fil);
+    
+    fil = fopen(strcat('data\PmXZ_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, P(:, end/2, :), 'double');
+    fclose(fil);
+    
+    fil = fopen(strcat('data\PmYZ_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, P(end/2, :, :), 'double');
+    fclose(fil);
+    
+    fil = fopen(strcat('data\tauXXm_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, tauxx(:, :, end/2), 'double');
+    fclose(fil);
+    
+    fil = fopen(strcat('data\tauYYm_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, tauyy(:, :, end/2), 'double');
+    fclose(fil);
+    
+    fil = fopen(strcat('data\tauXYm_', int2str(Nx), '_.dat'), 'wb');
+    fwrite(fil, tauxy(:, :, end/2), 'double');
+    fclose(fil);
+    
   end %if
 end % function
