@@ -22,9 +22,15 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
   y      = (-Ly / 2) : dY : (Ly / 2);
   z      = (-Lz / 2) : dZ : (Lz / 2);
   [x, y, z] = ndgrid(x, y, z);                                    % 3D mesh
-  %iHoles = find((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*j) .^ 2 < rad * rad)
-  %xC     = av4(x);
-  %yC     = av4(y);
+  xCxy   = av4_3D(x, 1);
+  xCxz   = av4_3D(x, 2);
+  xCyz   = av4_3D(x, 3);
+  yCxy   = av4_3D(y, 1);
+  yCxz   = av4_3D(y, 2);
+  yCyz   = av4_3D(y, 3);
+  zCxy   = av4_3D(z, 1);
+  zCxz   = av4_3D(z, 2);
+  zCyz   = av4_3D(z, 3);
   %radC   = sqrt(xC .* xC + yC .* yC);
   [xUx, yUx, zUx] = ndgrid((-(Lx + dX)/2) : dX : ((Lx + dX)/2), (-Ly/2) : dY : (Ly/2), (-Lz/2) : dZ : (Lz/2));
   [xUy, yUy, zUy] = ndgrid((-Lx/2) : dX : (Lx/2), (-(Ly + dY)/2) : dY : ((Ly + dY)/2), (-Lz/2) : dZ : (Lz/2));
@@ -109,11 +115,14 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
         for i = 0 : N - 1
           for j = 0 : N - 1
             for k = 0 : N - 1
-              P((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*j) .^ 2 < rad * rad)  = 0.0;
-              tauxx((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*j) .^ 2 < rad * rad)  = 0.0;
-              tauyy((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*j) .^ 2 < rad * rad)  = 0.0;
-              tauzz((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*j) .^ 2 < rad * rad)  = 0.0;
-           end % for(k)
+              P((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauxx((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauyy((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauzz((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauxy((xCxy - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCxy - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCxy - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauxz((xCxz - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCxz - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCxz - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauxy((xCyz - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCyz - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCyz - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+            end % for(k)
           end % for(j)
         end % for(i)
         
@@ -134,7 +143,7 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
         Uz = Uz + Vz * dt;
         
         % exit criteria
-        if mod(iter, 10000) == 0
+        if mod(iter, 100) == 0
           error = (max(abs(Vx(:))) / Lx + max(abs(Vy(:))) / Ly + max(abs(Vz(:))) / Lz) * dt / max(abs(loadValue * loadType));
           outStr = sprintf('Iteration %d: Error is %d', iter, error);
           disp(outStr);
