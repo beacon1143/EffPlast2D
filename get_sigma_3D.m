@@ -107,7 +107,7 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
         %P     = P - G .* divU * dt / Nx;    % incompressibility
         tauxx = 2.0 * G .* (diff(Ux,1,1)/dX - divU/3.0);
         tauyy = 2.0 * G .* (diff(Uy,1,2)/dY - divU/3.0);
-        tauzz = 2.0 * G .* (diff(Uz,1,3)/dY - divU/3.0);
+        tauzz = 2.0 * G .* (diff(Uz,1,3)/dZ - divU/3.0);
         tauxy = av4_3D(G, 1) .* (diff(Ux(2:end-1, :, :), 1, 2)/dY + diff(Uy(:, 2:end-1, :), 1, 1)/dX);
         tauxz = av4_3D(G, 2) .* (diff(Ux(2:end-1, :, :), 1, 3)/dZ + diff(Uz(:, :, 2:end-1), 1, 1)/dX);
         tauyz = av4_3D(G, 3) .* (diff(Uy(:, 2:end-1, :), 1, 3)/dZ + diff(Uz(:, :, 2:end-1), 1, 2)/dY);
@@ -134,7 +134,7 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
         Vx(2:end-1, 2:end-1, 2:end-1) = Vx(2:end-1, 2:end-1, 2:end-1) * (1 - dt * dampX) + dVxdt * dt;
         dVydt = diff(-P(2:end-1,:,2:end-1) + tauyy(2:end-1,:,2:end-1), 1, 2)/dY / rho0 + (diff(tauxy(:,:,2:end-1),1,1)/dX + diff(tauyz(2:end-1, :, :), 1, 3)/dZ) / rho0;
         Vy(2:end-1, 2:end-1, 2:end-1) = Vy(2:end-1, 2:end-1, 2:end-1) * (1 - dt * dampY) + dVydt * dt;
-        dVzdt = diff(-P(2:end-1,2:end-1,:) + tauxx(2:end-1,2:end-1,:), 1, 3)/dZ / rho0 + (diff(tauyz(2:end-1,:,:),1,2)/dY + diff(tauxz(:, 2:end-1, :), 1, 1)/dX) / rho0;
+        dVzdt = diff(-P(2:end-1,2:end-1,:) + tauzz(2:end-1,2:end-1,:), 1, 3)/dZ / rho0 + (diff(tauyz(2:end-1,:,:),1,2)/dY + diff(tauxz(:, 2:end-1, :), 1, 1)/dX) / rho0;
         Vz(2:end-1, 2:end-1, 2:end-1) = Vz(2:end-1, 2:end-1, 2:end-1) * (1 - dt * dampZ) + dVzdt * dt;
         
         % displacements
