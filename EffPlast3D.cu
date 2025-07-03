@@ -273,10 +273,10 @@ void EffPlast3D::ComputeEffParams(const size_t step, const double loadStepValue,
     std::cout << "Time step " << (it + 1) << " from " << nTimeSteps << "\n";
     log_file << "Time step " << (it + 1) << " from " << nTimeSteps << "\n";
 
-    epsilon[step][it] = { 0.0 };
+    /*epsilon[step][it] = { 0.0 };
     epsilonPer[step][it] = { 0.0 };
     sigma[step][it] = { 0.0 };
-    sigmaPer[step][it] = { 0.0 };
+    sigmaPer[step][it] = { 0.0 };*/
 
     dUxdx = loadStepValue * loadType[0] / static_cast<double>(nTimeSteps);
     dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
@@ -604,7 +604,7 @@ EffPlast3D::EffPlast3D() {
 
   /* UTILITIES */
   log_file.open("EffPlast3D.log", std::ios_base::app);
-  output_step = 1'000;
+  output_step = 100;
   lX = (nX - 1) * dX;
   lY = (nY - 1) * dY;
   lZ = (nZ - 1) * dZ;
