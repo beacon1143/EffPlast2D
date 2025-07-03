@@ -608,7 +608,7 @@ EffPlast3D::EffPlast3D() {
   lX = (nX - 1) * dX;
   lY = (nY - 1) * dY;
   lZ = (nZ - 1) * dZ;
-  porosity = (4.0 / 3.0) * 3.1415926 * pow(rad * nPores, 3) / (lX * lY * lZ);
+  porosity = (4.0 / 3.0) * 3.1415926 * pow(rad * nPores, 3.0) / (lX * lY * lZ);
 }
 EffPlast3D::~EffPlast3D() {
   // parameters
