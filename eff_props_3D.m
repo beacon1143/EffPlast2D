@@ -18,17 +18,22 @@ nTasks = 2;
 % NUMERICS
 nGrid = 2;
 nTimeSteps = 1;
-nIter = 5000000;
+nIter = 1000;
 eIter = 1.0e-6;
 iDevice = 0;
 
 needCPUcalculation = true;
 
-Nx  = 32 * nGrid;     % number of space steps
-Ny  = 32 * nGrid;
-Nz  = 32 * nGrid;
+Nx  = 8 * nGrid;     % number of space steps
+Ny  = 8 * nGrid;
+Nz  = 8 * nGrid;
 
 get_sigma_3D(Lx, Ly, Lz, initLoadValue, loadType, nGrid, nTimeSteps, nIter, eIter, nPores, Y, porosity, needCPUcalculation);
+
+% GPU CALCULATION
+outname = ['a', int2str(iDevice)];
+system(['nvcc -O 3 -allow-unsupported-compiler -o ', outname, ' -DDEVICE_IDX=', int2str(iDevice), ' -DNL=', int2str(nTasks), ' -DNGRID=', int2str(nGrid), ' -DNITER=', int2str(nIter), ' -DEITER=', num2str(eIter), ' -DNPARS=', int2str(13), ' EffPlast3D.cu main3D.cu']);
+system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)), ' ', num2str(loadType(2)), ' ', num2str(loadType(3)), ' ', num2str(nTimeSteps)]); %, ' ' num2str(addLoadValueStep)]);
 
 if not(needCPUcalculation)
   

@@ -9,9 +9,9 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
   rad = (0.75 * porosity * Lx * Ly * Lz / (pi * N ^ 3)) ^ (1 / 3);
   
   % NUMERICS
-  Nx  = 32 * nGrid;     % number of space steps
-  Ny  = 32 * nGrid;
-  Nz  = 32 * nGrid;
+  Nx  = 8 * nGrid;     % number of space steps
+  Ny  = 8 * nGrid;
+  Nz  = 8 * nGrid;
   CFL = 0.5;     % Courant-Friedrichs-Lewy
   
   % PREPROCESSING
