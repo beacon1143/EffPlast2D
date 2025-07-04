@@ -121,7 +121,7 @@ function [Keff, Geff] = get_sigma_3D(Lx, Ly, Lz, loadValue, loadType, nGrid, nTi
               tauzz((x - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (y - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (z - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
               tauxy((xCxy - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCxy - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCxy - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
               tauxz((xCxz - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCxz - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCxz - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
-              tauxy((xCyz - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCyz - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCyz - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
+              tauyz((xCyz - 0.5*Lx*(1-1/N)  + (Lx/N)*i) .^ 2 + (yCyz - 0.5*Ly*(1-1/N) + (Ly/N)*j) .^ 2 + (zCyz - 0.5*Lz*(1-1/N) + (Lz/N)*k) .^ 2 < rad * rad)  = 0.0;
             end % for(k)
           end % for(j)
         end % for(i)
