@@ -144,9 +144,9 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy, co
         if (sqrt((-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) *
           (-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) +
           (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) *
-          (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b)) +
+          (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) +
           (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) * 
-          (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) < rad) {
+          (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c)) < rad) {
           P[k * nX * nY + j * nX + i] = 0.0;
           tauXX[k * nX * nY + j * nX + i] = 0.0;
           tauYY[k * nX * nY + j * nX + i] = 0.0;
@@ -157,9 +157,9 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy, co
           if (sqrt((-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) *
             (-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) +
             (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) *
-            (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b)) +
+            (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) +
             (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) * 
-            (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) < rad) {
+            (-0.5 * dZ * (nZ - 1) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c)) < rad) {
             tauXY[k * (nX - 1) * (nY - 1) + j * (nX - 1) + i] = 0.0;
           }
         }
@@ -167,9 +167,9 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy, co
           if (sqrt((-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) *
             (-0.5 * dX * (nX - 2) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) +
             (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) *
-            (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b)) +
+            (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) +
             (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) * 
-            (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) < rad) {
+            (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c)) < rad) {
             tauXZ[k * (nX - 1) * nY + j * (nX - 1) + i] = 0.0;
           }
         }
@@ -177,9 +177,9 @@ __global__ void ComputeStress(const double* const Ux, const double* const Uy, co
           if (sqrt((-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) *
             (-0.5 * dX * (nX - 1) + dX * i - 0.5 * dX * (nX - 1) * (1.0 - 1.0 / N) + (dX * (nX - 1) / N) * a) +
             (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) *
-            (-0.5 * dY * (nY - 1) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b)) +
+            (-0.5 * dY * (nY - 2) + dY * j - 0.5 * dY * (nY - 1) * (1.0 - 1.0 / N) + (dY * (nY - 1) / N) * b) +
             (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) * 
-            (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c) < rad) {
+            (-0.5 * dZ * (nZ - 2) + dZ * k - 0.5 * dZ * (nZ - 1) * (1.0 - 1.0 / N) + (dZ * (nZ - 1) / N) * c)) < rad) {
             tauYZ[k * nX * (nY - 1) + j * nX + i] = 0.0;
           }
         }
