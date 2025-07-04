@@ -43,25 +43,73 @@ else % needCPUcalculation
   PmYZ = read_data_2D('data\PmYZ', Nx, Nx, Ny);
   tauXXm = read_data_2D('data\tauXXm', Nx, Nx, Ny);
   tauYYm = read_data_2D('data\tauYYm', Nx, Nx, Ny);
-  tauXYm = read_data_2D('data\tauXYm', Nx, Nx - 1, Ny - 1);
+  tauXZmXY = read_data_2D('data\tauXZmXY', Nx, Nx - 1, Ny);
+  UxmXY = read_data_2D('data\UxmXY', Nx, Nx + 1, Ny);
+  VxmXY = read_data_2D('data\VxmXY', Nx, Nx + 1, Ny);
+  
+  PcXY = read_data_2D('data\PcXY', Nx, Nx, Ny);
+  tauXZcXY = read_data_2D('data\tauXZcXY', Nx, Nx - 1, Ny);
+  UxcXY = read_data_2D('data\UxcXY', Nx, Nx + 1, Ny);
+  VxcXY = read_data_2D('data\VxcXY', Nx, Nx + 1, Ny);
+  
+  diffPxy = PmXY - PcXY;
+  difftauXZxy = tauXZmXY - tauXZcXY;
+  diffUxXY = UxmXY - UxcXY;
+  diffVxXY = VxmXY - VxcXY;
   
   % POSTPROCESSING
-  subplot(1, 3, 1)
+  subplot(2, 3, 1)
   imagesc(PmXY)
   colorbar
   title('PmXY')
   axis image
   
-  subplot(1, 3, 2)
-  imagesc(PmXZ)
+  subplot(2, 3, 2)
+  imagesc(PcXY)
   colorbar
-  title('PmXZ')
+  title('PcXY')
   axis image
   
-  subplot(1, 3, 3)
-  imagesc(PmYZ)
+  subplot(2, 3, 3)
+  imagesc(diffPxy)
   colorbar
-  title('PmYZ')
+  title('diffPxy')
+  axis image
+  
+  %subplot(2, 3, 1)
+  %imagesc(tauXZmXY)
+  %colorbar
+  %title('tauXZmXY')
+  %axis image
+  
+  %subplot(2, 3, 2)
+  %imagesc(tauXZcXY)
+  %colorbar
+  %title('tauXZcXY')
+  %axis image
+  
+  %subplot(2, 3, 3)
+  %imagesc(difftauXZxy)
+  %colorbar
+  %title('difftauXZxy')
+  %axis image
+  
+  subplot(2, 3, 4)
+  imagesc(UxmXY)
+  colorbar
+  title('UxmXY')
+  axis image
+  
+  subplot(2, 3, 5)
+  imagesc(UxcXY)
+  colorbar
+  title('UxcXY')
+  axis image
+  
+  subplot(2, 3, 6)
+  imagesc(diffUxXY)
+  colorbar
+  title('diffUxXY')
   axis image
   
   %subplot(2, 2, 2)
