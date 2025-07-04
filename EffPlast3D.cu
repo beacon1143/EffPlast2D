@@ -308,7 +308,7 @@ void EffPlast3D::ComputeEffParams(const size_t step, const double loadStepValue,
     for (int i = 0; i < nX + 1; i++) {
       for (int j = 0; j < nY; j++) {
         for (int k = 0; k < nZ; k++) {
-          Ux_cpu[k * (nX + 1) * nY + j * (nX + 1) + i] += (-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy + (-0.5 * dZ * (nZ - 1) + dZ * k) * dUzdz;
+          Ux_cpu[k * (nX + 1) * nY + j * (nX + 1) + i] += (-0.5 * dX * nX + dX * i) * dUxdx + (-0.5 * dY * (nY - 1) + dY * j) * dUxdy + (-0.5 * dZ * (nZ - 1) + dZ * k) * dUxdz;
         }
       }
     }
