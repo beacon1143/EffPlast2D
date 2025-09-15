@@ -87,42 +87,42 @@ if not(needCPUcalculation)
     colorbar
     title('J_1/Y analytic')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 5)
     imagesc(J2an(iBegin : iEnd, iBegin : iEnd))
     colorbar
     title('J_2/Y^2 analytic')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 6)
     imagesc(UanAbs(iBegin : iEnd, iBegin : iEnd))
     colorbar
     title('|u|/R analytic')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
 
     subplot(nRows, 3, 7)
     imagesc(errorJ1(iBegin : iEnd, iBegin : iEnd))
     colorbar
     title('J_1 error, %')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 8)
     imagesc(errorJ2(iBegin : iEnd, iBegin : iEnd))
     colorbar
     title('J_2 error, %')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 9)
     imagesc(errorUabs(iBegin : iEnd, iBegin : iEnd))
     colorbar
     title('|u| error, %')
     axis image
-    set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+    set(gca, 'FontSize', 10)
   end % if(needCompareStatic)
         
   subplot(nRows, 3, 1)
@@ -130,21 +130,21 @@ if not(needCPUcalculation)
   colorbar
   title('J_1/Y numerical')
   axis image
-  set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  set(gca, 'FontSize', 10)
   
   subplot(nRows, 3, 2)
   imagesc(J2nu(iBegin : iEnd, iBegin : iEnd))
   colorbar
   title('J_2/Y^2 numerical')
   axis image
-  set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  set(gca, 'FontSize', 10)
 
   subplot(nRows, 3, 3)
   imagesc(UnuAbs(iBegin : iEnd, iBegin : iEnd))
   colorbar
   title('|u|/R numerical')
   axis image
-  set(gca, 'FontSize', 10, 'fontWeight', 'bold')
+  set(gca, 'FontSize', 10)
   
   drawnow
   
