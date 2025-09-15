@@ -32,7 +32,7 @@ if nPores > 1 || nTasks < 2
 end %if
 needPeriodicBCs = true;
 if nPores < 3
-  needPeriodisBCs = false;
+  needPeriodicBCs = false;
 end %if
 
 Nx  = 32 * nGrid;     % number of space steps
