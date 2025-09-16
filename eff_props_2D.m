@@ -48,8 +48,8 @@ system(['.\', outname, '.exe ', num2str(initLoadValue), ' ', num2str(loadType(1)
 % POSTPROCESSING
 if not(needCPUcalculation)
   nRows = 1;
-  iBegin = int32(2);
-  iEnd = int32(Nx - 2);
+  iBegin = 2;
+  iEnd = Nx - 2;
   if needPeriodicBCs
     iBegin = int32(Nx / nPores);
     iEnd = int32(Nx * (nPores - 1) / nPores);
@@ -85,42 +85,42 @@ if not(needCPUcalculation)
     subplot(nRows, 3, 4)
     imagesc(J1an(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('J_1/Y analytic')
+    title('J_1/Y analytical', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 5)
     imagesc(J2an(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('J_2/Y^2 analytic')
+    title('J_2/Y^2 analytical', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 6)
     imagesc(UanAbs(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('|u|/R analytic')
+    title('|u|/R analytical', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
 
     subplot(nRows, 3, 7)
     imagesc(errorJ1(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('J_1 error, %')
+    title('J_1 error, %', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 8)
     imagesc(errorJ2(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('J_2 error, %')
+    title('J_2 error, %', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
     
     subplot(nRows, 3, 9)
     imagesc(errorUabs(iBegin : iEnd, iBegin : iEnd))
     colorbar
-    title('|u| error, %')
+    title('|u| error, %', 'FontWeight', 'Normal')
     axis image
     set(gca, 'FontSize', 10)
   end % if(needCompareStatic)
@@ -128,21 +128,21 @@ if not(needCPUcalculation)
   subplot(nRows, 3, 1)
   imagesc(J1nu(iBegin : iEnd, iBegin : iEnd))
   colorbar
-  title('J_1/Y numerical')
+  title('J_1/Y numerical', 'FontWeight', 'Normal')
   axis image
   set(gca, 'FontSize', 10)
   
   subplot(nRows, 3, 2)
   imagesc(J2nu(iBegin : iEnd, iBegin : iEnd))
   colorbar
-  title('J_2/Y^2 numerical')
+  title('J_2/Y^2 numerical', 'FontWeight', 'Normal')
   axis image
   set(gca, 'FontSize', 10)
 
   subplot(nRows, 3, 3)
   imagesc(UnuAbs(iBegin : iEnd, iBegin : iEnd))
   colorbar
-  title('|u|/R numerical')
+  title('|u|/R numerical', 'FontWeight', 'Normal')
   axis image
   set(gca, 'FontSize', 10)
   
