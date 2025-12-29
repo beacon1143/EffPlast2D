@@ -176,8 +176,8 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
   }
 }
 
-double EffPlast2D::ComputeEffModuli(const double initLoadValue, [[deprecated]] const double loadValue, 
-  const unsigned int nTimeSteps, const std::array<double, 3>& loadType)
+double EffPlast2D::ComputeEffModuli(const double initLoadValue, 
+  const unsigned int nTimeSteps, const std::array<double, 3>& loadType, [[deprecated]] const double loadValue)
 {
   const auto start = std::chrono::system_clock::now();
   nTimeSteps_ = nTimeSteps;
@@ -1159,7 +1159,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     } // for(j)
   } // for(i)
 
-  if (nPores == 1) {
+  /*if (nPores == 1) {
     errorUabsAvg /= errorUabsN;
     errorJ1Avg /= errorJN;
     errorJ2Avg /= errorJN;
@@ -1194,7 +1194,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
 
     //SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
     //delete[] plastZoneAn;
-  }
+  } */
 
   SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
   delete[] UnuAbs;

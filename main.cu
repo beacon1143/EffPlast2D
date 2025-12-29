@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     }
 
     EffPlast2D eff_plast;
-    eff_plast.ComputeEffModuli(init_load_value, load_value, time_steps, load_type);
+    eff_plast.ComputeEffModuli(init_load_value, time_steps, load_type, load_value);
     return 0;
   }
   catch (const std::exception& e) {
