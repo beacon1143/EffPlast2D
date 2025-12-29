@@ -5,7 +5,7 @@ function [field] = read_data_2D(var_name, size, nX, nY)
     field = fread(fil, 'double');
     fclose(fil);
     field = reshape(field, nX, nY);
-    field = transpose(field);
+    %field = transpose(field);
   else
     disp(strjoin({'Error! File', file_name, 'does not exist!'}));
     field = zeros(nX, nY);

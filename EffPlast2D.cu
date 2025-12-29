@@ -558,7 +558,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     /*std::cout << "    KeffPhi = " << KeffPhi << '\n';
     log_file << "    KeffPhi = " << KeffPhi << '\n';*/
 
-    const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));
+    const double phi = 3.1415926 * rad * rad / (dX * (nX - 1) * dY * (nY - 1));  // it's wrong!
     
     if (NL <= 1) {  // pure elastic case
       const double KphiExactElast = G0 / Phi0;
