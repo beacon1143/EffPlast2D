@@ -53,15 +53,15 @@ inline void gpuAssert(cudaError_t code, const char* file, int line)
 class EffPlast2D {
 public:
 	double ComputeEffModuli( double initLoadValue, 
-		unsigned int nTimeSteps, const std::array<double, 3>& loadType,
+		const std::array<double, 3>& loadType,
 		[[deprecated]] double loadValue = 0.0
 	);
 	double ComputeEffDamping( double initLoadValue, 
-		unsigned int nTimeSteps, const std::array<double, 3>& loadType,
+		const std::array<double, 3>& loadType,
 		[[deprecated]] double loadValue = 0.0
 	);
 
-	EffPlast2D();
+	EffPlast2D(const unsigned int nTimeSteps = 1);
 	~EffPlast2D();
 private:
 	dim3 grid, block;

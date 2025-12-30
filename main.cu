@@ -27,12 +27,12 @@ int main(int argc, char** argv) {
       load_value = std::stod(argv[6]);
     }*/
 
-    EffPlast2D eff_plast;
+    EffPlast2D eff_plast(time_steps);
     if (NL <= 3) {
-      eff_plast.ComputeEffModuli(init_load_value, time_steps, load_type, load_value);
+      eff_plast.ComputeEffModuli(init_load_value, load_type, load_value);
     }
     else {
-      eff_plast.ComputeEffDamping(init_load_value, time_steps, load_type, load_value);
+      eff_plast.ComputeEffDamping(init_load_value, load_type, load_value);
     }
     return 0;
   }

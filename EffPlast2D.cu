@@ -176,14 +176,13 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
   }
 }
 
-double EffPlast2D::ComputeEffModuli(const double initLoadValue, const unsigned int nTimeSteps, const std::array<double, 3>& loadType, 
+double EffPlast2D::ComputeEffModuli(const double initLoadValue, const std::array<double, 3>& loadType, 
   [[deprecated]] const double loadValue)
 {
   if (NL > 3) {
     throw std::invalid_argument("ERROR:  Wrong number of loads in ComputeEffModuli()!\n");
   }
   const auto start = std::chrono::system_clock::now();
-  nTimeSteps_ = nTimeSteps;
   loadType_ = loadType;
 
   std::array<double, 3> sphericalLoadType{0.5 * (loadType_[0] + loadType_[1]), 0.5 * (loadType_[0] + loadType_[1]), 0.0};
@@ -228,7 +227,7 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue, const unsigned i
 
   return 0.0;
 }
-double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned int nTimeSteps, const std::array<double, 3>& loadType,
+double EffPlast2D::ComputeEffDamping(const double initLoadValue, const std::array<double, 3>& loadType,
   [[deprecated]] const double loadValue)
 {
   if (NL < 4) {
@@ -237,7 +236,7 @@ double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned 
   const auto start = std::chrono::system_clock::now();
 
   printCalculationType();
-  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
+  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps_);
   for (size_t i = 1; i < NL; i++) {
     //std::cout << "\n\nsin += " << std::sin(i * 2.0 * 3.1415926 / (NL - 1)) - std::sin((i - 1) * 2.0 * 3.1415926 / (NL - 1)) << "\n";
     ComputeEffParams(i, loadValue * (std::sin(i * 2.0 * 3.1415926 / (NL - 1)) - std::sin((i - 1) * 2.0 * 3.1415926 / (NL - 1))), loadType, 1);
@@ -246,7 +245,7 @@ double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned 
   std::cout << "\nStrain tensors:\n";
   std::cout << "0) ";
   for (size_t j = 0; j < 3; j++) {
-    std::cout << epsilon[0][nTimeSteps - 1][j] << " ";
+    std::cout << epsilon[0][nTimeSteps_ - 1][j] << " ";
   }
   std::cout << "\n";
   for (size_t i = 1; i < NL; i++) {
@@ -257,10 +256,24 @@ double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned 
     std::cout << "\n";
   }
 
+  std::cout << "\nStrain tensors periodic:\n";
+  std::cout << "0) ";
+  for (size_t j = 0; j < 3; j++) {
+    std::cout << epsilonPer[0][nTimeSteps_ - 1][j] << " ";
+  }
+  std::cout << "\n";
+  for (size_t i = 1; i < NL; i++) {
+    std::cout << i << ") ";
+    for (size_t j = 0; j < 3; j++) {
+      std::cout << epsilonPer[i][0][j] << " ";
+    }
+    std::cout << "\n";
+  }
+
   std::cout << "\nStress tensors:\n";
   std::cout << "0) ";
   for (size_t j = 0; j < 4; j++) {
-    std::cout << sigma[0][nTimeSteps - 1][j] << " ";
+    std::cout << sigma[0][nTimeSteps_ - 1][j] << " ";
   }
   std::cout << "\n";
   for (size_t i = 1; i < NL; i++) {
@@ -271,8 +284,22 @@ double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned 
     std::cout << "\n";
   }
 
-  if (nTimeSteps > 0) {
-    SaveAnStatic2D(deltaP[0][nTimeSteps - 1], tauInfty[0][nTimeSteps - 1]);
+  std::cout << "\nStress tensors periodic:\n";
+  std::cout << "0) ";
+  for (size_t j = 0; j < 4; j++) {
+    std::cout << sigmaPer[0][nTimeSteps_ - 1][j] << " ";
+  }
+  std::cout << "\n";
+  for (size_t i = 1; i < NL; i++) {
+    std::cout << i << ") ";
+    for (size_t j = 0; j < 4; j++) {
+      std::cout << sigmaPer[i][0][j] << " ";
+    }
+    std::cout << "\n";
+  }
+
+  if (nTimeSteps_ > 0) {
+    SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1]);
   }
 
   const auto end = std::chrono::system_clock::now();
@@ -1511,7 +1538,9 @@ double EffPlast2D::getGper() {
     (epsilonDevIncPer[0] - epsilonVolIncPer[0] - epsilonDevIncPer[1] + epsilonVolIncPer[1]);
 }
 
-EffPlast2D::EffPlast2D() {
+EffPlast2D::EffPlast2D(const unsigned int nTimeSteps)
+  : nTimeSteps_(nTimeSteps)
+{
   block.x = 32;
   block.y = 32;
   block.z = 1;
