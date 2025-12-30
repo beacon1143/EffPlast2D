@@ -176,9 +176,12 @@ __global__ void ComputePlasticity(double* tauXX, double* tauYY, double* tauXY,
   }
 }
 
-double EffPlast2D::ComputeEffModuli(const double initLoadValue, 
-  const unsigned int nTimeSteps, const std::array<double, 3>& loadType, [[deprecated]] const double loadValue)
+double EffPlast2D::ComputeEffModuli(const double initLoadValue, const unsigned int nTimeSteps, const std::array<double, 3>& loadType, 
+  [[deprecated]] const double loadValue)
 {
+  if (NL > 3) {
+    throw std::invalid_argument("ERROR:  Wrong number of loads in ComputeEffModuli()!\n");
+  }
   const auto start = std::chrono::system_clock::now();
   nTimeSteps_ = nTimeSteps;
   loadType_ = loadType;
@@ -208,7 +211,6 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue,
   if (NL > 1 && nTimeSteps_) {
     SaveAnStatic2D(deltaP[0][nTimeSteps_ - 1], tauInfty[0][nTimeSteps_ - 1]);
   }
-
   /* OUTPUT DATA WRITING */
   SaveMatrix(P_cpu, P_cuda, nX, nY, "data/Pc_" + std::to_string(32 * NGRID) + "_.dat");
   SaveMatrix(tauXX_cpu, tauXX_cuda, nX, nY, "data/tauXXc_" + std::to_string(32 * NGRID) + "_.dat");
@@ -226,7 +228,59 @@ double EffPlast2D::ComputeEffModuli(const double initLoadValue,
 
   return 0.0;
 }
+double EffPlast2D::ComputeEffDamping(const double initLoadValue, const unsigned int nTimeSteps, const std::array<double, 3>& loadType,
+  [[deprecated]] const double loadValue)
+{
+  if (NL < 4) {
+    throw std::invalid_argument("ERROR:  Wrong number of loads in ComputeEffModuli()!\n");
+  }
+  const auto start = std::chrono::system_clock::now();
 
+  printCalculationType();
+  ComputeEffParams(0, initLoadValue, loadType, nTimeSteps);
+  for (size_t i = 1; i < NL; i++) {
+    //std::cout << "\n\nsin += " << std::sin(i * 2.0 * 3.1415926 / (NL - 1)) - std::sin((i - 1) * 2.0 * 3.1415926 / (NL - 1)) << "\n";
+    ComputeEffParams(i, loadValue * (std::sin(i * 2.0 * 3.1415926 / (NL - 1)) - std::sin((i - 1) * 2.0 * 3.1415926 / (NL - 1))), loadType, 1);
+  }
+
+  std::cout << "\nStrain tensors:\n";
+  std::cout << "0) ";
+  for (size_t j = 0; j < 3; j++) {
+    std::cout << epsilon[0][nTimeSteps - 1][j] << " ";
+  }
+  std::cout << "\n";
+  for (size_t i = 1; i < NL; i++) {
+    std::cout << i << ") ";
+    for (size_t j = 0; j < 3; j++) {
+      std::cout << epsilon[i][0][j] << " ";
+    }
+    std::cout << "\n";
+  }
+
+  std::cout << "\nStress tensors:\n";
+  std::cout << "0) ";
+  for (size_t j = 0; j < 4; j++) {
+    std::cout << sigma[0][nTimeSteps - 1][j] << " ";
+  }
+  std::cout << "\n";
+  for (size_t i = 1; i < NL; i++) {
+    std::cout << i << ") ";
+    for (size_t j = 0; j < 4; j++) {
+      std::cout << sigma[i][0][j] << " ";
+    }
+    std::cout << "\n";
+  }
+
+  if (nTimeSteps > 0) {
+    SaveAnStatic2D(deltaP[0][nTimeSteps - 1], tauInfty[0][nTimeSteps - 1]);
+  }
+
+  const auto end = std::chrono::system_clock::now();
+  int elapsed_sec = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(end - start).count());
+  printDuration(elapsed_sec);
+
+  return 0.0;
+}
 void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue, const std::array<double, 3>& loadType, const size_t nTimeSteps) {
   printStepInfo(step);
 
@@ -269,6 +323,7 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     dUydy = loadStepValue * loadType[1] / static_cast<double>(nTimeSteps);
     dUxdy = loadStepValue * loadType[2] / static_cast<double>(nTimeSteps);
     dUydx = dUxdy;
+    //std::cout << "dUxdx = " << dUxdx << ", dUydy = " << dUydy << ", dUxdy = " << dUxdy << "\n";
 
     curEffStrain[0] += dUxdx;
     curEffStrain[1] += dUydy;
@@ -982,7 +1037,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     std::abs(loadType_[2]) < std::numeric_limits<double>::epsilon();
 
   const double Rmin = rad/* + 20.0 * dX*/;
-  const double Rmax = 0.5 * dX * (nX - 1) - dX * 60.0;
+  const double Rmax = 0.5 * dX * (nX - 1) - dX * 20.0;
   const double eps = 1.0e-18;
 
   const double xi = (deltaP > 0.0) ? 1.0 : -1.0;
@@ -1159,7 +1214,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
     } // for(j)
   } // for(i)
 
-  /*if (nPores == 1) {
+  if (nPores == 1) {
     errorUabsAvg /= errorUabsN;
     errorJ1Avg /= errorJN;
     errorJ2Avg /= errorJN;
@@ -1194,7 +1249,7 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
 
     //SaveVector(plastZoneAn, (nX - 1)* (nY - 1), "data/plast_an_" + std::to_string(32 * NGRID) + "_.dat");
     //delete[] plastZoneAn;
-  } */
+  }
 
   SaveVector(UnuAbs, nX * nY, "data/UnuAbs_" + std::to_string(32 * NGRID) + "_.dat");
   delete[] UnuAbs;
@@ -1213,21 +1268,23 @@ void EffPlast2D::SaveAnStatic2D(const double deltaP, const double tauInfty) {
 void EffPlast2D::printStepInfo(const size_t step) {
   std::cout << "\nLOAD STEP " << step + 1 << " FROM " << NL << ": ";
   log_file << "\nLOAD STEP " << step + 1 << " FROM " << NL << ": ";
-  switch (step) {
-  case 0:
-    std::cout << "PRELOADING\n";
-    log_file << "PRELOADING\n";
-    break;
-  case 1:
-    std::cout << "SMALL HYDROSTATIC INCREMENT\n";
-    log_file << "SMALL HYDROSTATIC INCREMENT\n";
-    break;
-  case 2:
-    std::cout << "SMALL DEVIATORIC INCREMENT\n";
-    log_file << "SMALL DEVIATORIC INCREMENT\n";
-    break;
-  default:
-    throw std::invalid_argument("ERROR:  Wrong step index!\n");
+  if (NL <= 3) {
+    switch (step) {
+    case 0:
+      std::cout << "PRELOADING\n";
+      log_file << "PRELOADING\n";
+      break;
+    case 1:
+      std::cout << "SMALL HYDROSTATIC INCREMENT\n";
+      log_file << "SMALL HYDROSTATIC INCREMENT\n";
+      break;
+    case 2:
+      std::cout << "SMALL DEVIATORIC INCREMENT\n";
+      log_file << "SMALL DEVIATORIC INCREMENT\n";
+      break;
+    default:
+      throw std::invalid_argument("ERROR:  Wrong step index!\n");
+    }
   }
   std::cout << "Porosity is " << porosity * 100 << "%\n";
   log_file << "Porosity is " << porosity * 100 << "%\n";
@@ -1249,7 +1306,8 @@ void EffPlast2D::printCalculationType() {
     log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE BULK MODULI AND THE EFFECTIVE SHEAR MODULUS\n";
     break;
   default:
-    throw std::invalid_argument("ERROR:  Wrong number of loads!\n");
+    std::cout << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE DAMPING\n";
+    log_file << "\nELASTOPLASTIC CALCULATION\nESTIMATION OF THE EFFECTIVE DAMPING\n";
   }
 }
 void EffPlast2D::printEffectiveModuli() {

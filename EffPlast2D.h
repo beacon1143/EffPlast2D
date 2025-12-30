@@ -1,12 +1,13 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <cmath>
 #include <vector>
 #include <string>
 #include <array>
 #include <set>
 #include <limits>
-#include <algorithm>
+//#include <algorithm>
 #include <complex>
 #include <chrono>
 
@@ -51,7 +52,11 @@ inline void gpuAssert(cudaError_t code, const char* file, int line)
 
 class EffPlast2D {
 public:
-	double EffPlast2D::ComputeEffModuli( double initLoadValue, 
+	double ComputeEffModuli( double initLoadValue, 
+		unsigned int nTimeSteps, const std::array<double, 3>& loadType,
+		[[deprecated]] double loadValue = 0.0
+	);
+	double ComputeEffDamping( double initLoadValue, 
 		unsigned int nTimeSteps, const std::array<double, 3>& loadType,
 		[[deprecated]] double loadValue = 0.0
 	);

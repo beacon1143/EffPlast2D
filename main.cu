@@ -14,7 +14,10 @@ int main(int argc, char** argv) {
     unsigned int time_steps = std::stod(argv[5]);
 
     double load_value;
-    if (time_steps == 1) {
+    if (argc >= 6) {
+      load_value = std::stod(argv[6]);
+    }
+    /*if (time_steps == 1) {
       load_value = init_load_value;
     }
     else {
@@ -22,10 +25,15 @@ int main(int argc, char** argv) {
         throw std::invalid_argument(err_info);
       }
       load_value = std::stod(argv[6]);
-    }
+    }*/
 
     EffPlast2D eff_plast;
-    eff_plast.ComputeEffModuli(init_load_value, time_steps, load_type, load_value);
+    if (NL <= 3) {
+      eff_plast.ComputeEffModuli(init_load_value, time_steps, load_type, load_value);
+    }
+    else {
+      eff_plast.ComputeEffDamping(init_load_value, time_steps, load_type, load_value);
+    }
     return 0;
   }
   catch (const std::exception& e) {
