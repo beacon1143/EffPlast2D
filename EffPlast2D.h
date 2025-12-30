@@ -113,8 +113,8 @@ private:
 	std::array<double, 3> curEffStrain;
 	std::array<std::vector<std::array<double, 3>>, NL> epsilon;
 	std::array<std::vector<std::array<double, 3>>, NL> epsilonPer;
-	std::array<std::vector<std::array<double, 4>>, NL> sigma;    // sigma_zz is non-zero due to plane strain
-	std::array<std::vector<std::array<double, 4>>, NL> sigmaPer;
+	std::array<std::vector<std::array<double, 4>>, NL> sigma;     // xx, yy, xy, zz
+	std::array<std::vector<std::array<double, 4>>, NL> sigmaPer;  // xx, yy, xy, zz
 
 	// effective moduli
 	struct EffModuli {

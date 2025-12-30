@@ -461,21 +461,21 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
         //if (!inTheHole(x, y)) 
         sigma[step][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
         sigma[step][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
+        if (i < nX - 1 && j < nY - 1) {
+          sigma[step][it][2] += tauXY_cpu[j * (nX - 1) + i];
+        }
         sigma[step][it][2] += nu0 * (tauXX_cpu[j * nX + i] + tauYY_cpu[j * nX + i] - 2.0 * P_cpu[j * nX + i]);
-
-        if (i < nX - 1 && j < nY - 1)
-          sigma[step][it][3] += tauXY_cpu[j * (nX - 1) + i];
 
         if (i > perOffsetX && i < nX - perOffsetX && j > perOffsetY && j < nY - perOffsetY) {
           sigmaPer[step][it][0] += tauXX_cpu[j * nX + i] - P_cpu[j * nX + i];
           sigmaPer[step][it][1] += tauYY_cpu[j * nX + i] - P_cpu[j * nX + i];
-          sigmaPer[step][it][2] += nu0 * (tauXX_cpu[j * nX + i] + tauYY_cpu[j * nX + i] - 2.0 * P_cpu[j * nX + i]);
-          sigmaPer[step][it][3] += 0.25 * (
+          sigmaPer[step][it][2] += 0.25 * (
             tauXY_cpu[(j - 1) * (nX - 1) + i - 1] + 
             tauXY_cpu[(j - 1) * (nX - 1) + i] + 
             tauXY_cpu[j * (nX - 1) + i - 1] + 
             tauXY_cpu[j * (nX - 1) + i]
           );
+          sigmaPer[step][it][3] += nu0 * (tauXX_cpu[j * nX + i] + tauYY_cpu[j * nX + i] - 2.0 * P_cpu[j * nX + i]);
 
           epsilonPer[step][it][0] += (Ux_cpu[j * (nX + 1) + i + 1] - Ux_cpu[j * (nX + 1) + i]) / dX;
           epsilonPer[step][it][1] += (Uy_cpu[(j + 1) * nX + i] - Uy_cpu[j * nX + i]) / dY;
@@ -490,8 +490,8 @@ void EffPlast2D::ComputeEffParams(const size_t step, const double loadStepValue,
     }
     sigma[step][it][0] /= nX * nY;
     sigma[step][it][1] /= nX * nY;
-    sigma[step][it][2] /= nX * nY;
-    sigma[step][it][3] /= (nX - 1) * (nY - 1);
+    sigma[step][it][2] /= (nX - 1) * (nY - 1);
+    sigma[step][it][3] /= nX * nY;
 
     sigmaPer[step][it][0] /= (nX - 2 * perOffsetX) * (nY - 2 * perOffsetY);
     sigmaPer[step][it][1] /= (nX - 2 * perOffsetX) * (nY - 2 * perOffsetY);
